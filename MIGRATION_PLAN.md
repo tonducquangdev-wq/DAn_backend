@@ -10,6 +10,7 @@
 
 - **Tên Dự Án**: **LIFE PLANNER** (Hệ thống Quản lý Cuộc sống, Học tập, Lịch cá nhân, Tập luyện Gym & Công việc)
 - **Nguồn gốc**: Đã chuyển đổi thành công từ dự án Laravel Monolith sang mô hình **RESTful API + React Single Page Application**.
+- **GitHub Repository**: [https://github.com/tonducquangdev-wq/DAn_backend.git](https://github.com/tonducquangdev-wq/DAn_backend.git)
 - **Cấu trúc Monorepo**:
   - **Backend API**: Node.js + Express (v5.2.1) + Mongoose (MongoDB) tại thư mục gốc `d:\hoctap\test_backend` (Port 5000)
   - **Frontend Client**: React 19 + Vite + Vanilla CSS Glassmorphic tại `d:\hoctap\test_backend\client`
