@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const connectDB = require("./Config/db");
 
 // Import Routers
@@ -33,8 +34,18 @@ app.use("/api", monHocRouter);
 app.use("/api", duAnRouter);
 app.use("/api", dashboardRouter);
 
-// Base Route
+// Phục vụ giao diện Frontend tĩnh từ client/dist (nếu đã build)
+const clientDistPath = path.join(__dirname, "client", "dist");
+if (fs.existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+}
+
+// Base Route & SPA Fallback cho React
 app.get("/", (req, res) => {
+    const indexPath = path.join(clientDistPath, "index.html");
+    if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+    }
     res.json({
         success: true,
         message: "🚀 Life Planner RESTful API Server đang hoạt động!",
@@ -42,7 +53,19 @@ app.get("/", (req, res) => {
     });
 });
 
+// Middleware Fallback cho các URL client-side routing của React
+app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api") && !req.path.startsWith("/public")) {
+        const indexPath = path.join(clientDistPath, "index.html");
+        if (fs.existsSync(indexPath)) {
+            return res.sendFile(indexPath);
+        }
+    }
+    next();
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
