@@ -1,83 +1,79 @@
 import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export const FloatingMenu = ({ activeTab, setActiveTab }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout, theme, toggleTheme } = useAuth();
 
-  const handleSelect = (tab) => {
-    setActiveTab(tab);
+  const menuItems = [
+    { id: "calendar", label: "Lịch & Sự Kiện", icon: "📅", color: "#3b82f6" },
+    { id: "study", label: "Học Tập & GPA", icon: "🎓", color: "#8b5cf6" },
+    { id: "workout", label: "Tập Luyện Gym", icon: "🏋️", color: "#10b981" },
+    { id: "profile", label: "Hồ Sơ Cá Nhân", icon: "👤", color: "#f59e0b" }
+  ];
+
+  const handleSelect = (id) => {
+    setActiveTab(id);
     setIsOpen(false);
   };
 
   return (
-    <div className={`floating-menu-container d-none d-lg-block ${isOpen ? "active" : ""}`} id="floatingMenuContainer">
+    <div className={`neu-floating-container ${isOpen ? "is-open" : ""}`}>
       {/* POPUP MENU */}
-      <div className="floating-menu-popup" id="floatingMenuPopup" role="menu">
-        <div className="px-2 py-1 mb-1 d-flex align-items-center justify-content-between">
-          <span className="fs-8 fw-bold text-uppercase text-muted letter-spacing-1">Điều hướng</span>
-          <span className="badge bg-primary-subtle text-primary rounded-pill fs-8">Life Planner</span>
+      <div className="neu-floating-popup">
+        <div className="neu-popup-header">
+          <div className="user-mini-badge">
+            <div className="user-avatar-small">
+              {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+            </div>
+            <div className="user-info-small">
+              <div className="user-name-text">{user?.name || "Người dùng"}</div>
+              <div className="user-email-text">{user?.email || "Life Planner"}</div>
+            </div>
+          </div>
+          <button 
+            className="neu-theme-toggle-btn"
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Chuyển sang Light Mode ☀️" : "Chuyển sang Dark Mode 🌙"}
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
         </div>
 
-        <ul className="floating-menu-list p-0 m-0 style-none">
-          <li>
-            <button
-              className={`floating-menu-item w-100 text-start border-0 bg-transparent cursor-pointer ${activeTab === "calendar" ? "active" : ""}`}
-              onClick={() => handleSelect("calendar")}
-            >
-              <span className="menu-item-icon bg-primary-subtle text-primary">
-                <i className="bi bi-calendar3"></i>
-              </span>
-              <span>📅 Lịch cá nhân</span>
-            </button>
-          </li>
+        <div className="neu-menu-divider"></div>
 
-          <li>
-            <button
-              className={`floating-menu-item w-100 text-start border-0 bg-transparent cursor-pointer ${activeTab === "study" ? "active" : ""}`}
-              onClick={() => handleSelect("study")}
-            >
-              <span className="menu-item-icon bg-info-subtle text-info">
-                <i className="bi bi-mortarboard-fill"></i>
-              </span>
-              <span>📚 Báo cáo học tập</span>
-            </button>
-          </li>
+        <nav className="neu-floating-nav">
+          {menuItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                className={`neu-floating-nav-item ${isActive ? "active" : ""}`}
+                onClick={() => handleSelect(item.id)}
+              >
+                <span className="nav-item-icon">{item.icon}</span>
+                <span className="nav-item-label">{item.label}</span>
+                {isActive && <span className="nav-active-dot">●</span>}
+              </button>
+            );
+          })}
+        </nav>
 
-          <li>
-            <button
-              className={`floating-menu-item w-100 text-start border-0 bg-transparent cursor-pointer ${activeTab === "workout" ? "active" : ""}`}
-              onClick={() => handleSelect("workout")}
-            >
-              <span className="menu-item-icon bg-success-subtle text-success">
-                <i className="bi bi-heart-pulse-fill"></i>
-              </span>
-              <span>🏋️ Báo cáo tập luyện</span>
-            </button>
-          </li>
+        <div className="neu-menu-divider"></div>
 
-          <li className="floating-menu-divider"></li>
-
-          <li>
-            <button
-              className={`floating-menu-item w-100 text-start border-0 bg-transparent cursor-pointer ${activeTab === "profile" ? "active" : ""}`}
-              onClick={() => handleSelect("profile")}
-            >
-              <span className="menu-item-icon bg-secondary-subtle text-secondary">
-                <i className="bi bi-person-fill-gear"></i>
-              </span>
-              <span>👤 Hồ sơ & Cài đặt</span>
-            </button>
-          </li>
-        </ul>
+        <button className="neu-logout-btn" onClick={logout}>
+          <span>🚪 Đăng xuất</span>
+        </button>
       </div>
 
-      {/* TOGGLE BUTTON */}
+      {/* FLOATING BUBBLE BUTTON */}
       <button
         type="button"
-        className="floating-menu-btn border-0 cursor-pointer"
+        className="neu-floating-bubble-btn"
         onClick={() => setIsOpen(!isOpen)}
-        title="Menu điều hướng nhanh"
+        title="Menu điều hướng"
       >
-        <i className={`bi ${isOpen ? "bi-x-lg" : "bi-list"} icon-open`}></i>
+        <span className="bubble-icon">{isOpen ? "✖" : "🚀"}</span>
       </button>
     </div>
   );

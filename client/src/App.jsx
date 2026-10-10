@@ -1,18 +1,16 @@
 import React, { useState } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AuthModal } from "./components/AuthModal";
-import { Sidebar } from "./components/Sidebar";
+import { FloatingMenu } from "./components/FloatingMenu";
 
-import { DashboardView } from "./views/DashboardView";
 import { CalendarView } from "./views/CalendarView";
 import { StudyGpaView } from "./views/StudyGpaView";
 import { WorkoutView } from "./views/WorkoutView";
-import { ProjectsView } from "./views/ProjectsView";
 import { ProfileView } from "./views/ProfileView";
 
 function MainApp() {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("calendar");
 
   if (loading) {
     return (
@@ -28,29 +26,36 @@ function MainApp() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "dashboard":
-        return <DashboardView />;
       case "calendar":
         return <CalendarView />;
       case "study":
         return <StudyGpaView />;
       case "workout":
         return <WorkoutView />;
-      case "projects":
-        return <ProjectsView />;
       case "profile":
         return <ProfileView />;
       default:
-        return <DashboardView />;
+        return <CalendarView />;
     }
   };
 
   return (
-    <div className="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="main-wrapper">
+    <div className="app-container no-sidebar">
+      {/* Top Header Bar */}
+      <header className="neu-top-header">
+        <div className="brand-logo-inline">
+          <div className="logo-icon-circle">LP</div>
+          <span className="logo-title">LIFE PLANNER</span>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="main-wrapper full-width">
         {renderContent()}
       </main>
+
+      {/* Bottom Right Floating Bubble Menu */}
+      <FloatingMenu activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   );
 }
