@@ -1,0 +1,1206 @@
+/* ==========================================================================
+   CALENDAR FIRST MODULE - NOTION & GOOGLE CALENDAR STYLE (LIFE PLANNER)
+   ========================================================================== */
+
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --card-radius: 16px;
+    --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    --card-shadow-hover: 0 10px 25px -4px rgba(15, 23, 42, 0.08);
+
+    /* 4 TÔNG MÀU CHUẨN GOOGLE / NOTION CALENDAR */
+    /* 1. Lịch học: Xanh dương (#3b82f6) */
+    --event-blue-bg: #eff6ff;
+    --event-blue-text: #1d4ed8;
+    --event-blue-border: #bfdbfe;
+    --event-blue-dot: #3b82f6;
+
+    /* 2. Lịch tập: Xanh lá (#22c55e) */
+    --event-green-bg: #f0fdf4;
+    --event-green-text: #15803d;
+    --event-green-border: #bbf7d0;
+    --event-green-dot: #22c55e;
+
+    /* 3. Deadline: Cam (#f97316) */
+    --event-orange-bg: #fff7ed;
+    --event-orange-text: #c2410c;
+    --event-orange-border: #fed7aa;
+    --event-orange-dot: #f97316;
+
+    /* 4. Sự kiện cá nhân: Tím (#a855f7) */
+    --event-purple-bg: #faf5ff;
+    --event-purple-text: #7e22ce;
+    --event-purple-border: #e9d5ff;
+    --event-purple-dot: #a855f7;
+
+    /* 5. Công việc: Chàm (#6366f1) */
+    --event-indigo-bg: #eef2ff;
+    --event-indigo-text: #4338ca;
+    --event-indigo-border: #c7d2fe;
+    --event-indigo-dot: #6366f1;
+}
+
+/* ==========================================================================
+   1. LEGEND BADGES & NÚT LỌC MÀU SỰ KIỆN (MULTI-SELECT FILTER)
+   ========================================================================== */
+.legend-pill, .legend-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    cursor: pointer;
+}
+
+.legend-btn {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.legend-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.legend-pill.hoc-tap, .legend-btn.hoc-tap {
+    background-color: var(--event-blue-bg);
+    color: var(--event-blue-text);
+    border-color: var(--event-blue-border);
+}
+
+.legend-pill.tap-luyen, .legend-btn.tap-luyen {
+    background-color: var(--event-green-bg);
+    color: var(--event-green-text);
+    border-color: var(--event-green-border);
+}
+
+.legend-pill.deadline, .legend-btn.deadline {
+    background-color: var(--event-orange-bg);
+    color: var(--event-orange-text);
+    border-color: var(--event-orange-border);
+}
+
+.legend-pill.ca-nhan, .legend-btn.ca-nhan {
+    background-color: var(--event-purple-bg);
+    color: var(--event-purple-text);
+    border-color: var(--event-purple-border);
+}
+
+.legend-pill.cong-viec, .legend-btn.cong-viec {
+    background-color: var(--event-indigo-bg);
+    color: var(--event-indigo-text);
+    border-color: var(--event-indigo-border);
+}
+
+.legend-btn.active[data-filter="all"] {
+    background-color: #4f46e5;
+    color: #ffffff;
+    border-color: #4338ca;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+}
+
+.legend-btn.active:not([data-filter="all"]) {
+    border-color: currentColor;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    transform: scale(1.04);
+}
+
+.filter-active .legend-btn:not(.active) {
+    opacity: 1;
+    filter: none;
+    transform: none;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.hoc-tap .legend-dot { background-color: var(--event-blue-dot); }
+.tap-luyen .legend-dot { background-color: var(--event-green-dot); }
+.deadline .legend-dot { background-color: var(--event-orange-dot); }
+.ca-nhan .legend-dot { background-color: var(--event-purple-dot); }
+.cong-viec .legend-dot { background-color: var(--event-indigo-dot); }
+
+/* ==========================================================================
+   2. LƯỚI LỊCH THÁNG LỚN (MONTHLY CALENDAR GRID - NOTION/GOOGLE STYLE)
+   ========================================================================== */
+.calendar-grid-container {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: #cbd5e1;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.calendar-header-day {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-align: center;
+    padding: 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.calendar-header-day.weekend {
+    color: #ef4444;
+}
+
+.calendar-day-cell {
+    background-color: #ffffff;
+    min-height: 120px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+    cursor: pointer;
+}
+
+.calendar-day-cell:hover {
+    background-color: #f8fafc;
+}
+
+.calendar-day-cell.other-month {
+    background-color: #fafafa;
+    color: #cbd5e1;
+}
+
+.calendar-day-cell.other-month .day-number {
+    color: #cbd5e1;
+}
+
+.day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    padding: 0 4px;
+}
+
+.day-number {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #334155;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* NỔI BẬT NGÀY HIỆN TẠI (TODAY HIGHLIGHT) */
+.calendar-day-cell.is-today {
+    background-color: rgba(99, 102, 241, 0.04);
+    box-shadow: inset 0 0 0 2px #4f46e5;
+}
+
+.calendar-day-cell.is-today .day-number {
+    background-color: #4f46e5;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+}
+
+.today-tag {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #4f46e5;
+    background-color: #e0e7ff;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/* ==========================================================================
+   3. EVENT PILLS (THẺ SỰ KIỆN TRONG Ô NGÀY - ELLIPSIS AN TOÀN)
+   ========================================================================== */
+.event-pill-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.event-pill {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    border: 1px solid transparent;
+    max-width: 100%;
+}
+
+.event-pill span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: 100%;
+}
+
+.event-pill:hover {
+    transform: scale(1.02);
+    filter: brightness(0.96);
+}
+
+.event-pill.hoc-tap {
+    background-color: var(--event-blue-bg);
+    color: var(--event-blue-text);
+    border-color: var(--event-blue-border);
+}
+
+.event-pill.tap-luyen {
+    background-color: var(--event-green-bg);
+    color: var(--event-green-text);
+    border-color: var(--event-green-border);
+}
+
+.event-pill.deadline {
+    background-color: var(--event-orange-bg);
+    color: var(--event-orange-text);
+    border-color: var(--event-orange-border);
+}
+
+.event-pill.ca-nhan {
+    background-color: var(--event-purple-bg);
+    color: var(--event-purple-text);
+    border-color: var(--event-purple-border);
+}
+
+.event-pill.cong-viec {
+    background-color: var(--event-indigo-bg);
+    color: var(--event-indigo-text);
+    border-color: var(--event-indigo-border);
+}
+
+.event-more-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #4f46e5;
+    background-color: #e0e7ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.event-more-pill:hover {
+    background-color: #4f46e5;
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   4. CARDS CỘT PHẢI (SUMMARY & SCHEDULE)
+   ========================================================================== */
+.side-card {
+    background-color: #ffffff;
+    border-radius: var(--card-radius);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+}
+
+.side-card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.side-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.schedule-item {
+    padding: 0.75rem 0.85rem;
+    border-radius: 12px;
+    background-color: #f8fafc;
+    margin-bottom: 0.6rem;
+    border-left: 3.5px solid #6366f1;
+    transition: all 0.2s ease;
+}
+
+.schedule-item.hoc-tap { border-left-color: #3b82f6; }
+.schedule-item.tap-luyen { border-left-color: #22c55e; }
+.schedule-item.deadline { border-left-color: #f97316; }
+.schedule-item.ca-nhan { border-left-color: #a855f7; }
+.schedule-item.cong-viec { border-left-color: #6366f1; }
+
+.schedule-item:hover {
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* ==========================================================================
+   DEADLINE COMPACT COMPONENT (MODERN TASK/DEADLINE LIST)
+   ========================================================================== */
+.deadline-compact-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.deadline-compact-item {
+    background-color: #f8fafc;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 10px;
+    padding: 0.5rem 0.65rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 3px solid #6366f1;
+}
+
+.deadline-compact-item:hover {
+    background-color: #ffffff;
+    border-color: rgba(203, 213, 225, 0.95);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.deadline-compact-item.urgent {
+    border-left-color: #f43f5e;
+}
+
+.deadline-compact-item.upcoming {
+    border-left-color: #f59e0b;
+}
+
+.deadline-dot {
+    width: 6.5px;
+    height: 6.5px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.deadline-dot.urgent {
+    background-color: #f43f5e;
+    box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.18);
+}
+
+.deadline-dot.upcoming {
+    background-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
+}
+
+.deadline-title {
+    font-size: 0.875rem; /* 14px */
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+}
+
+.deadline-meta {
+    font-size: 0.75rem; /* 12px */
+    color: #64748b;
+    line-height: 1.3;
+}
+
+.deadline-date {
+    font-size: 0.75rem; /* 12px */
+    color: #64748b;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.deadline-tag {
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    line-height: 1.25;
+}
+
+@media (max-width: 380px) {
+    .deadline-compact-item {
+        padding: 0.45rem 0.55rem;
+    }
+    .deadline-title {
+        font-size: 0.825rem;
+    }
+    .deadline-meta,
+    .deadline-date {
+        font-size: 0.7rem;
+    }
+}
+
+/* ==========================================================================
+   5. BOOTSTRAP MODAL PHÂN LOẠI 4 TAB & CHI TIẾT NGÀY
+   ========================================================================== */
+.modal-custom .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.modal-custom .modal-header {
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1.1rem 1.5rem;
+}
+
+.modal-custom .nav-pills .nav-link {
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.modal-custom .nav-pills .nav-link.active.tab-hoc-tap {
+    background-color: var(--event-blue-dot);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+.modal-custom .nav-pills .nav-link.active.tab-tap-luyen {
+    background-color: var(--event-green-dot);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+}
+
+.modal-custom .nav-pills .nav-link.active.tab-deadline {
+    background-color: var(--event-orange-dot);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
+}
+
+.modal-custom .nav-pills .nav-link.active.tab-ca-nhan {
+    background-color: var(--event-purple-dot);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+}
+
+/* DAY DETAIL EVENT ITEM CARD IN MODAL */
+.day-event-detail-item {
+    background-color: #f8fafc;
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    transition: all 0.2s ease;
+}
+
+.day-event-detail-item:hover {
+    background-color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    border-color: #cbd5e1;
+}
+
+.day-event-detail-item.hoc-tap { border-left: 4px solid var(--event-blue-dot); }
+.day-event-detail-item.tap-luyen { border-left: 4px solid var(--event-green-dot); }
+.day-event-detail-item.deadline { border-left: 4px solid var(--event-orange-dot); }
+.day-event-detail-item.ca-nhan { border-left: 4px solid var(--event-purple-dot); }
+.day-event-detail-item.cong-viec { border-left: 4px solid var(--event-indigo-dot); }
+
+.day-event-detail-item .event-icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.day-event-detail-item.hoc-tap .event-icon-badge { background-color: var(--event-blue-bg); color: var(--event-blue-text); }
+.day-event-detail-item.tap-luyen .event-icon-badge { background-color: var(--event-green-bg); color: var(--event-green-text); }
+.day-event-detail-item.deadline .event-icon-badge { background-color: var(--event-orange-bg); color: var(--event-orange-text); }
+.day-event-detail-item.ca-nhan .event-icon-badge { background-color: var(--event-purple-bg); color: var(--event-purple-text); }
+.day-event-detail-item.cong-viec .event-icon-badge { background-color: var(--event-indigo-bg); color: var(--event-indigo-text); }
+
+.day-event-detail-item .repeat-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.repeat-tag.weekly { background-color: #e0e7ff; color: #4338ca; }
+.repeat-tag.once { background-color: #f1f5f9; color: #64748b; }
+
+.day-event-detail-item .btn-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    transition: all 0.15s ease;
+}
+.day-event-detail-item .btn-action.btn-edit { background-color: #f1f5f9; color: #475569; }
+.day-event-detail-item .btn-action.btn-edit:hover { background-color: #e2e8f0; color: #0f172a; }
+.day-event-detail-item .btn-action.btn-delete { background-color: #fef2f2; color: #ef4444; }
+.day-event-detail-item .btn-action.btn-delete:hover { background-color: #fee2e2; color: #dc2626; }
+
+/* Custom tooltip styling for events */
+.tooltip-inner {
+    max-width: 260px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ==========================================================================
+   6. DESKTOP 100VH FULL SCREEN FIT (GOOGLE / NOTION CALENDAR LAYOUT)
+   ========================================================================== */
+@media (min-width: 992px) {
+    .content-body {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - var(--header-height));
+        overflow: hidden;
+        padding: 1rem 1.5rem !important;
+    }
+
+    .content-body > .row.g-4 {
+        flex-grow: 1;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .content-body .col-lg-8.col-xl-9 {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .content-body .custom-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0 !important;
+    }
+
+    .content-body .card-header-custom {
+        flex-shrink: 0;
+        padding: 0.75rem 1.15rem;
+    }
+
+    .content-body .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding: 0.5rem !important;
+        overflow: hidden;
+    }
+
+    .calendar-grid-container {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        grid-template-rows: auto repeat(5, 1fr);
+        height: 100%;
+        min-height: 0;
+    }
+
+    .calendar-header-day {
+        padding: 6px 0;
+        font-size: 0.8rem;
+    }
+
+    .calendar-day-cell {
+        min-height: 0 !important;
+        height: 100%;
+        padding: 3px 5px;
+        overflow: hidden;
+    }
+
+    .event-pill-list {
+        overflow: hidden;
+        gap: 2px;
+    }
+
+    .event-pill {
+        font-size: 0.67rem;
+        padding: 2px 4px;
+        line-height: 1.25;
+    }
+
+    .content-body .col-lg-4.col-xl-3 {
+        height: 100%;
+        overflow-y: auto;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .calendar-day-cell { min-height: 105px; }
+    .event-pill { font-size: 0.68rem; padding: 2px 5px; }
+}
+
+@media (max-width: 991.98px) {
+    .calendar-day-cell { min-height: 85px; padding: 4px 2px; }
+    .day-number { font-size: 0.8rem; width: 22px; height: 22px; }
+    .event-pill { font-size: 0.65rem; }
+}
+
+/* NOTIFICATION DROPDOWN STYLES */
+.notification-item {
+    transition: all 0.15s ease;
+    border-radius: 10px;
+}
+.notification-item:hover {
+    background-color: #f1f5f9;
+}
+.notification-item.unread {
+    background-color: #f0f7ff;
+}
+.notification-item.unread:hover {
+    background-color: #e0f2fe;
+}
+
+/* ==========================================================================
+   DARK MODE OVERRIDES FOR CALENDAR (STRICT DESIGN SYSTEM SPECIFICATION)
+   ========================================================================== */
+[data-bs-theme="dark"] {
+    /* 1. Học tập: #60A5FA */
+    --event-blue-bg: rgba(96, 165, 250, 0.18);
+    --event-blue-text: #60A5FA;
+    --event-blue-border: rgba(96, 165, 250, 0.35);
+    --event-blue-dot: #60A5FA;
+
+    /* 2. Tập luyện: #4ADE80 */
+    --event-green-bg: rgba(74, 222, 128, 0.18);
+    --event-green-text: #4ADE80;
+    --event-green-border: rgba(74, 222, 128, 0.35);
+    --event-green-dot: #4ADE80;
+
+    /* 3. Deadline: #F87171 */
+    --event-orange-bg: rgba(248, 113, 113, 0.18);
+    --event-orange-text: #F87171;
+    --event-orange-border: rgba(248, 113, 113, 0.35);
+    --event-orange-dot: #F87171;
+
+    /* 4. Cá nhân: #C084FC */
+    --event-purple-bg: rgba(192, 132, 252, 0.18);
+    --event-purple-text: #C084FC;
+    --event-purple-border: rgba(192, 132, 252, 0.35);
+    --event-purple-dot: #C084FC;
+
+    /* 5. Công việc: #6C8CFF */
+    --event-indigo-bg: rgba(108, 140, 255, 0.18);
+    --event-indigo-text: #6C8CFF;
+    --event-indigo-border: rgba(108, 140, 255, 0.35);
+    --event-indigo-dot: #6C8CFF;
+}
+
+[data-bs-theme="dark"] .calendar-grid-container {
+    background-color: #2E2E34 !important;
+    border: 1px solid #2E2E34 !important;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .calendar-header-day {
+    background-color: #1A1A1D !important;
+    color: #A0A0A8 !important;
+    font-weight: 700;
+}
+
+[data-bs-theme="dark"] .calendar-day-cell {
+    background-color: #1E1E22 !important;
+    color: #E8E8EA !important;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+[data-bs-theme="dark"] .calendar-day-cell:hover {
+    background-color: #26262B !important;
+}
+
+[data-bs-theme="dark"] .calendar-day-cell.other-month {
+    background-color: #121212 !important;
+    opacity: 0.45;
+}
+
+[data-bs-theme="dark"] .calendar-day-cell.is-today,
+[data-bs-theme="dark"] .calendar-day-cell.today {
+    background-color: rgba(108, 140, 255, 0.15) !important;
+    box-shadow: inset 0 0 0 1.5px #6C8CFF !important;
+}
+
+[data-bs-theme="dark"] .day-number {
+    color: #E8E8EA !important;
+}
+
+[data-bs-theme="dark"] .calendar-day-cell.is-today .day-number,
+[data-bs-theme="dark"] .calendar-day-cell.today .day-number {
+    background-color: #6C8CFF !important;
+    color: #0B1020 !important;
+    font-weight: 800;
+    box-shadow: 0 2px 8px rgba(108, 140, 255, 0.4) !important;
+}
+
+[data-bs-theme="dark"] .event-pill {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+}
+
+[data-bs-theme="dark"] .event-pill:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.15);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme="dark"] .event-more-pill {
+    background-color: rgba(108, 140, 255, 0.18) !important;
+    color: #6C8CFF !important;
+    border: 1px solid rgba(108, 140, 255, 0.3) !important;
+}
+
+[data-bs-theme="dark"] .event-more-pill:hover {
+    background-color: #6C8CFF !important;
+    color: #0B1020 !important;
+}
+
+[data-bs-theme="dark"] .legend-btn {
+    background-color: #1A1A1E !important;
+    color: #A0A0A8 !important;
+    border: 1px solid #2E2E34 !important;
+}
+
+[data-bs-theme="dark"] .legend-btn:hover {
+    background-color: #26262B !important;
+    color: #E8E8EA !important;
+    border-color: #3A3A42 !important;
+}
+
+[data-bs-theme="dark"] .side-card {
+    background-color: #1E1E22 !important;
+    border: 1px solid #2E2E34 !important;
+}
+
+[data-bs-theme="dark"] .side-card-header {
+    border-bottom: 1px solid #2E2E34 !important;
+}
+
+[data-bs-theme="dark"] .side-card-title {
+    color: #E8E8EA !important;
+}
+
+[data-bs-theme="dark"] .schedule-item {
+    background-color: #1A1A1D !important;
+    border-color: #2E2E34 !important;
+    color: #E8E8EA !important;
+}
+
+[data-bs-theme="dark"] .notification-item {
+    color: #E8E8EA !important;
+}
+
+[data-bs-theme="dark"] .notification-item:hover {
+    background-color: #26262B !important;
+}
+
+[data-bs-theme="dark"] .notification-item.unread {
+    background-color: rgba(108, 140, 255, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .notification-item.unread:hover {
+    background-color: rgba(108, 140, 255, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .deadline-compact-item {
+    background-color: #1A1A1D !important;
+    border: 1px solid #2E2E34 !important;
+}
+
+[data-bs-theme="dark"] .deadline-compact-item:hover {
+    background-color: #26262B !important;
+    border-color: #3A3A42 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .deadline-compact-item.urgent {
+    border-left: 3px solid #f87171 !important;
+}
+
+[data-bs-theme="dark"] .deadline-compact-item.upcoming {
+    border-left: 3px solid #fbbf24 !important;
+}
+
+[data-bs-theme="dark"] .deadline-dot.urgent {
+    background-color: #f87171 !important;
+    box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .deadline-dot.upcoming {
+    background-color: #fbbf24 !important;
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .deadline-title {
+    color: #E8E8EA !important;
+}
+
+[data-bs-theme="dark"] .deadline-meta,
+[data-bs-theme="dark"] .deadline-date {
+    color: #A0A0A8 !important;
+}
+
+[data-bs-theme="dark"] .deadline-tag.bg-danger-subtle {
+    background-color: rgba(248, 113, 113, 0.16) !important;
+    color: #fca5a5 !important;
+    border: 1px solid rgba(248, 113, 113, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .deadline-tag.bg-warning-subtle {
+    background-color: rgba(251, 191, 36, 0.16) !important;
+    color: #fcd34d !important;
+    border: 1px solid rgba(251, 191, 36, 0.25) !important;
+}
+
+/* ==========================================================================
+   7. HIỆU ỨNG FADE & STYLE CHO KHỐI THÔNG BÁO SỰ KIỆN (EVENT NOTIFICATION)
+   ========================================================================== */
+.notif-remind-box {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.notif-remind-box.show {
+    opacity: 1;
+    max-height: 180px;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* ==========================================================================
+   8. MOBILE WEEK CALENDAR VIEW (FLUTTER / NOTION STYLE)
+   ========================================================================== */
+.mobile-week-calendar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.week-strip-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 6px;
+}
+
+.week-strip-wrapper::-webkit-scrollbar {
+    height: 4px;
+}
+.week-strip-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+.week-strip-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+[data-bs-theme="dark"] .week-strip-wrapper::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+.week-strip-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    background-color: #f8fafc;
+    padding: 12px;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    min-width: max-content;
+}
+
+[data-bs-theme="dark"] .week-strip-grid {
+    background-color: #1e293b;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.week-day-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    min-width: 175px;
+    width: 175px;
+    height: 290px;
+    padding: 12px 10px 14px 10px;
+    border-radius: 20px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1.5px solid #e2e8f0;
+    user-select: none;
+    scroll-snap-align: start;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle fade overlay at the bottom to indicate scrollability */
+.week-day-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95));
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    pointer-events: none;
+    transition: background 0.25s ease;
+    z-index: 2;
+}
+
+[data-bs-theme="dark"] .week-day-card::after {
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.95));
+}
+
+.week-day-card.active::after {
+    background: linear-gradient(to bottom, rgba(79, 70, 229, 0), rgba(79, 70, 229, 0.95));
+}
+
+[data-bs-theme="dark"] .week-day-card {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.week-day-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #e2e8f0;
+    flex-shrink: 0;
+}
+
+[data-bs-theme="dark"] .week-day-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.week-day-card .day-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+}
+
+.week-day-card .day-number {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.1;
+}
+
+[data-bs-theme="dark"] .week-day-card .day-number {
+    color: #f8fafc;
+}
+
+.week-events-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 2px;
+    padding-bottom: 16px;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+}
+
+/* Custom sleek scrollbar for week day card events container */
+.week-events-container::-webkit-scrollbar {
+    width: 3.5px;
+}
+
+.week-events-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.week-events-container::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.25);
+    border-radius: 10px;
+}
+
+.week-events-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.5);
+}
+
+.week-day-card.active .week-events-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.week-event-detail-item {
+    font-size: 0.75rem;
+    padding: 6px 8px;
+    border-radius: 10px;
+    text-align: left;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.week-event-detail-item.hoc-tap { background: #e0e7ff; color: #3730a3; border-left: 3px solid #6366f1; }
+.week-event-detail-item.tap-luyen { background: #d1fae5; color: #065f46; border-left: 3px solid #10b981; }
+.week-event-detail-item.deadline { background: #ffedd5; color: #9a3412; border-left: 3px solid #f97316; }
+.week-event-detail-item.ca-nhan { background: #f3e8ff; color: #6b21a8; border-left: 3px solid #a855f7; }
+.week-event-detail-item.cong-viec { background: #e0f2fe; color: #075985; border-left: 3px solid #0284c7; }
+
+.week-event-title {
+    font-weight: 700;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.week-event-meta {
+    font-size: 0.68rem;
+    font-weight: 500;
+    opacity: 0.85;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.week-event-time, .week-event-loc {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.week-event-more {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #64748b;
+    text-align: center;
+    margin-top: 2px;
+}
+
+.week-event-empty {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    text-align: center;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+.week-day-card.active {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    box-shadow: 0 8px 20px -3px rgba(79, 70, 229, 0.45) !important;
+    transform: translateY(-4px) scale(1.03);
+    border-color: transparent !important;
+}
+
+.week-day-card.active .day-name,
+.week-day-card.active .day-number {
+    color: #ffffff !important;
+}
+
+.week-day-card.active .week-day-header {
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.week-day-card.active .week-event-detail-item {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #ffffff !important;
+    border-left: 3px solid #ffffff !important;
+    backdrop-filter: blur(4px);
+}
+
+.week-day-card.active .week-event-more {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.week-day-card.active .week-event-empty {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.week-day-card.is-today:not(.active) {
+    border-color: #6366f1;
+    background-color: rgba(99, 102, 241, 0.05);
+}
+
+.mobile-day-schedule-card {
+    transition: all 0.25s ease;
+}
+
+.mobile-agenda-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-radius: 16px;
+    margin-bottom: 10px;
+    border-left: 4.5px solid #6366f1;
+    background-color: #f8fafc;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+    transition: all 0.2s ease;
+}
+
+[data-bs-theme="dark"] .mobile-agenda-item {
+    background-color: #0f172a;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-agenda-item.hoc-tap { border-left-color: #3b82f6; }
+.mobile-agenda-item.tap-luyen { border-left-color: #22c55e; }
+.mobile-agenda-item.deadline { border-left-color: #f97316; }
+.mobile-agenda-item.ca-nhan { border-left-color: #a855f7; }
+.mobile-agenda-item.cong-viec { border-left-color: #6366f1; }
+
+.mobile-agenda-item:active {
+    transform: scale(0.98);
+}
+
+
