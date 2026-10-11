@@ -9,8 +9,8 @@ import { WorkoutView } from "./views/WorkoutView";
 import { ProfileView } from "./views/ProfileView";
 
 function MainApp() {
-  const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState("calendar");
+  const { user, loading, theme, toggleTheme } = useAuth();
+  const [activeTab, setActiveTab] = useState("workout"); // Default to workout for focus or user choice
 
   if (loading) {
     return (
@@ -35,7 +35,7 @@ function MainApp() {
       case "profile":
         return <ProfileView />;
       default:
-        return <CalendarView />;
+        return <WorkoutView />;
     }
   };
 
@@ -43,9 +43,74 @@ function MainApp() {
     <div className="app-container no-sidebar">
       {/* Top Header Bar */}
       <header className="neu-top-header">
-        <div className="brand-logo-inline">
+        <div className="brand-logo-inline" onClick={() => setActiveTab("calendar")}>
           <div className="logo-icon-circle">LP</div>
           <span className="logo-title">LIFE PLANNER</span>
+        </div>
+
+        {/* Header Nav Pills */}
+        <nav className="header-nav-pills" aria-label="Main Navigation">
+          <button
+            className={`header-nav-btn ${activeTab === "calendar" ? "active" : ""}`}
+            onClick={() => setActiveTab("calendar")}
+          >
+            <span>📅</span> Lịch & Sự Kiện
+          </button>
+          <button
+            className={`header-nav-btn ${activeTab === "study" ? "active" : ""}`}
+            onClick={() => setActiveTab("study")}
+          >
+            <span>🎓</span> Học Tập & GPA
+          </button>
+          <button
+            className={`header-nav-btn ${activeTab === "workout" ? "active" : ""}`}
+            onClick={() => setActiveTab("workout")}
+          >
+            <span>🏋️</span> Thể Chất & Gym
+          </button>
+          <button
+            className={`header-nav-btn ${activeTab === "profile" ? "active" : ""}`}
+            onClick={() => setActiveTab("profile")}
+          >
+            <span>👤</span> Hồ Sơ
+          </button>
+        </nav>
+
+        {/* Header Right Actions */}
+        <div className="header-actions">
+          <button
+            id="header-theme-toggle"
+            className="header-theme-toggle"
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Chuyển sang Giao diện Sáng (Light)" : "Chuyển sang Giao diện Tối (Dark)"}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
+          <div
+            className="d-none d-md-flex align-items-center gap-2"
+            style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-main)" }}
+          >
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+                fontSize: "0.8rem"
+              }}
+            >
+              {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+            </div>
+            <span style={{ maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {user?.name || "Tài khoản"}
+            </span>
+          </div>
         </div>
       </header>
 

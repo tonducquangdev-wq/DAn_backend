@@ -15,7 +15,8 @@ const userSchema = new mongoose.Schema(
         notify_events: { type: Boolean, default: true },
         notify_deadlines: { type: Boolean, default: true },
         notify_workouts: { type: Boolean, default: true },
-        notify_sound: { type: Boolean, default: true }
+        notify_sound: { type: Boolean, default: true },
+        workout_default_initialized: { type: Boolean, default: false }
     },
     { timestamps: true }
 );

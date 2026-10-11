@@ -76,6 +76,16 @@ export const api = {
   getWorkoutSchedule: () => request("/tap-luyen/schedule"),
   completeWorkout: (data) => request("/tap-luyen/hoan-thanh", { method: "POST", body: JSON.stringify(data) }),
   getWorkoutReport: () => request("/tap-luyen/report"),
+  getWorkoutPlans: () => request("/tap-luyen/plans"),
+  createWorkoutPlan: (data) => request("/tap-luyen/plans", { method: "POST", body: JSON.stringify(data) }),
+  updateWorkoutPlan: (id, data) => request(`/tap-luyen/plans/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  activateWorkoutPlan: (id) => request(`/tap-luyen/plans/${id}/activate`, { method: "PATCH" }),
+  deleteWorkoutPlan: (id) => request(`/tap-luyen/plans/${id}`, { method: "DELETE" }),
+  updateBuoiTap: (id, data) => request(`/tap-luyen/buoi-tap/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  addExerciseToBuoi: (buoiId, data) => request(`/tap-luyen/buoi-tap/${buoiId}/exercises`, { method: "POST", body: JSON.stringify(data) }),
+  updateExerciseDetail: (id, data) => request(`/tap-luyen/chi-tiet/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  deleteExerciseDetail: (id) => request(`/tap-luyen/chi-tiet/${id}`, { method: "DELETE" }),
+  getExerciseCatalog: () => request("/tap-luyen/exercises"),
 
   // Dự án & Task
   getDuAn: () => request("/du-an"),
