@@ -7,10 +7,9 @@ const {
 } = require("../Controller/api/dashboardController");
 const authMiddleware = require("../Middleware/authMiddleware");
 
-router.use(authMiddleware);
-
-router.get("/dashboard", getDashboardKPI);
-router.get("/thong-bao", getThongBao);
-router.patch("/thong-bao/:id/read", markThongBaoAsRead);
+router.get("/dashboard", authMiddleware, getDashboardKPI);
+router.get("/thong-bao", authMiddleware, getThongBao);
+router.patch("/thong-bao/:id/read", authMiddleware, markThongBaoAsRead);
 
 module.exports = router;
+

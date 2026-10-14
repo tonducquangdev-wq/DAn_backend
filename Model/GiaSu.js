@@ -9,7 +9,11 @@ const giaSuSchema = new mongoose.Schema(
         gia_theo_gio: { type: Number, default: 0 },
         mo_ta: { type: String, default: null },
         rating: { type: Number, default: 5.0 },
-        avatar: { type: String, default: null }
+        avatar: { type: String, default: null },
+        khung_gio_day: { type: String, default: "Buổi tối & Cuối tuần" },
+        ca_day: { type: [String], default: ["toi"] },
+        kinh_nghiem: { type: String, default: "3+ năm kinh nghiệm" },
+        khu_vuc: { type: String, default: "Online toàn quốc" }
     },
     { timestamps: true }
 );

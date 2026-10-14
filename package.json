@@ -6,10 +6,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
+    "host": "npm run build && node server.js",
+    "prod": "npm run build && node server.js",
     "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"npm run server\" \"npm run client\"",
     "server": "nodemon server.js",
     "client": "npm --prefix client run dev",
-    "build:client": "npm --prefix client run build"
+    "build": "npm --prefix client run build",
+    "build:client": "npm --prefix client run build",
+    "build:all": "npm --prefix client run build"
   },
   "keywords": [],
   "author": "",

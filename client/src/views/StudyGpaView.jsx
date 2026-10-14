@@ -1,32 +1,107 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../services/api";
+import { TutorView } from "./TutorView";
 
-export const StudyGpaView = () => {
-  const [gpaData, setGpaData] = useState(null);
+const DAYS_OF_WEEK = [
+  { value: 2, label: "Thứ 2", short: "T2" },
+  { value: 3, label: "Thứ 3", short: "T3" },
+  { value: 4, label: "Thứ 4", short: "T4" },
+  { value: 5, label: "Thứ 5", short: "T5" },
+  { value: 6, label: "Thứ 6", short: "T6" },
+  { value: 7, label: "Thứ 7", short: "T7" },
+  { value: 8, label: "Chủ Nhật", short: "CN" }
+];
+
+const formatScheduleDays = (days) => {
+  if (!days || !days.length) return "T2";
+  const map = { 2: "T2", 3: "T3", 4: "T4", 5: "T5", 6: "T6", 7: "T7", 8: "CN" };
+  return days.map(d => map[d] || d).join(", ");
+};
+
+const formatDateDisplay = (dateStr) => {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("vi-VN");
+};
+
+export const StudyGpaView = ({ onNavigateToTutor }) => {
+  const [monHocs, setMonHocs] = useState([]);
   const [baiTaps, setBaiTaps] = useState([]);
-  const [giaSus, setGiaSus] = useState([]);
   const [showMonModal, setShowMonModal] = useState(false);
   const [showBtModal, setShowBtModal] = useState(false);
+  const [isViewingTutors, setIsViewingTutors] = useState(false);
+  const [toastMsg, setToastMsg] = useState(null);
 
-  const [monForm, setMonForm] = useState({ ma_mon: "", ten_mon: "", so_tin_chi: 3, diem_so: "", giang_vien: "", phong_hoc: "" });
-  const [btForm, setBtForm] = useState({ ten_bai_tap: "", han_nop: new Date().toISOString().slice(0, 10), do_uu_tien: "trung_binh" });
+  const initialMonForm = {
+    ma_mon: "",
+    ten_mon: "",
+    so_tin_chi: 3,
+    giang_vien: "",
+    phong_hoc: "",
+    ngay_bat_dau: new Date().toISOString().slice(0, 10),
+    ngay_ket_thuc: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    gio_bat_dau: "07:30",
+    gio_ket_thuc: "09:30",
+    ngay_hoc: [2, 4],
+    mau_sac: "#3b82f6"
+  };
+
+  const [monForm, setMonForm] = useState(initialMonForm);
+  const [btForm, setBtForm] = useState({
+    ten_bai_tap: "",
+    han_nop: new Date().toISOString().slice(0, 10),
+    do_uu_tien: "trung_binh"
+  });
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 4000);
+  };
 
   const loadData = () => {
-    api.getBaoCaoHocTap().then(res => res.success && setGpaData(res.data));
+    api.getMonHoc().then(res => res.success && setMonHocs(res.data));
     api.getBaiTap().then(res => res.success && setBaiTaps(res.data));
-    api.getGiaSu().then(res => res.success && setGiaSus(res.data));
   };
 
   useEffect(() => {
     loadData();
   }, []);
 
+  const toggleDay = (dayValue) => {
+    setMonForm(prev => {
+      const exists = prev.ngay_hoc.includes(dayValue);
+      const newDays = exists ? prev.ngay_hoc.filter(d => d !== dayValue) : [...prev.ngay_hoc, dayValue];
+      return { ...prev, ngay_hoc: newDays.sort((a, b) => a - b) };
+    });
+  };
+
   const handleCreateMon = async (e) => {
     e.preventDefault();
+    if (!monForm.ngay_hoc || monForm.ngay_hoc.length === 0) {
+      alert("Vui lòng chọn ít nhất một ngày học trong tuần.");
+      return;
+    }
     const res = await api.createMonHoc(monForm);
     if (res.success) {
       setShowMonModal(false);
+      setMonForm(initialMonForm);
       loadData();
+      showToast(res.message || "Tạo môn học và tự động đồng bộ trang Lịch thành công!");
+    } else {
+      alert(res.message || "Lỗi tạo môn học");
+    }
+  };
+
+  const handleDeleteMon = async (id, tenMon) => {
+    if (window.confirm(`Bạn có chắc muốn xóa môn học "${tenMon}"? Lịch học của môn này trên trang Lịch cũng sẽ được tự động xóa.`)) {
+      const res = await api.deleteMonHoc(id);
+      if (res.success) {
+        loadData();
+        showToast("Đã xóa môn học và dọn dẹp lịch thành công.");
+      } else {
+        alert(res.message || "Lỗi xóa môn học");
+      }
     }
   };
 
@@ -35,88 +110,152 @@ export const StudyGpaView = () => {
     const res = await api.createBaiTap(btForm);
     if (res.success) {
       setShowBtModal(false);
+      setBtForm({ ten_bai_tap: "", han_nop: new Date().toISOString().slice(0, 10), do_uu_tien: "trung_binh" });
       loadData();
+      showToast("Tạo bài tập mới thành công!");
     }
   };
 
+  // Nếu người dùng đang bấm xem trang tìm gia sư
+  if (isViewingTutors) {
+    return <TutorView onBack={() => setIsViewingTutors(false)} />;
+  }
+
   return (
     <div>
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div style={{
+          position: "fixed",
+          top: "24px",
+          right: "24px",
+          zIndex: 9999,
+          background: "linear-gradient(135deg, #10b981, #059669)",
+          color: "#ffffff",
+          padding: "14px 22px",
+          borderRadius: "14px",
+          boxShadow: "0 10px 25px rgba(16, 185, 129, 0.4)",
+          fontWeight: "600",
+          fontSize: "0.92rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          animation: "fadeIn 0.3s ease"
+        }}>
+          <span>✨</span>
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
       <div className="header-top">
         <div>
-          <h1 className="page-title">🎓 Quản Lý Học Tập & Báo Cáo GPA</h1>
-          <p className="page-subtitle">Tính toán tự động GPA hệ 10 & hệ 4 theo tín chỉ và quản lý deadline bài tập</p>
+          <h1 className="page-title">🎓 Quản Lý Học Tập</h1>
+          <p className="page-subtitle">Theo dõi lịch học, phòng học, giảng viên và hạn nộp bài tập</p>
         </div>
         <div className="action-bar">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => onNavigateToTutor ? onNavigateToTutor() : setIsViewingTutors(true)}
+            style={{
+              fontWeight: "700",
+              background: "rgba(139, 92, 246, 0.12)",
+              color: "#7c3aed",
+              border: "1px solid rgba(139, 92, 246, 0.25)"
+            }}
+          >
+            👩‍🏫 Tìm Gia Sư Hỗ Trợ
+          </button>
           <button className="btn-secondary" onClick={() => setShowBtModal(true)}>➕ Thêm Bài Tập</button>
           <button className="btn-primary" onClick={() => setShowMonModal(true)}>➕ Thêm Môn Học</button>
         </div>
       </div>
 
-      {/* Widgets Thống Kê GPA */}
-      <div className="kpi-grid">
-        <div className="glass-card kpi-card">
-          <div className="kpi-icon" style={{ background: "rgba(99, 102, 241, 0.15)", color: "#6366f1" }}>📊</div>
-          <div>
-            <div className="kpi-value">{gpaData?.gpa_he_4 || "0.00"}</div>
-            <div className="kpi-label">Điểm Tích Lũy GPA (Hệ 4)</div>
-          </div>
-        </div>
-
-        <div className="glass-card kpi-card">
-          <div className="kpi-icon" style={{ background: "rgba(16, 185, 129, 0.15)", color: "#10b981" }}>🏆</div>
-          <div>
-            <div className="kpi-value">{gpaData?.xep_loai || "Chưa có"}</div>
-            <div className="kpi-label">Xếp Loại Học Lực</div>
-          </div>
-        </div>
-
-        <div className="glass-card kpi-card">
-          <div className="kpi-icon" style={{ background: "rgba(6, 182, 212, 0.15)", color: "#06b6d4" }}>📚</div>
-          <div>
-            <div className="kpi-value">{gpaData?.tong_tin_chi_co_diem || 0} / {gpaData?.tong_tin_chi || 0}</div>
-            <div className="kpi-label">Tín Chỉ Đã Tích Lũy</div>
-          </div>
-        </div>
-
-        <div className="glass-card kpi-card">
-          <div className="kpi-icon" style={{ background: "rgba(245, 158, 11, 0.15)", color: "#f59e0b" }}>📝</div>
-          <div>
-            <div className="kpi-value">{gpaData?.gpa_he_10 || "0.00"}</div>
-            <div className="kpi-label">Điểm Trung Bình (Hệ 10)</div>
-          </div>
-        </div>
-      </div>
-
       {/* Danh sách môn học */}
       <div className="glass-card" style={{ marginBottom: "28px" }}>
-        <h3 style={{ fontSize: "1.1rem", fontWeight: "700", marginBottom: "16px" }}>📚 Danh Sách Môn Học</h3>
-        {gpaData?.danh_sach_mon?.length === 0 ? (
-          <p style={{ color: "var(--text-muted)" }}>Chưa có môn học nào được thêm.</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
+          <h3 style={{ fontSize: "1.15rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "10px" }}>
+            📚 Danh Sách Môn Học & Lịch Trình
+          </h3>
+          <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            Tổng số: <strong>{monHocs.length}</strong> môn học
+          </span>
+        </div>
+
+        {monHocs.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px 20px" }}>
+            <p style={{ color: "var(--text-muted)", fontStyle: "italic", marginBottom: "14px" }}>
+              Chưa có môn học nào được thêm. Hãy nhấn "Thêm Môn Học" để bắt đầu và tự động lên lịch học!
+            </p>
+            <button className="btn-primary" onClick={() => setShowMonModal(true)}>➕ Thêm Môn Học Đầu Tiên</button>
+          </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <div className="neu-table-wrapper" style={{ overflowX: "auto" }}>
+            <table>
               <thead>
-                <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)", fontSize: "0.85rem" }}>
-                  <th style={{ padding: "10px" }}>MÃ MÔN</th>
-                  <th style={{ padding: "10px" }}>TÊN MÔN HỌC</th>
-                  <th style={{ padding: "10px" }}>SỐ TÍN CHỈ</th>
-                  <th style={{ padding: "10px" }}>ĐIỂM HỆ 10</th>
-                  <th style={{ padding: "10px" }}>GIẢNG VIÊN</th>
-                  <th style={{ padding: "10px" }}>TRẠNG THÁI</th>
+                <tr>
+                  <th>MÃ MÔN</th>
+                  <th>TÊN MÔN HỌC</th>
+                  <th>TÍN CHỈ</th>
+                  <th>GIẢNG VIÊN</th>
+                  <th>PHÒNG HỌC</th>
+                  <th>GIỜ & NGÀY HỌC</th>
+                  <th>THỜI GIAN MÔN</th>
+                  <th>TRẠNG THÁI</th>
+                  <th style={{ textAlign: "center" }}>THAO TÁC</th>
                 </tr>
               </thead>
               <tbody>
-                {gpaData?.danh_sach_mon?.map(m => (
-                  <tr key={m._id} style={{ borderBottom: "1px solid var(--border-color)", fontSize: "0.9rem" }}>
-                    <td style={{ padding: "12px", fontWeight: "700" }}>{m.ma_mon}</td>
-                    <td style={{ padding: "12px" }}>{m.ten_mon}</td>
-                    <td style={{ padding: "12px" }}>{m.so_tin_chi}</td>
-                    <td style={{ padding: "12px", fontWeight: "700", color: "var(--primary)" }}>{m.diem_so !== null ? m.diem_so : "Chưa có"}</td>
-                    <td style={{ padding: "12px" }}>{m.giang_vien || "-"}</td>
-                    <td style={{ padding: "12px" }}>
+                {monHocs.map(m => (
+                  <tr key={m._id}>
+                    <td style={{ fontWeight: "700" }}>{m.ma_mon}</td>
+                    <td style={{ fontWeight: "600" }}>{m.ten_mon}</td>
+                    <td>{m.so_tin_chi}</td>
+                    <td>{m.giang_vien || "-"}</td>
+                    <td>
+                      {m.phong_hoc ? (
+                        <span style={{ fontWeight: "600", color: "var(--primary)" }}>📍 {m.phong_hoc}</span>
+                      ) : "-"}
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontWeight: "700", color: "var(--text-main)", fontSize: "0.88rem" }}>
+                          ⏰ {m.gio_bat_dau || "07:30"} - {m.gio_ket_thuc || "09:30"}
+                        </span>
+                        <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                          📅 {formatScheduleDays(m.ngay_hoc)}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                        {formatDateDisplay(m.ngay_bat_dau)} ➔ {formatDateDisplay(m.ngay_ket_thuc)}
+                      </div>
+                    </td>
+                    <td>
                       <span className={`badge ${m.trang_thai === 'da_hoan_thanh' ? 'badge-success' : 'badge-primary'}`}>
-                        {m.trang_thai}
+                        {m.trang_thai === 'da_hoan_thanh' ? 'Đã hoàn thành' : 'Đang học'}
                       </span>
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <button
+                        type="button"
+                        className="btn-danger"
+                        style={{
+                          padding: "6px 12px",
+                          fontSize: "0.78rem",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          border: "none",
+                          background: "#fee2e2",
+                          color: "#dc2626",
+                          fontWeight: "700"
+                        }}
+                        onClick={() => handleDeleteMon(m._id, m.ten_mon)}
+                        title="Xóa môn học và đồng bộ dọn dẹp lịch"
+                      >
+                        🗑️ Xóa
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -126,51 +265,182 @@ export const StudyGpaView = () => {
         )}
       </div>
 
-      {/* Gia sư gợi ý */}
-      <div className="glass-card">
-        <h3 style={{ fontSize: "1.1rem", fontWeight: "700", marginBottom: "16px" }}>👩‍🏫 Gia Sư Hỗ Trợ Học Tập Gợi Ý</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
-          {giaSus.map(gs => (
-            <div key={gs._id} style={{ padding: "16px", borderRadius: "12px", background: "var(--bg-primary)" }}>
-              <div style={{ fontWeight: "700", fontSize: "1rem" }}>{gs.ho_ten}</div>
-              <div style={{ fontSize: "0.85rem", color: "var(--primary)", fontWeight: "600", marginTop: "2px" }}>{gs.mon_hoc_chuyen_mon}</div>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "8px" }}>{gs.mo_ta}</p>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#f59e0b" }}>⭐ {gs.rating} / 5.0</span>
-                <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>{gs.gia_theo_gio.toLocaleString()} đ/h</span>
-              </div>
-            </div>
-          ))}
+      {/* Danh sách Bài tập & Deadline môn học */}
+      <div className="glass-card" style={{ marginBottom: "28px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
+          <h3 style={{ fontSize: "1.15rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "10px" }}>
+            📝 Bài Tập & Deadline Môn Học
+          </h3>
+          <button className="btn-secondary" style={{ padding: "8px 16px", fontSize: "0.85rem" }} onClick={() => setShowBtModal(true)}>
+            ➕ Thêm Bài Tập
+          </button>
         </div>
+        {baiTaps.length === 0 ? (
+          <p style={{ color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Chưa có bài tập nào cần làm.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {baiTaps.map(bt => (
+              <div key={bt._id} className="deadline-item">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                  <div className="deadline-item-title">{bt.ten_bai_tap}</div>
+                  <span className={`badge ${bt.do_uu_tien === 'cao' ? 'badge-danger' : 'badge-warning'}`}>
+                    {bt.do_uu_tien}
+                  </span>
+                </div>
+                <div style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                  Môn: {bt.mon_hoc_id?.ten_mon || "Bài tập chung"} | 📅 Hạn nộp: {new Date(bt.han_nop).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modal Môn học */}
       {showMonModal && (
         <div className="modal-overlay">
-          <div className="modal-content glass-card">
-            <h3>➕ Thêm Môn Học Mới</h3>
-            <form onSubmit={handleCreateMon} style={{ marginTop: "16px" }}>
-              <div className="form-group">
-                <label>Mã môn</label>
-                <input type="text" required value={monForm.ma_mon} onChange={e => setMonForm({ ...monForm, ma_mon: e.target.value })} placeholder="CS101" />
-              </div>
-              <div className="form-group">
-                <label>Tên môn học</label>
-                <input type="text" required value={monForm.ten_mon} onChange={e => setMonForm({ ...monForm, ten_mon: e.target.value })} placeholder="Cấu trúc dữ liệu & Giải thuật" />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <div className="modal-content" style={{ maxWidth: "620px" }}>
+            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", marginBottom: "8px" }}>➕ Thêm Môn Học & Tự Động Lên Lịch</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "20px" }}>
+              Nhập thông tin môn học. Hệ thống sẽ tự động đồng bộ tất cả các buổi học vào <strong>trang Lịch cá nhân</strong>.
+            </p>
+            <form onSubmit={handleCreateMon}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "14px" }}>
                 <div className="form-group">
-                  <label>Số tín chỉ</label>
+                  <label>Mã môn *</label>
+                  <input type="text" required value={monForm.ma_mon} onChange={e => setMonForm({ ...monForm, ma_mon: e.target.value })} placeholder="VD: CS101" />
+                </div>
+                <div className="form-group">
+                  <label>Tên môn học *</label>
+                  <input type="text" required value={monForm.ten_mon} onChange={e => setMonForm({ ...monForm, ten_mon: e.target.value })} placeholder="VD: Cấu trúc dữ liệu & Giải thuật" />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
+                <div className="form-group">
+                  <label>Số tín chỉ *</label>
                   <input type="number" required min="1" max="20" value={monForm.so_tin_chi} onChange={e => setMonForm({ ...monForm, so_tin_chi: e.target.value })} />
                 </div>
                 <div className="form-group">
-                  <label>Điểm số (Thang 10, nếu có)</label>
-                  <input type="number" step="0.1" min="0" max="10" value={monForm.diem_so} onChange={e => setMonForm({ ...monForm, diem_so: e.target.value })} placeholder="8.5" />
+                  <label>Phòng học</label>
+                  <input type="text" value={monForm.phong_hoc} onChange={e => setMonForm({ ...monForm, phong_hoc: e.target.value })} placeholder="P.302 - Nhà A" />
+                </div>
+                <div className="form-group">
+                  <label>Giảng viên phụ trách</label>
+                  <input type="text" value={monForm.giang_vien} onChange={e => setMonForm({ ...monForm, giang_vien: e.target.value })} placeholder="TS. Nguyễn Văn A" />
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "16px" }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowMonModal(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Lưu Môn Học</button>
+
+              {/* Khung cấu hình lịch học tự động */}
+              <div style={{
+                background: "rgba(59, 130, 246, 0.05)",
+                border: "1px solid rgba(59, 130, 246, 0.15)",
+                borderRadius: "14px",
+                padding: "16px",
+                marginBottom: "18px"
+              }}>
+                <div style={{ fontWeight: "700", fontSize: "0.92rem", marginBottom: "12px", color: "var(--primary)", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>📅 Cấu hình Lịch học (Tự động thêm vào Trang Lịch)</span>
+                </div>
+
+                {/* Chọn ngày học trong tuần */}
+                <div className="form-group" style={{ marginBottom: "14px" }}>
+                  <label style={{ marginBottom: "8px", display: "block" }}>Ngày học trong tuần (chọn các thứ):</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {DAYS_OF_WEEK.map(day => {
+                      const isSelected = monForm.ngay_hoc.includes(day.value);
+                      return (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => toggleDay(day.value)}
+                          style={{
+                            padding: "6px 14px",
+                            borderRadius: "10px",
+                            fontSize: "0.85rem",
+                            fontWeight: "700",
+                            border: "none",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            background: isSelected ? "var(--primary)" : "var(--neu-bg)",
+                            color: isSelected ? "#ffffff" : "var(--text-main)",
+                            boxShadow: isSelected ? "0 4px 12px rgba(59, 130, 246, 0.35)" : "var(--neu-shadow-sm)"
+                          }}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Giờ học */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label>Giờ bắt đầu học *</label>
+                    <input type="time" required value={monForm.gio_bat_dau} onChange={e => setMonForm({ ...monForm, gio_bat_dau: e.target.value })} />
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label>Giờ kết thúc học *</label>
+                    <input type="time" required value={monForm.gio_ket_thuc} onChange={e => setMonForm({ ...monForm, gio_ket_thuc: e.target.value })} />
+                  </div>
+                </div>
+
+                {/* Thời gian môn học: Ngày bắt đầu & Thời gian kết thúc môn */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label>Ngày bắt đầu môn học *</label>
+                    <input type="date" required value={monForm.ngay_bat_dau} onChange={e => setMonForm({ ...monForm, ngay_bat_dau: e.target.value })} />
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label>Thời gian kết thúc môn *</label>
+                    <input type="date" required value={monForm.ngay_ket_thuc} onChange={e => setMonForm({ ...monForm, ngay_ket_thuc: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px" }}>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                  ⚡ Tự động tạo sự kiện lịch cho tất cả các buổi học
+                </span>
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <button type="button" className="btn-secondary" onClick={() => setShowMonModal(false)}>Hủy</button>
+                  <button type="submit" className="btn-primary">Lưu Môn Học & Lên Lịch</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Bài tập */}
+      {showBtModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", marginBottom: "8px" }}>➕ Thêm Bài Tập Mới</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "20px" }}>Tạo deadline để quản lý tiến độ bài tập</p>
+            <form onSubmit={handleCreateBt}>
+              <div className="form-group">
+                <label>Tên bài tập</label>
+                <input type="text" required value={btForm.ten_bai_tap} onChange={e => setBtForm({ ...btForm, ten_bai_tap: e.target.value })} placeholder="Bài tập lớn Đồ họa máy tính" />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div className="form-group">
+                  <label>Hạn nộp</label>
+                  <input type="date" required value={btForm.han_nop} onChange={e => setBtForm({ ...btForm, han_nop: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Mức độ ưu tiên</label>
+                  <select value={btForm.do_uu_tien} onChange={e => setBtForm({ ...btForm, do_uu_tien: e.target.value })}>
+                    <option value="thap">Thấp</option>
+                    <option value="trung_binh">Trung bình</option>
+                    <option value="cao">Cao</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "20px" }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowBtModal(false)}>Hủy</button>
+                <button type="submit" className="btn-primary">Lưu Bài Tập</button>
               </div>
             </form>
           </div>

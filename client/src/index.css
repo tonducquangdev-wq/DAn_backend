@@ -1,24 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import './styles/calendar.css';
 
 /* ============================================================
-   Neumorphic Master Design System (Soft UI 2026)
-   Synchronized Across Entire Life Planner App
+   NEUMORPHIC MASTER DESIGN SYSTEM (SOFT UI 2026)
+   Inspired by Reference Neumorphism Design (CodeByGaurav)
+   Harmonized Across Entire Life Planner Web Application
    ============================================================ */
 
 :root {
   --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 
-  /* Neumorphic Light Mode Palette */
+  /* Neumorphic Light Mode Palette (Exact Match to Reference Image) */
   --neu-bg: #e7ebf0;
   --bg-primary: #e7ebf0;
   --bg-surface: #e7ebf0;
+  --bg-recessed: #dde2e8;
 
   --text-main: #2d3748;
   --text-muted: #718096;
-  --border-color: rgba(255, 255, 255, 0.7);
+  --border-color: rgba(255, 255, 255, 0.6);
 
+  /* Primary Vibrant Blue (From Reference Image Accent) */
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
+  --primary-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
   --primary-light: rgba(37, 99, 235, 0.12);
 
   --accent-success: #10b981;
@@ -32,19 +37,24 @@
   --neu-inset-dark: rgba(163, 177, 198, 0.55);
   --neu-inset-light: rgba(255, 255, 255, 0.9);
 
-  --card-shadow: 12px 12px 24px var(--neu-shadow-dark), -12px -12px 24px var(--neu-shadow-light);
-  --card-shadow-hover: 16px 16px 32px var(--neu-shadow-dark), -16px -16px 32px var(--neu-shadow-light);
+  /* Card elevation */
+  --neu-card-shadow: 14px 14px 28px var(--neu-shadow-dark), -14px -14px 28px var(--neu-shadow-light);
+  --neu-card-shadow-hover: 18px 18px 36px var(--neu-shadow-dark), -18px -18px 36px var(--neu-shadow-light);
+  --neu-card-inset: inset 4px 4px 8px var(--neu-inset-dark), inset -4px -4px 8px var(--neu-inset-light);
 
-  --radius-sm: 12px;
+  --radius-sm: 14px;
   --radius: 20px;
   --radius-lg: 28px;
+  --radius-xl: 35px;
   --radius-pill: 50px;
 }
 
 [data-theme='dark'] {
+  /* Neumorphic Dark Mode Palette */
   --neu-bg: #1e2530;
   --bg-primary: #181e28;
   --bg-surface: #1e2530;
+  --bg-recessed: #151a23;
 
   --text-main: #f1f5f9;
   --text-muted: #94a3b8;
@@ -52,164 +62,315 @@
 
   --primary: #3b82f6;
   --primary-hover: #60a5fa;
+  --primary-gradient: linear-gradient(135deg, #60a5fa, #3b82f6);
   --primary-light: rgba(59, 130, 246, 0.2);
 
-  --neu-shadow-dark: rgba(15, 20, 28, 0.85);
-  --neu-shadow-light: rgba(45, 55, 72, 0.45);
-  --neu-inset-dark: rgba(15, 20, 28, 0.8);
-  --neu-inset-light: rgba(45, 55, 72, 0.4);
+  --neu-shadow-dark: rgba(12, 16, 22, 0.88);
+  --neu-shadow-light: rgba(45, 55, 75, 0.45);
+  --neu-inset-dark: rgba(12, 16, 22, 0.82);
+  --neu-inset-light: rgba(45, 55, 75, 0.4);
 
-  --card-shadow: 10px 10px 22px var(--neu-shadow-dark), -10px -10px 22px var(--neu-shadow-light);
-  --card-shadow-hover: 14px 14px 28px var(--neu-shadow-dark), -14px -14px 28px var(--neu-shadow-light);
+  --neu-card-shadow: 14px 14px 28px var(--neu-shadow-dark), -14px -14px 28px var(--neu-shadow-light);
+  --neu-card-shadow-hover: 18px 18px 36px var(--neu-shadow-dark), -18px -18px 36px var(--neu-shadow-light);
+  --neu-card-inset: inset 4px 4px 8px var(--neu-inset-dark), inset -4px -4px 8px var(--neu-inset-light);
 }
 
+/* Base Reset & Smooth Rendering */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   font-family: var(--font-family);
-  transition: background-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease, transform 0.25s ease;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease, transform 0.2s ease;
 }
 
 body {
-  background-color: var(--bg-primary);
+  background-color: var(--neu-bg);
   color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* App Container Layout (No Sidebar) */
+/* ============================================================
+   APP SHELL LAYOUT & HEADER
+   ============================================================ */
+
 .app-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: var(--bg-primary);
+  background-color: var(--neu-bg);
 }
 
-/* Inline Top Header Bar */
+/* Neumorphic Top Header Bar */
 .neu-top-header {
   width: 100%;
-  padding: 16px 32px;
+  padding: 16px 36px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--neu-bg);
-  box-shadow: 0 4px 14px var(--neu-shadow-dark);
+  box-shadow: 0 8px 24px var(--neu-shadow-dark);
   position: sticky;
   top: 0;
   z-index: 100;
   box-sizing: border-box;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .brand-logo-inline {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  cursor: pointer;
 }
 
 .logo-icon-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--neu-bg);
-  box-shadow: 4px 4px 10px var(--neu-shadow-dark),
-             -4px -4px 10px var(--neu-shadow-light);
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--primary-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  color: var(--primary);
-  font-size: 1rem;
+  color: #ffffff;
+  font-size: 1.15rem;
+  box-shadow: 5px 5px 12px rgba(37, 99, 235, 0.4), -3px -3px 8px rgba(255, 255, 255, 0.8);
+  letter-spacing: -0.5px;
 }
 
 .logo-title {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.5px;
 }
 
-/* Main Content Area (Full Width, Centered Max 1300px) */
+/* Main Content Area */
 .main-wrapper.full-width {
   margin-left: 0 !important;
-  width: 100%;
-  max-width: 1300px;
-  margin: 0 auto;
-  padding: 32px 24px 120px 24px;
-  min-height: calc(100vh - 72px);
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 28px 36px 120px 36px;
+  min-height: calc(100vh - 76px);
   box-sizing: border-box;
 }
 
-/* Neumorphic Cards & Containers */
-.glass-card, .card, .stat-card {
+/* Header Top of View */
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.page-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.6px;
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   NEUMORPHIC CARDS & SURFACES (SIGNATURE SOFT UI)
+   ============================================================ */
+
+/* Replaces old flat glass-card with Neumorphic Outset Depth */
+.glass-card,
+.neu-card {
   background: var(--neu-bg) !important;
-  border: none !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 26px !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--neu-card-shadow) !important;
+  box-sizing: border-box;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.glass-card:hover,
+.neu-card:hover {
+  box-shadow: var(--neu-card-shadow-hover) !important;
+}
+
+/* Recessed Inset Card Well */
+.neu-card-recessed {
+  background: var(--neu-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--neu-card-inset);
+  padding: 20px;
+}
+
+/* ============================================================
+   KPI STATS & DASHBOARD WIDGETS
+   ============================================================ */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 22px;
+  margin-bottom: 30px;
+}
+
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px !important;
   border-radius: var(--radius) !important;
-  padding: 24px;
-  box-shadow: var(--card-shadow) !important;
-  backdrop-filter: none;
 }
 
-.glass-card:hover, .card:hover {
-  box-shadow: var(--card-shadow-hover) !important;
+.kpi-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: 6px 6px 14px var(--neu-shadow-dark),
+             -6px -6px 14px var(--neu-shadow-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
 }
 
-/* Neumorphic Buttons */
+.kpi-value {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+
+.kpi-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   NEUMORPHIC BUTTONS (3D SOFT RAISED & INSET ACTIVE)
+   ============================================================ */
+
 .btn-primary {
-  background: var(--neu-bg) !important;
-  color: var(--primary) !important;
+  background: var(--primary-gradient) !important;
+  color: #ffffff !important;
   border: none !important;
-  padding: 12px 24px;
-  border-radius: var(--radius-pill) !important;
-  font-weight: 700;
-  font-size: 0.9rem;
+  padding: 12px 24px !important;
+  border-radius: var(--radius) !important;
+  font-weight: 700 !important;
+  font-size: 0.92rem !important;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  box-shadow: 6px 6px 14px var(--neu-shadow-dark),
-             -6px -6px 14px var(--neu-shadow-light) !important;
-  transition: all 0.25s ease;
+  box-shadow: 6px 6px 16px rgba(37, 99, 235, 0.4),
+             -3px -3px 8px rgba(255, 255, 255, 0.7) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  color: var(--primary-hover) !important;
+  box-shadow: 8px 8px 20px rgba(37, 99, 235, 0.5),
+             -4px -4px 10px rgba(255, 255, 255, 0.9) !important;
+  color: #ffffff !important;
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.3) !important;
+}
+
+.btn-secondary {
+  background: var(--neu-bg) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 12px 22px !important;
+  border-radius: var(--radius) !important;
+  font-weight: 700 !important;
+  font-size: 0.92rem !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 6px 6px 14px var(--neu-shadow-dark),
+             -6px -6px 14px var(--neu-shadow-light) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  color: var(--primary) !important;
   box-shadow: 8px 8px 18px var(--neu-shadow-dark),
              -8px -8px 18px var(--neu-shadow-light) !important;
 }
 
-.btn-primary:active {
-  transform: translateY(0);
+.btn-secondary:active {
+  transform: translateY(1px);
   box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
              inset -3px -3px 6px var(--neu-inset-light) !important;
 }
 
-.btn-secondary, .btn-light {
-  background: var(--neu-bg) !important;
-  color: var(--text-main) !important;
-  border: none !important;
-  padding: 10px 20px;
-  border-radius: var(--radius-pill) !important;
-  font-weight: 600;
-  font-size: 0.9rem;
+/* Neumorphic Circular Icon Button (like plus btn in image) */
+.neu-circle-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--neu-bg);
+  color: var(--primary);
+  font-size: 1.25rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   box-shadow: 5px 5px 12px var(--neu-shadow-dark),
-             -5px -5px 12px var(--neu-shadow-light) !important;
+             -5px -5px 12px var(--neu-shadow-light);
+  transition: all 0.2s ease;
 }
 
-.btn-secondary:hover, .btn-light:hover {
-  transform: translateY(-2px);
+.neu-circle-btn:hover {
+  transform: scale(1.08);
   box-shadow: 7px 7px 16px var(--neu-shadow-dark),
-             -7px -7px 16px var(--neu-shadow-light) !important;
+             -7px -7px 16px var(--neu-shadow-light);
 }
 
-.btn-secondary:active, .btn-light:active {
+.neu-circle-btn:active {
+  transform: scale(0.96);
   box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
-             inset -3px -3px 6px var(--neu-inset-light) !important;
+             inset -3px -3px 6px var(--neu-inset-light);
 }
 
-/* Form Inputs & Controls */
+/* ============================================================
+   NEUMORPHIC INPUTS (RECESSED INSET DEEP WELLS)
+   Exact match to Email & Password fields in reference image
+   ============================================================ */
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -218,10 +379,9 @@ body {
 }
 
 .form-group label {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-muted);
-  margin-left: 6px;
 }
 
 .form-group input, 
@@ -229,90 +389,732 @@ body {
 .form-group textarea,
 .form-control {
   width: 100%;
-  padding: 12px 20px;
-  border-radius: var(--radius-pill);
-  border: none !important;
+  padding: 12px 18px !important;
+  border-radius: 16px !important;
+  border: 1.5px solid transparent !important;
   outline: none !important;
   background: var(--neu-bg) !important;
-  color: var(--text-main) !important;
-  font-size: 0.92rem;
   box-shadow: inset 4px 4px 8px var(--neu-inset-dark),
              inset -4px -4px 8px var(--neu-inset-light) !important;
+  color: var(--text-main) !important;
+  font-size: 0.92rem !important;
   box-sizing: border-box;
-}
-
-.form-group textarea {
-  border-radius: var(--radius) !important;
+  transition: all 0.25s ease;
 }
 
 .form-group input:focus, 
 .form-group select:focus, 
 .form-group textarea:focus,
 .form-control:focus {
-  box-shadow: inset 5px 5px 10px var(--neu-inset-dark),
-             inset -5px -5px 10px var(--neu-inset-light),
-             0 0 0 2px rgba(37, 99, 235, 0.4) !important;
+  box-shadow: inset 4px 4px 8px var(--neu-inset-dark),
+             inset -4px -4px 8px var(--neu-inset-light),
+             0 0 0 2px rgba(37, 99, 235, 0.45) !important;
 }
 
-/* Modal Popup */
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* ============================================================
+/* ============================================================
+   NEUMORPHIC MODAL DIALOGS
+   Giữ nguyên 100% phong cách Neumorphism bên trong (nền, inputs lõm, buttons),
+   loại bỏ hoàn toàn viền hào quang sáng chói mắt bên ngoài.
+   ============================================================ */
+
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(231, 235, 240, 0.7);
+  background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
-[data-theme='dark'] .modal-overlay {
-  background: rgba(24, 30, 40, 0.8);
-}
-
-.modal-content {
+.modal-content,
+.modal-content.glass-card {
   background: var(--neu-bg) !important;
-  border: none !important;
-  border-radius: var(--radius-lg) !important;
-  padding: 32px;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-xl) !important;
+  padding: 34px !important;
   width: 100%;
   max-width: 540px;
-  box-shadow: 20px 20px 40px var(--neu-shadow-dark),
-             -20px -20px 40px var(--neu-shadow-light) !important;
+  /* Đổ bóng tối mềm tự nhiên bên ngoài - Không dùng viền sáng trắng -24px gây chói */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35),
+              0 12px 24px -8px rgba(0, 0, 0, 0.2) !important;
+  box-sizing: border-box;
+  animation: neuModalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme='dark'] .modal-content,
+[data-theme='dark'] .modal-content.glass-card {
+  background: var(--neu-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75) !important;
+}
+
+@keyframes neuModalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* ============================================================
-   FLOATING BUBBLE NAVIGATION MENU (BOTTOM RIGHT)
+   BADGES & PILLS
+   ============================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.2px;
+  box-shadow: 3px 3px 7px var(--neu-shadow-dark),
+             -3px -3px 7px var(--neu-shadow-light);
+}
+
+.badge-primary {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+.badge-success {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+}
+
+.badge-warning {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+}
+
+.badge-danger {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+[data-theme='dark'] .badge-primary {
+  background: rgba(37, 99, 235, 0.25) !important;
+  color: #93c5fd !important;
+}
+
+[data-theme='dark'] .badge-success {
+  background: rgba(22, 163, 74, 0.25) !important;
+  color: #86efac !important;
+}
+
+[data-theme='dark'] .badge-warning {
+  background: rgba(217, 119, 6, 0.25) !important;
+  color: #fde047 !important;
+}
+
+[data-theme='dark'] .badge-danger {
+  background: rgba(220, 38, 38, 0.25) !important;
+  color: #fca5a5 !important;
+}
+
+/* ============================================================
+   DATA TABLES (STUDY, WORKOUT, PROJECTS)
+   ============================================================ */
+
+.neu-table-wrapper {
+  background: var(--neu-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
+             inset -3px -3px 6px var(--neu-inset-light);
+  padding: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  padding: 14px 16px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:last-child {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background-color: rgba(37, 99, 235, 0.04);
+}
+
+tbody td {
+  padding: 14px 16px;
+  font-size: 0.92rem;
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+/* ============================================================
+   WORKOUT HEATMAP GRID
+   ============================================================ */
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: var(--neu-bg);
+  box-shadow: inset 2px 2px 5px var(--neu-inset-dark),
+             inset -2px -2px 5px var(--neu-inset-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.15);
+}
+
+.heatmap-cell.heatmap-lvl-1 {
+  background: #86efac !important;
+  box-shadow: 2px 2px 6px rgba(34, 197, 94, 0.35) !important;
+}
+
+.heatmap-cell.heatmap-lvl-2 {
+  background: #22c55e !important;
+  box-shadow: 3px 3px 8px rgba(34, 197, 94, 0.45) !important;
+}
+
+.heatmap-cell.heatmap-lvl-3 {
+  background: #15803d !important;
+  box-shadow: 4px 4px 10px rgba(34, 197, 94, 0.55) !important;
+}
+
+/* ============================================================
+   CALENDAR PAGE SPECIFIC DESIGN STYLES (MATCHED TO SOFT UI)
+   ============================================================ */
+
+.calendar-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Top Control Bar */
+.cal-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: var(--neu-bg);
+  padding: 18px 26px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--neu-card-shadow);
+  border: 1px solid var(--border-color);
+}
+
+/* Date Nav */
+.cal-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cal-date-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cal-date-icon {
+  font-size: 1.5rem;
+}
+
+.cal-date-text {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
+}
+
+.cal-nav-buttons {
+  display: flex;
+  align-items: center;
+  background: var(--neu-bg);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
+             inset -3px -3px 6px var(--neu-inset-light);
+}
+
+.cal-nav-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.cal-nav-btn:hover {
+  background: var(--neu-bg);
+  color: var(--primary);
+  box-shadow: 2px 2px 6px var(--neu-shadow-dark),
+             -2px -2px 6px var(--neu-shadow-light);
+}
+
+/* Filter Pills */
+.cal-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-color);
+  background: var(--neu-bg);
+  box-shadow: 4px 4px 10px var(--neu-shadow-dark),
+             -4px -4px 10px var(--neu-shadow-light);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-pill.active-all,
+.filter-pill.active {
+  box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
+             inset -3px -3px 6px var(--neu-inset-light) !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+.filter-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 14px var(--neu-shadow-dark),
+             -6px -6px 14px var(--neu-shadow-light);
+}
+
+/* View Switcher */
+.cal-view-switcher {
+  display: flex;
+  align-items: center;
+  background: var(--neu-bg);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
+             inset -3px -3px 6px var(--neu-inset-light);
+}
+
+.view-switcher-btn {
+  padding: 7px 18px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-switcher-btn.active {
+  background: var(--neu-bg);
+  color: var(--primary);
+  box-shadow: 3px 3px 8px var(--neu-shadow-dark),
+             -3px -3px 8px var(--neu-shadow-light);
+}
+
+/* Main 2-Column Calendar Layout */
+.cal-main-layout {
+  display: flex;
+  gap: 26px;
+  align-items: flex-start;
+}
+
+.cal-left-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.cal-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex-shrink: 0;
+  overflow: visible !important;
+  padding: 6px 16px 16px 6px;
+}
+
+/* Month Grid Card */
+.cal-month-card {
+  background: var(--neu-bg);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--neu-card-shadow);
+}
+
+.cal-month-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.month-header-cell {
+  font-weight: 800;
+  font-size: 0.88rem;
+  padding: 8px 0;
+  color: var(--text-muted);
+}
+
+.cal-month-body {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--neu-bg);
+  box-shadow: none;
+}
+
+.month-day-cell {
+  min-height: 110px;
+  padding: 10px;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--neu-bg);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.month-day-cell:hover {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.month-day-cell.other-month {
+  background: var(--neu-bg);
+}
+
+.month-day-cell.other-month .day-number {
+  opacity: 0.35;
+  color: var(--text-muted);
+}
+
+.month-day-cell.other-month .day-events-list {
+  opacity: 0.5;
+}
+
+.month-day-cell.today-cell {
+  background: rgba(37, 99, 235, 0.08) !important;
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.day-cell-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.day-number {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.today-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary-gradient);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  box-shadow: 2px 2px 6px rgba(37, 99, 235, 0.4);
+}
+
+.today-badge {
+  font-size: 0.65rem;
+  background: var(--primary);
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.day-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.day-event-chip {
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* Week View */
+.cal-week-card {
+  background: var(--neu-bg);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--neu-card-shadow);
+}
+
+.week-days-container {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 14px;
+}
+
+.week-day-column {
+  background: var(--neu-bg);
+  border-radius: var(--radius);
+  padding: 14px;
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
+             inset -3px -3px 6px var(--neu-inset-light);
+}
+
+.week-day-column.active-week-column {
+  box-shadow: inset 3px 3px 8px var(--neu-inset-dark),
+             inset -3px -3px 8px var(--neu-inset-light),
+             0 0 0 2px var(--primary) !important;
+}
+
+.week-day-header {
+  text-align: center;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.week-day-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: block;
+  color: var(--text-muted);
+}
+
+.week-day-date {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+  display: block;
+}
+
+.week-event-card {
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  box-shadow: 3px 3px 8px var(--neu-shadow-dark),
+             -3px -3px 8px var(--neu-shadow-light);
+}
+
+/* Widgets in Right Column */
+.widget-card {
+  background: var(--neu-bg);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--neu-card-shadow);
+  overflow: visible !important;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.widget-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.widget-count-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: 3px 3px 7px var(--neu-shadow-dark),
+             -3px -3px 7px var(--neu-shadow-light);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.today-events-list, .deadlines-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.today-event-item, .deadline-item {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--neu-bg);
+  box-shadow: 5px 5px 12px var(--neu-shadow-dark),
+             -5px -5px 12px var(--neu-shadow-light);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.today-event-item:hover, .deadline-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 7px 7px 16px var(--neu-shadow-dark),
+             -7px -7px 16px var(--neu-shadow-light);
+}
+
+.today-event-title, .deadline-item-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.today-event-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* FAB Quick Add Button */
+.cal-fab-btn {
+  position: fixed;
+  bottom: 106px;
+  right: 32px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary-gradient);
+  color: #ffffff;
+  font-size: 1.8rem;
+  font-weight: 300;
+  cursor: pointer;
+  box-shadow: 6px 6px 18px rgba(37, 99, 235, 0.45),
+             -3px -3px 10px rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cal-fab-btn:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 8px 8px 24px rgba(37, 99, 235, 0.55);
+}
+
+/* ============================================================
+   FLOATING BUBBLE NAVIGATION & POPUP (SOFT UI 2026)
    ============================================================ */
 
 .neu-floating-container {
   position: fixed;
   bottom: 32px;
   right: 32px;
-  z-index: 9999;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
-/* Floating Bubble Button */
+/* Floating Bubble Trigger Button */
 .neu-floating-bubble-btn {
-  width: 64px;
-  height: 64px;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
   border: none;
   background: var(--neu-bg);
-  box-shadow: 8px 8px 20px var(--neu-shadow-dark),
-             -8px -8px 20px var(--neu-shadow-light);
   color: var(--primary);
   font-size: 1.6rem;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
+  cursor: pointer;
+  box-shadow: 8px 8px 20px var(--neu-shadow-dark),
+             -8px -8px 20px var(--neu-shadow-light);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .neu-floating-bubble-btn:hover {
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.1);
   box-shadow: 10px 10px 24px var(--neu-shadow-dark),
              -10px -10px 24px var(--neu-shadow-light);
 }
@@ -323,32 +1125,33 @@ body {
              inset -4px -4px 8px var(--neu-inset-light);
 }
 
-/* Floating Popup Window */
+/* Floating Popup Menu Window */
 .neu-floating-popup {
   position: absolute;
   bottom: 80px;
   right: 0;
-  width: 280px;
+  width: 290px;
   background: var(--neu-bg);
-  border-radius: 28px;
-  box-shadow: 16px 16px 36px var(--neu-shadow-dark),
-             -16px -16px 36px var(--neu-shadow-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
   padding: 20px;
+  box-shadow: 18px 18px 40px var(--neu-shadow-dark),
+             -18px -18px 40px var(--neu-shadow-light);
   opacity: 0;
   visibility: hidden;
-  transform: scale(0.85) translateY(20px);
-  transform-origin: bottom right;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(16px) scale(0.94);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
   box-sizing: border-box;
 }
 
 .neu-floating-container.is-open .neu-floating-popup {
   opacity: 1;
   visibility: visible;
-  transform: scale(1) translateY(0);
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
-/* Popup Header & User Badge */
 .neu-popup-header {
   display: flex;
   align-items: center;
@@ -359,56 +1162,67 @@ body {
 .user-mini-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .user-avatar-small {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: var(--neu-bg);
-  box-shadow: 3px 3px 8px var(--neu-shadow-dark),
-             -3px -3px 8px var(--neu-shadow-light);
-  color: var(--primary);
+  background: var(--primary-gradient);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 0.95rem;
+  box-shadow: 4px 4px 10px rgba(37, 99, 235, 0.4);
+}
+
+.user-info-small {
+  display: flex;
+  flex-direction: column;
 }
 
 .user-name-text {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.92rem;
+  font-weight: 800;
   color: var(--text-main);
+  line-height: 1.2;
 }
 
 .user-email-text {
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
-  max-width: 130px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .neu-theme-toggle-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
   background: var(--neu-bg);
-  box-shadow: 3px 3px 8px var(--neu-shadow-dark),
-             -3px -3px 8px var(--neu-shadow-light);
+  border: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  box-shadow: 4px 4px 10px var(--neu-shadow-dark),
+             -4px -4px 10px var(--neu-shadow-light);
+  transition: all 0.2s ease;
 }
 
 .neu-theme-toggle-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.08);
+}
+
+.neu-theme-toggle-btn:active {
+  box-shadow: inset 2px 2px 5px var(--neu-inset-dark),
+             inset -2px -2px 5px var(--neu-inset-light);
 }
 
 .neu-menu-divider {
@@ -417,72 +1231,145 @@ body {
   margin: 12px 0;
 }
 
-/* Nav Item List inside Popup */
 .neu-floating-nav {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .neu-floating-nav-item {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: var(--radius-pill);
-  border: none;
-  background: var(--neu-bg);
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 11px 16px;
+  border-radius: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 0.92rem;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 4px 4px 10px var(--neu-shadow-dark),
-             -4px -4px 10px var(--neu-shadow-light);
+  text-align: left;
   transition: all 0.2s ease;
-  position: relative;
+  width: 100%;
 }
 
 .neu-floating-nav-item:hover {
+  background: var(--neu-bg);
+  box-shadow: 4px 4px 10px var(--neu-shadow-dark),
+             -4px -4px 10px var(--neu-shadow-light);
   color: var(--primary);
-  transform: translateX(-2px);
-  box-shadow: 6px 6px 14px var(--neu-shadow-dark),
-             -6px -6px 14px var(--neu-shadow-light);
 }
 
 .neu-floating-nav-item.active {
+  background: var(--neu-bg);
   color: var(--primary);
   font-weight: 800;
   box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
              inset -3px -3px 6px var(--neu-inset-light);
-  transform: translateX(0);
+}
+
+.nav-item-icon {
+  font-size: 1.15rem;
+}
+
+.nav-item-label {
+  flex: 1;
 }
 
 .nav-active-dot {
-  margin-left: auto;
+  font-size: 0.65rem;
   color: var(--primary);
-  font-size: 0.6rem;
 }
 
-/* Logout button in Popup */
 .neu-logout-btn {
   width: 100%;
-  padding: 10px 16px;
-  border-radius: var(--radius-pill);
+  padding: 11px 16px;
   border: none;
+  border-radius: 16px;
   background: var(--neu-bg);
   color: var(--accent-danger);
-  font-size: 0.85rem;
   font-weight: 700;
+  font-size: 0.9rem;
   cursor: pointer;
-  box-shadow: 4px 4px 10px var(--neu-shadow-dark),
-             -4px -4px 10px var(--neu-shadow-light);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  box-shadow: 4px 4px 10px var(--neu-shadow-dark),
+             -4px -4px 10px var(--neu-shadow-light);
+  transition: all 0.2s ease;
 }
 
 .neu-logout-btn:hover {
+  background: var(--accent-danger);
+  color: #ffffff;
+  box-shadow: 6px 6px 14px rgba(239, 68, 68, 0.4);
+}
+
+.neu-logout-btn:active {
   box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
              inset -3px -3px 6px var(--neu-inset-light);
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN (DESKTOP, TABLET, MOBILE)
+   ============================================================ */
+
+@media (max-width: 991px) {
+  .cal-main-layout {
+    flex-direction: column;
+  }
+  .cal-right-column {
+    width: 100%;
+  }
+  .cal-header-bar {
+    padding: 14px 18px;
+  }
+  .filter-pill {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+  .cal-fab-btn {
+    bottom: 96px;
+    right: 20px;
+  }
+  .neu-floating-container {
+    bottom: 20px;
+    right: 20px;
+  }
+  .main-wrapper.full-width {
+    padding: 20px 18px 100px 18px;
+  }
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .heatmap-grid {
+    grid-template-columns: repeat(10, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .neu-top-header {
+    padding: 14px 18px;
+  }
+  .page-title {
+    font-size: 1.45rem;
+  }
+  .cal-date-text {
+    font-size: 1.2rem;
+  }
+  .month-day-cell {
+    min-height: 80px;
+    padding: 6px;
+  }
+  .week-days-container {
+    grid-template-columns: 1fr;
+  }
+  .week-day-column {
+    min-height: auto;
+  }
+  .heatmap-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
 }

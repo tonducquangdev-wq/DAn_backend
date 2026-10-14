@@ -45,41 +45,73 @@ export const ProfileView = () => {
       </div>
 
       {msg && (
-        <div style={{ background: "var(--primary-light)", color: "var(--primary)", padding: "12px 16px", borderRadius: "12px", marginBottom: "20px", fontWeight: "700" }}>
-          {msg}
+        <div className="glass-card" style={{ padding: "16px 20px", marginBottom: "24px", color: msg.includes("✅") ? "var(--accent-success)" : "var(--accent-danger)", fontWeight: "700", display: "flex", alignItems: "center", gap: "10px" }}>
+          <span>{msg}</span>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "26px" }}>
         {/* Thông tin cá nhân & Giao diện */}
         <div className="glass-card">
-          <h3 style={{ fontSize: "1.1rem", fontWeight: "700", marginBottom: "16px" }}>👤 Thông Tin Cá Nhân & Theme</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px", paddingBottom: "18px", borderBottom: "1px dashed var(--border-color)" }}>
+            <div className="kpi-icon" style={{ width: "64px", height: "64px", fontSize: "1.8rem" }}>
+              👤
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.2rem", fontWeight: "800", color: "var(--text-main)", marginBottom: "4px" }}>
+                {user?.name || "Người Dùng"}
+              </h3>
+              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                {user?.email || "Cài đặt tài khoản & tùy chọn giao diện"}
+              </p>
+            </div>
+          </div>
+
           <form onSubmit={handleUpdateProfile}>
             <div className="form-group">
               <label>Họ và tên</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} required />
+              <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Nguyễn Văn A" />
             </div>
 
             <div className="form-group">
               <label>Địa chỉ Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="example@email.com" />
             </div>
 
-            <div style={{ margin: "20px 0", padding: "14px", borderRadius: "12px", background: "var(--bg-primary)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div className="today-event-item" style={{ margin: "24px 0", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontWeight: "700", fontSize: "0.95rem" }}>Chế độ Giao diện</div>
-                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Hiện tại: {theme === 'dark' ? 'Dark Mode 🌙' : 'Light Mode ☀️'}</div>
+                <div style={{ fontWeight: "800", fontSize: "0.95rem", color: "var(--text-main)" }}>Chế độ Giao diện</div>
+                <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "2px" }}>
+                  Hiện tại: <span style={{ fontWeight: "700", color: "var(--primary)" }}>{theme === 'dark' ? 'Dark Mode 🌙' : 'Light Mode ☀️'}</span>
+                </div>
               </div>
-              <button type="button" className="btn-secondary" onClick={toggleTheme}>Chuyển Theme</button>
+              <button type="button" className="btn-secondary" onClick={toggleTheme}>
+                {theme === 'dark' ? '☀️ Sang Sáng' : '🌙 Sang Tối'}
+              </button>
             </div>
 
-            <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>Lưu Thay Đổi</button>
+            <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>
+              💾 Lưu Thay Đổi
+            </button>
           </form>
         </div>
 
         {/* Đổi mật khẩu */}
         <div className="glass-card">
-          <h3 style={{ fontSize: "1.1rem", fontWeight: "700", marginBottom: "16px" }}>🔒 Đổi Mật Khẩu Bảo Mật</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px", paddingBottom: "18px", borderBottom: "1px dashed var(--border-color)" }}>
+            <div className="kpi-icon" style={{ width: "64px", height: "64px", fontSize: "1.8rem" }}>
+              🔒
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.2rem", fontWeight: "800", color: "var(--text-main)", marginBottom: "4px" }}>
+                Bảo Mật Tài Khoản
+              </h3>
+              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                Đổi mật khẩu định kỳ để bảo vệ tài khoản
+              </p>
+            </div>
+          </div>
+
           <form onSubmit={handleChangePassword}>
             <div className="form-group">
               <label>Mật khẩu hiện tại</label>
@@ -91,7 +123,11 @@ export const ProfileView = () => {
               <input type="password" required value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" />
             </div>
 
-            <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: "24px" }}>Cập Nhật Mật Khẩu</button>
+            <div style={{ marginTop: "32px" }}>
+              <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>
+                🔑 Cập Nhật Mật Khẩu
+              </button>
+            </div>
           </form>
         </div>
       </div>

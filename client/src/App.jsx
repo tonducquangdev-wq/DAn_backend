@@ -5,7 +5,9 @@ import { FloatingMenu } from "./components/FloatingMenu";
 
 import { CalendarView } from "./views/CalendarView";
 import { StudyGpaView } from "./views/StudyGpaView";
+import { TutorView } from "./views/TutorView";
 import { WorkoutView } from "./views/WorkoutView";
+import { ProjectsView } from "./views/ProjectsView";
 import { ProfileView } from "./views/ProfileView";
 
 function MainApp() {
@@ -14,7 +16,7 @@ function MainApp() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", fontBreak: "bold" }}>
+      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", fontWeight: "700", color: "var(--text-main)", background: "var(--neu-bg)" }}>
         🚀 Đang nạp hệ thống Life Planner...
       </div>
     );
@@ -29,9 +31,13 @@ function MainApp() {
       case "calendar":
         return <CalendarView />;
       case "study":
-        return <StudyGpaView />;
+        return <StudyGpaView onNavigateToTutor={() => setActiveTab("tutors")} />;
+      case "tutors":
+        return <TutorView onBack={() => setActiveTab("study")} />;
       case "workout":
-        return <WorkoutView />;
+        return <WorkoutView onNavigateToCalendar={() => setActiveTab("calendar")} />;
+      case "projects":
+        return <ProjectsView />;
       case "profile":
         return <ProfileView />;
       default:

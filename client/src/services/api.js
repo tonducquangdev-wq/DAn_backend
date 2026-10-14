@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
 const request = async (endpoint, options = {}) => {
   const token = localStorage.getItem("life_planner_token");
@@ -70,7 +70,7 @@ export const api = {
   createBaiTap: (data) => request("/bai-tap", { method: "POST", body: JSON.stringify(data) }),
   updateBaiTap: (id, data) => request(`/bai-tap/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteBaiTap: (id) => request(`/bai-tap/${id}`, { method: "DELETE" }),
-  getGiaSu: () => request("/gia-su"),
+  getGiaSu: (params = "") => request(`/gia-su${params}`),
 
   // Tập luyện Gym
   getWorkoutSchedule: () => request("/tap-luyen/schedule"),

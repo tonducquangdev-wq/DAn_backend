@@ -17,19 +17,20 @@ const authMiddleware = require("../Middleware/authMiddleware");
 // Public Gia sư route
 router.get("/gia-su", getGiaSu);
 
-// Protected routes
-router.use(authMiddleware);
+// Protected Môn học routes
+router.get("/mon-hoc", authMiddleware, getMonHoc);
+router.post("/mon-hoc", authMiddleware, createMonHoc);
+router.put("/mon-hoc/:id", authMiddleware, updateMonHoc);
+router.delete("/mon-hoc/:id", authMiddleware, deleteMonHoc);
 
-router.get("/mon-hoc", getMonHoc);
-router.post("/mon-hoc", createMonHoc);
-router.put("/mon-hoc/:id", updateMonHoc);
-router.delete("/mon-hoc/:id", deleteMonHoc);
+// Protected Báo cáo học tập
+router.get("/bao-cao-hoc-tap", authMiddleware, getBaoCaoHocTap);
 
-router.get("/bao-cao-hoc-tap", getBaoCaoHocTap);
-
-router.get("/bai-tap", getBaiTap);
-router.post("/bai-tap", createBaiTap);
-router.put("/bai-tap/:id", updateBaiTap);
-router.delete("/bai-tap/:id", deleteBaiTap);
+// Protected Bài tập routes
+router.get("/bai-tap", authMiddleware, getBaiTap);
+router.post("/bai-tap", authMiddleware, createBaiTap);
+router.put("/bai-tap/:id", authMiddleware, updateBaiTap);
+router.delete("/bai-tap/:id", authMiddleware, deleteBaiTap);
 
 module.exports = router;
+

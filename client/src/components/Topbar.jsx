@@ -5,10 +5,10 @@ export const Topbar = ({ activeTab, setActiveTab, setMobileOpen }) => {
   const { user, logout, theme, toggleTheme } = useAuth();
 
   const titleMap = {
-    dashboard: "Tổng quan Dashboard",
     calendar: "Lịch Cá Nhân & Sự Kiện",
     projects: "Công Việc & Dự Án",
-    study: "Quản Lý Học Tập & GPA",
+    study: "Quản Lý Học Tập",
+    tutors: "Tìm Kiếm Gia Sư Hỗ Trợ",
     workout: "Rèn Luyện Thể Chất & Gym",
     profile: "Cài Đặt Cá Nhân & Tài Khoản"
   };

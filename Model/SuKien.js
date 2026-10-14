@@ -4,6 +4,7 @@ const suKienSchema = new mongoose.Schema(
     {
         user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
         cong_viec_id: { type: mongoose.Schema.Types.ObjectId, ref: "CongViec", default: null },
+        mon_hoc_id: { type: mongoose.Schema.Types.ObjectId, ref: "MonHoc", default: null },
         loai_su_kien: {
             type: String,
             enum: ["hoc-tap", "tap-luyen", "deadline", "ca-nhan"],

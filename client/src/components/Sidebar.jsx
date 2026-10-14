@@ -5,9 +5,8 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
   const { user, logout, theme, toggleTheme } = useAuth();
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard KPI", icon: "📊" },
     { id: "calendar", label: "Lịch & Sự Kiện", icon: "📅" },
-    { id: "study", label: "Học Tập & GPA", icon: "🎓" },
+    { id: "study", label: "Học Tập", icon: "🎓" },
     { id: "workout", label: "Tập Luyện Gym", icon: "🏋️" },
     { id: "projects", label: "Dự Án & Task", icon: "📋" },
     { id: "profile", label: "Cài Đặt Cá Nhân", icon: "⚙️" }

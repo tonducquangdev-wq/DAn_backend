@@ -12,18 +12,17 @@ const {
 } = require("../Controller/api/duAnController");
 const authMiddleware = require("../Middleware/authMiddleware");
 
-router.use(authMiddleware);
-
 // Routes Dự án
-router.get("/du-an", getDuAn);
-router.post("/du-an", createDuAn);
-router.put("/du-an/:id", updateDuAn);
-router.delete("/du-an/:id", deleteDuAn);
+router.get("/du-an", authMiddleware, getDuAn);
+router.post("/du-an", authMiddleware, createDuAn);
+router.put("/du-an/:id", authMiddleware, updateDuAn);
+router.delete("/du-an/:id", authMiddleware, deleteDuAn);
 
 // Routes Công việc Task
-router.get("/cong-viec", getCongViec);
-router.post("/cong-viec", createCongViec);
-router.put("/cong-viec/:id", updateCongViec);
-router.delete("/cong-viec/:id", deleteCongViec);
+router.get("/cong-viec", authMiddleware, getCongViec);
+router.post("/cong-viec", authMiddleware, createCongViec);
+router.put("/cong-viec/:id", authMiddleware, updateCongViec);
+router.delete("/cong-viec/:id", authMiddleware, deleteCongViec);
 
 module.exports = router;
+

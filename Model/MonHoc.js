@@ -12,6 +12,9 @@ const monHocSchema = new mongoose.Schema(
         tien_do: { type: Number, min: 0, max: 100, default: 0 },
         ngay_bat_dau: { type: Date, default: null },
         ngay_ket_thuc: { type: Date, default: null },
+        gio_bat_dau: { type: String, default: "07:30" },
+        gio_ket_thuc: { type: String, default: "09:30" },
+        ngay_hoc: { type: [Number], default: [2] }, // 2: Thứ 2, ..., 8: CN
         trang_thai: {
             type: String,
             enum: ["dang_hoc", "da_hoan_thanh", "tam_dung"],

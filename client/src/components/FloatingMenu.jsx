@@ -7,9 +7,10 @@ export const FloatingMenu = ({ activeTab, setActiveTab }) => {
 
   const menuItems = [
     { id: "calendar", label: "Lịch & Sự Kiện", icon: "📅", color: "#3b82f6" },
-    { id: "study", label: "Học Tập & GPA", icon: "🎓", color: "#8b5cf6" },
+    { id: "study", label: "Học Tập", icon: "🎓", color: "#8b5cf6" },
     { id: "workout", label: "Tập Luyện Gym", icon: "🏋️", color: "#10b981" },
-    { id: "profile", label: "Hồ Sơ Cá Nhân", icon: "👤", color: "#f59e0b" }
+    { id: "projects", label: "Dự Án & Tasks", icon: "📋", color: "#06b6d4" },
+    { id: "profile", label: "Cài Đặt Cá Nhân", icon: "⚙️", color: "#f59e0b" }
   ];
 
   const handleSelect = (id) => {

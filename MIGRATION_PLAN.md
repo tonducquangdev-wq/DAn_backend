@@ -110,11 +110,17 @@ Khi người dùng mở lại dự án và muốn phát triển tiếp, AI có t
 
 ## 5. BẢNG TIẾN ĐỘ TỔNG KẾT (PROGRESS CHECKLIST)
 
-- [x] Phân tích dự án Laravel Monolith cũ & lập bản đồ chuyển đổi.
-- [x] Tạo 15 Mongoose Models trong `Model/`.
+- [x] Phân tích dự án Laravel Monolith cũ & lập bản đồ chuyển đổi sang Node.js/Express + React.
+- [x] Tạo 15 Mongoose Models chuẩn trong `Model/` (MongoDB duy nhất, không dùng MySQL/Eloquent/PDO).
 - [x] Viết JWT Authentication Middleware & Auth API (`/api/auth`).
 - [x] Viết các Controller & Router API cho 6 phân hệ (Lịch, Môn học/GPA, Gym, Dự án/Task, Dashboard).
-- [x] Đăng ký API trong `server.js` & kiểm tra cú pháp thành công.
+- [x] Chuẩn hóa `Config/db.js` đọc an toàn biến môi trường `MONGO_URI`, không hardcode database.
+- [x] Bổ sung `Middleware/errorMiddleware.js` (xử lý route 404 và tập trung lỗi runtime Mongoose/JWT).
+- [x] Tách biệt và bảo vệ cô lập các router (`monHocRouter`, `duAnRouter`, `dashboardRouter`).
+- [x] Cấu hình Vite Dev Server Proxy chuyển tiếp `/api` đến backend port 5000.
+- [x] Đăng ký API trong `server.js` & kiểm tra cú pháp, xuất module phục vụ test.
 - [x] Xây dựng React 19 Frontend trong `client/src` đầy đủ 6 Views + Dark/Light Theme.
-- [x] Kiểm thử build production `vite build` thành công.
+- [x] Kiểm thử build production `npm run build` thành công (100% không lỗi).
+- [x] Kiểm thử tự động end-to-end các API Auth, CRUD, GPA calculation và Mongoose connection thành công.
 - [x] Đã lưu tài liệu khôi phục tiến trình tại `MIGRATION_PLAN.md`.
+

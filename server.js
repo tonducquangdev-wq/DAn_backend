@@ -53,7 +53,7 @@ app.get("/", (req, res) => {
     });
 });
 
-// Middleware Fallback cho các URL client-side routing của React
+// Middleware Fallback cho các URL client-side routing của React (nếu client đã build)
 app.use((req, res, next) => {
     if (req.method === "GET" && !req.path.startsWith("/api") && !req.path.startsWith("/public")) {
         const indexPath = path.join(clientDistPath, "index.html");
@@ -64,8 +64,16 @@ app.use((req, res, next) => {
     next();
 });
 
+// Middleware xử lý 404 cho API và xử lý lỗi toàn cục
+const { notFound, errorHandler } = require("./Middleware/errorMiddleware");
+app.use("/api", notFound);
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+const server = app.listen(PORT, () => {
+    console.log(`🚀 Life Planner Server running on http://localhost:${PORT}`);
 });
+
+module.exports = { app, server };
+
 
