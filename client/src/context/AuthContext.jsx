@@ -7,10 +7,11 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("life_planner_token") || null);
   const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState(localStorage.getItem("life_planner_theme") || "light");
+  const [theme, setTheme] = useState(localStorage.getItem("life_planner_theme") || "dark");
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute("data-bs-theme", theme);
     localStorage.setItem("life_planner_theme", theme);
   }, [theme]);
 

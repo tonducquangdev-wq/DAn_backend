@@ -1,1281 +1,1538 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
+import "../styles/tap-luyen.css";
 
-const WEEKDAYS = [
-  { id: 2, label: "T2", defaultTitle: "Push (Ngực, Vai, Tay sau)", isRest: false },
-  { id: 3, label: "T3", defaultTitle: "Nghỉ", isRest: true, hasDot: true },
-  { id: 4, label: "T4", defaultTitle: "Pull (Lưng, Xô, Tay trước)", isRest: false },
-  { id: 5, label: "T5", defaultTitle: "Nghỉ", isRest: true },
-  { id: 6, label: "T6", defaultTitle: "Legs & Core (Đùi, Mông, Bụng)", isRest: false },
-  { id: 7, label: "T7", defaultTitle: "Nghỉ", isRest: true },
-  { id: 8, label: "CN", defaultTitle: "Nghỉ", isRest: true }
+// Helper map ngày trong tuần theo chuẩn VN (2 = T2, ..., 8 = CN)
+const DAYS_OF_WEEK = [
+  { day: 2, label: "T2", fullName: "Thứ Hai" },
+  { day: 3, label: "T3", fullName: "Thứ Ba" },
+  { day: 4, label: "T4", fullName: "Thứ Tư" },
+  { day: 5, label: "T5", fullName: "Thứ Năm" },
+  { day: 6, label: "T6", fullName: "Thứ Sáu" },
+  { day: 7, label: "T7", fullName: "Thứ Bảy" },
+  { day: 8, label: "CN", fullName: "Chủ Nhật" }
 ];
 
-const DEFAULT_EXERCISES_BY_DAY = {
-  2: [
-    { id: "p1", name: "Barbell Bench Press", setsReps: "4 sets × 8–10 reps", muscle: "Ngực" },
-    { id: "p2", name: "Incline Dumbbell Press", setsReps: "3 sets × 10–12 reps", muscle: "Ngực" },
-    { id: "p3", name: "Dumbbell Lateral Raise", setsReps: "4 sets × 12–15 reps", muscle: "Vai" },
-    { id: "p4", name: "Triceps Rope Pushdown", setsReps: "3 sets × 12–15 reps", muscle: "Tay sau" }
-  ],
-  4: [
-    { id: "l1", name: "Barbell Deadlift", setsReps: "4 sets × 6–8 reps", muscle: "Lưng" },
-    { id: "l2", name: "Lat Pulldown", setsReps: "3 sets × 10–12 reps", muscle: "Xô" },
-    { id: "l3", name: "Seated Cable Row", setsReps: "3 sets × 10–12 reps", muscle: "Lưng giữa" },
-    { id: "l4", name: "Barbell Bicep Curl", setsReps: "3 sets × 10–12 reps", muscle: "Tay trước" }
-  ],
-  6: [
-    { id: "c1", name: "Barbell Back Squat", setsReps: "4 sets × 8–10 reps", muscle: "Đùi trước" },
-    { id: "c2", name: "Romanian Deadlift", setsReps: "3 sets × 10–12 reps", muscle: "Đùi sau / Mông" },
-    { id: "c3", name: "Leg Press", setsReps: "3 sets × 12–15 reps", muscle: "Đùi" },
-    { id: "c4", name: "Hanging Leg Raise", setsReps: "3 sets × 15–20 reps", muscle: "Bụng" }
-  ]
-};
-
 export const WorkoutView = ({ onNavigateToCalendar }) => {
-  const { user } = useAuth();
+  // Navigation tabs
+  const [activeTab, setActiveTab] = useState("today"); // "today" | "plans" | "history"
 
-  // Dữ liệu API
+  // Dữ liệu từ API
   const [scheduleData, setScheduleData] = useState(null);
+  const [plansList, setPlansList] = useState([]);
   const [reportData, setReportData] = useState(null);
+  const [exerciseCatalog, setExerciseCatalog] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Điều hướng & Chọn ngày trong tuần (T2..CN)
-  const [selectedDay, setSelectedDay] = useState(2);
-  const [activeSubTab, setActiveSubTab] = useState("today"); // 'today' | 'plans' | 'history'
-  const [searchKeyword, setSearchKeyword] = useState("");
-
-  // Checklist bài tập
-  const [checkedItems, setCheckedItems] = useState({});
-  const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
-
-  // Đồng hồ bấm giờ (Stopwatch)
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const timerRef = useRef(null);
-
-  // Modals & Thông báo
-  const [toastMsg, setToastMsg] = useState(null);
-  const [showPlanModal, setShowPlanModal] = useState(false);
-  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [showCommunityModal, setShowCommunityModal] = useState(false);
-
-  const showToast = (msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3500);
+  // Ngày đang chọn trên Weekly Strip
+  const getTodayDayNumber = () => {
+    const jsDay = new Date().getDay(); // 0 is Sunday, 1 is Monday...
+    return jsDay === 0 ? 8 : jsDay + 1; // 0->8, 1->2, 2->3...
   };
+  const [selectedDay, setSelectedDay] = useState(getTodayDayNumber());
 
-  // Nạp dữ liệu từ backend
-  const loadWorkout = () => {
-    api.getWorkoutSchedule().then((res) => {
-      if (res.success && res.data) {
-        setScheduleData(res.data);
-      }
-    });
-    api.getWorkoutReport().then((res) => {
-      if (res.success && res.data) {
-        setReportData(res.data);
-      }
-    });
+  // Trạng thái bài tập & checklist
+  const [completedExercises, setCompletedExercises] = useState([]);
+  const [activeExercise, setActiveExercise] = useState(null);
+
+  // Đồng hồ tập luyện (Stopwatch) & Rest timer
+  const [stopwatchSeconds, setStopwatchSeconds] = useState(0);
+  const [isStopwatchRunning, setIsStopwatchRunning] = useState(false);
+  const stopwatchRef = useRef(null);
+
+  const [restCountdown, setRestCountdown] = useState(0);
+  const restTimerRef = useRef(null);
+
+  // Modals state
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [planForm, setPlanForm] = useState({ ten_ke_hoach: "", mo_ta: "", is_active: false });
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState(null);
+
+  const [selectedPlanForEdit, setSelectedPlanForEdit] = useState(null);
+  const [planDetailSessions, setPlanDetailSessions] = useState([]);
+
+  const [showAddExModal, setShowAddExModal] = useState(false);
+  const [currentBuoiForEx, setCurrentBuoiForEx] = useState(null);
+  const [exForm, setExForm] = useState({
+    bai_tap_the_chat_id: "",
+    ten_bai_tap: "",
+    nhom_co: "Ngực",
+    loai_bai_tap: "strength",
+    so_sets: 3,
+    so_reps: 10,
+    thoi_luong_phut: 10
+  });
+
+  const [showEditDetailModal, setShowEditDetailModal] = useState(false);
+  const [editingDetail, setEditingDetail] = useState(null);
+  const [detailForm, setDetailForm] = useState({ so_sets: 3, so_reps: 10, thoi_luong_phut: "" });
+
+  // Nạp toàn bộ dữ liệu khi khởi động
+  const loadAllData = async () => {
+    try {
+      setLoading(true);
+      const [scheduleRes, plansRes, reportRes, catalogRes] = await Promise.all([
+        api.getWorkoutSchedule(),
+        api.getWorkoutPlans(),
+        api.getWorkoutReport(),
+        api.getExerciseCatalog()
+      ]);
+
+      if (scheduleRes.success) setScheduleData(scheduleRes.data);
+      if (plansRes.success) setPlansList(plansRes.data || []);
+      if (reportRes.success) setReportData(reportRes.data);
+      if (catalogRes.success) setExerciseCatalog(catalogRes.data || []);
+    } catch (err) {
+      console.error("Lỗi tải dữ liệu tập luyện:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadWorkout();
+    loadAllData();
   }, []);
 
-  // Xử lý đếm giờ tập
+  // Quản lý Stopwatch
   useEffect(() => {
-    if (isTimerRunning) {
-      timerRef.current = setInterval(() => {
-        setTimerSeconds((prev) => prev + 1);
+    if (isStopwatchRunning) {
+      stopwatchRef.current = setInterval(() => {
+        setStopwatchSeconds((prev) => prev + 1);
       }, 1000);
     } else {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (stopwatchRef.current) clearInterval(stopwatchRef.current);
     }
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (stopwatchRef.current) clearInterval(stopwatchRef.current);
     };
-  }, [isTimerRunning]);
+  }, [isStopwatchRunning]);
 
-  const formatStopwatch = (totalSec) => {
-    const pad = (n) => String(n).padStart(2, "0");
-    const h = Math.floor(totalSec / 3600);
-    const m = Math.floor((totalSec % 3600) / 60);
-    const s = totalSec % 60;
-    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  // Quản lý Rest Countdown
+  useEffect(() => {
+    if (restCountdown > 0) {
+      restTimerRef.current = setInterval(() => {
+        setRestCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    } else {
+      if (restTimerRef.current) clearInterval(restTimerRef.current);
+    }
+    return () => {
+      if (restTimerRef.current) clearInterval(restTimerRef.current);
+    };
+  }, [restCountdown]);
+
+  const formatTime = (totalSec) => {
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Lấy danh sách bài tập cho ngày đang chọn
-  const currentExercises = DEFAULT_EXERCISES_BY_DAY[selectedDay] || [];
-  const currentDayInfo = WEEKDAYS.find((w) => w.id === selectedDay) || WEEKDAYS[0];
+  // Xác định buổi tập của ngày đang chọn trong Kế hoạch active
+  const currentSession = scheduleData?.danh_sach_buoi_tap?.find(
+    (b) => b.ngay_trong_tuan === selectedDay
+  );
 
-  // Tính số lượng và phần trăm hoàn thành checklist
-  const totalCount = currentExercises.length;
-  const completedCount = currentExercises.filter((ex) => checkedItems[ex.id]).length;
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
-  // Toggle checklist
-  const handleToggleCheck = (id) => {
-    setCheckedItems((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      return next;
-    });
-  };
-
-  // Làm mới checklist
-  const handleResetChecklist = () => {
-    setCheckedItems({});
-    setActiveExerciseIndex(0);
-    showToast("Đã làm mới checklist bài tập cho buổi này.");
-  };
-
-  // Bài tiếp theo
-  const handleNextExercise = () => {
-    if (currentExercises.length === 0) return;
-    if (activeExerciseIndex < currentExercises.length - 1) {
-      setActiveExerciseIndex((prev) => prev + 1);
-      // Đánh dấu bài trước đó hoàn thành
-      const curEx = currentExercises[activeExerciseIndex];
-      if (curEx) {
-        setCheckedItems((prev) => ({ ...prev, [curEx.id]: true }));
+  // Set active exercise mặc định khi đổi ngày hoặc có dữ liệu mới
+  useEffect(() => {
+    if (currentSession?.chi_tiet && currentSession.chi_tiet.length > 0) {
+      if (!activeExercise || !currentSession.chi_tiet.some((c) => c._id === activeExercise._id)) {
+        setActiveExercise(currentSession.chi_tiet[0]);
       }
     } else {
-      showToast("Bạn đã đến bài tập cuối cùng trong buổi!");
+      setActiveExercise(null);
+    }
+  }, [selectedDay, currentSession]);
+
+  // Checklist hoàn thành bài tập
+  const toggleExerciseCheck = (detailId) => {
+    setCompletedExercises((prev) =>
+      prev.includes(detailId) ? prev.filter((id) => id !== detailId) : [...prev, detailId]
+    );
+  };
+
+  const exerciseCount = currentSession?.chi_tiet?.length || 0;
+  const completedCount = currentSession?.chi_tiet?.filter((c) =>
+    completedExercises.includes(c._id)
+  ).length || 0;
+  const progressPercent =
+    exerciseCount > 0 ? Math.round((completedCount / exerciseCount) * 100) : 0;
+
+  // Hoàn thành buổi tập
+  const handleCompleteWorkout = async () => {
+    if (!currentSession) return;
+
+    const workoutMinutes = Math.max(1, Math.round(stopwatchSeconds / 60)) || 45;
+    const res = await api.completeWorkout({
+      buoi_tap_id: currentSession._id,
+      ten_buoi_tap: currentSession.ten_buoi_tap,
+      thoi_gian_tap_phut: workoutMinutes,
+      ghi_chu: `Hoàn thành ${completedCount}/${exerciseCount} bài tập (${workoutMinutes} phút)`
+    });
+
+    if (res.success) {
+      alert(`🎉 ${res.message}`);
+      setIsStopwatchRunning(false);
+      setStopwatchSeconds(0);
+      setCompletedExercises([]);
+      loadAllData();
+    } else {
+      alert("⚠️ " + (res.message || "Không thể lưu buổi tập"));
     }
   };
 
-  // Hoàn thành buổi tập
-  const handleFinishWorkout = async () => {
-    const minutes = Math.max(1, Math.round(timerSeconds / 60) || 45);
-    const res = await api.completeWorkout({
-      buoi_tap_id: null,
-      thoi_gian_tap_phut: minutes,
-      ghi_chu: `Hoàn thành buổi tập ${currentDayInfo.defaultTitle}`
+  // Kích hoạt một kế hoạch tập luyện
+  const handleActivatePlan = async (planId) => {
+    const res = await api.activateWorkoutPlan(planId);
+    if (res.success) {
+      alert(`⚡ ${res.message}`);
+      loadAllData();
+    } else {
+      alert("⚠️ " + res.message);
+    }
+  };
+
+  // Mở modal tạo / sửa kế hoạch
+  const handleOpenPlanModal = (plan = null) => {
+    if (plan) {
+      setEditingPlan(plan);
+      setPlanForm({
+        ten_ke_hoach: plan.ten_ke_hoach,
+        mo_ta: plan.mo_ta || "",
+        is_active: plan.is_active || false
+      });
+    } else {
+      setEditingPlan(null);
+      setPlanForm({
+        ten_ke_hoach: "",
+        mo_ta: "",
+        is_active: plansList.length === 0
+      });
+    }
+    setShowPlanModal(true);
+  };
+
+  // Lưu kế hoạch
+  const handleSavePlan = async (e) => {
+    e.preventDefault();
+    if (!planForm.ten_ke_hoach.trim()) {
+      alert("Vui lòng nhập tên giáo án!");
+      return;
+    }
+
+    if (editingPlan) {
+      const res = await api.updateWorkoutPlan(editingPlan._id, {
+        ten_ke_hoach: planForm.ten_ke_hoach,
+        mo_ta: planForm.mo_ta
+      });
+      if (res.success) {
+        setShowPlanModal(false);
+        loadAllData();
+      } else {
+        alert("⚠️ " + res.message);
+      }
+    } else {
+      const res = await api.createWorkoutPlan(planForm);
+      if (res.success) {
+        setShowPlanModal(false);
+        loadAllData();
+      } else {
+        alert("⚠️ " + res.message);
+      }
+    }
+  };
+
+  // Xóa kế hoạch có xác nhận
+  const handleConfirmDeletePlan = async () => {
+    if (!planToDelete) return;
+    const res = await api.deleteWorkoutPlan(planToDelete._id);
+    if (res.success) {
+      setShowDeleteModal(false);
+      setPlanToDelete(null);
+      if (selectedPlanForEdit?._id === planToDelete._id) {
+        setSelectedPlanForEdit(null);
+      }
+      loadAllData();
+    } else {
+      alert("⚠️ " + res.message);
+    }
+  };
+
+  // Chuyển đổi trạng thái ngày nghỉ / ngày tập
+  const handleToggleRestDay = async (buoiId, currentRestState) => {
+    const res = await api.updateBuoiTap(buoiId, {
+      is_rest_day: !currentRestState,
+      ten_buoi_tap: !currentRestState ? "Nghỉ ngơi phục hồi (Rest Day)" : "Buổi tập chính"
     });
-
-    setIsTimerRunning(false);
-    showToast(res.message || "🎉 Chúc mừng! Bạn đã hoàn thành xuất sắc buổi tập hôm nay!");
-    loadWorkout();
+    if (res.success) {
+      loadAllData();
+      if (selectedPlanForEdit) {
+        loadPlanForEdit(selectedPlanForEdit);
+      }
+    } else {
+      alert("⚠️ " + res.message);
+    }
   };
 
-  // Bắt đầu / Tạm dừng đồng hồ
-  const handleToggleTimer = () => {
-    setIsTimerRunning((prev) => !prev);
+  // Đổi tên buổi tập
+  const handleUpdateSessionName = async (buoiId, newName) => {
+    if (!newName.trim()) return;
+    await api.updateBuoiTap(buoiId, { ten_buoi_tap: newName.trim() });
+    loadAllData();
   };
 
-  // Chia sẻ
-  const handleShare = () => {
-    navigator.clipboard?.writeText(window.location.href);
-    showToast("🔗 Đã sao chép liên kết chia sẻ tiến độ tập luyện!");
+  // Tải chi tiết các buổi tập của 1 kế hoạch để chỉnh sửa
+  const loadPlanForEdit = async (plan) => {
+    setSelectedPlanForEdit(plan);
+    if (scheduleData?.ke_hoach?._id === plan._id) {
+      setPlanDetailSessions(scheduleData.danh_sach_buoi_tap);
+    } else {
+      const res = await api.getWorkoutSchedule();
+      if (res.success) {
+        setPlanDetailSessions(res.data.danh_sach_buoi_tap);
+      }
+    }
   };
 
-  const activeExerciseObj = currentExercises[activeExerciseIndex];
+  // Mở modal thêm bài tập vào buổi
+  const handleOpenAddExModal = (buoi) => {
+    setCurrentBuoiForEx(buoi);
+    setExForm({
+      bai_tap_the_chat_id: exerciseCatalog[0]?._id || "",
+      ten_bai_tap: "",
+      nhom_co: "Ngực",
+      loai_bai_tap: "strength",
+      so_sets: 3,
+      so_reps: 10,
+      thoi_luong_phut: 10
+    });
+    setShowAddExModal(true);
+  };
+
+  // Lưu bài tập mới vào buổi
+  const handleSaveExercise = async (e) => {
+    e.preventDefault();
+    if (!currentBuoiForEx) return;
+
+    const payload = exForm.bai_tap_the_chat_id
+      ? {
+          bai_tap_the_chat_id: exForm.bai_tap_the_chat_id,
+          so_sets: exForm.so_sets,
+          so_reps: exForm.so_reps,
+          thoi_luong_phut: exForm.thoi_luong_phut
+        }
+      : {
+          ten_bai_tap: exForm.ten_bai_tap,
+          nhom_co: exForm.nhom_co,
+          loai_bai_tap: exForm.loai_bai_tap,
+          so_sets: exForm.so_sets,
+          so_reps: exForm.so_reps,
+          thoi_luong_phut: exForm.thoi_luong_phut
+        };
+
+    const res = await api.addExerciseToBuoi(currentBuoiForEx._id, payload);
+    if (res.success) {
+      setShowAddExModal(false);
+      loadAllData();
+      if (selectedPlanForEdit) loadPlanForEdit(selectedPlanForEdit);
+    } else {
+      alert("⚠️ " + res.message);
+    }
+  };
+
+  // Mở modal sửa thông số bài tập
+  const handleOpenEditDetailModal = (detail) => {
+    setEditingDetail(detail);
+    setDetailForm({
+      so_sets: detail.so_sets || 3,
+      so_reps: detail.so_reps || 10,
+      thoi_luong_phut: detail.thoi_luong_phut || ""
+    });
+    setShowEditDetailModal(true);
+  };
+
+  // Lưu sửa bài tập
+  const handleSaveEditDetail = async (e) => {
+    e.preventDefault();
+    if (!editingDetail) return;
+
+    const res = await api.updateExerciseDetail(editingDetail._id, detailForm);
+    if (res.success) {
+      setShowEditDetailModal(false);
+      loadAllData();
+      if (selectedPlanForEdit) loadPlanForEdit(selectedPlanForEdit);
+    } else {
+      alert("⚠️ " + res.message);
+    }
+  };
+
+  // Xóa bài tập
+  const handleDeleteExercise = async (detailId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bài tập này khỏi buổi?")) return;
+    const res = await api.deleteExerciseDetail(detailId);
+    if (res.success) {
+      loadAllData();
+      if (selectedPlanForEdit) loadPlanForEdit(selectedPlanForEdit);
+    } else {
+      alert("⚠️ " + res.message);
+    }
+  };
+
+  const todayDayNum = getTodayDayNumber();
 
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto", paddingBottom: "40px" }}>
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div
-          style={{
-            position: "fixed",
-            top: "24px",
-            right: "24px",
-            zIndex: 9999,
-            background: "linear-gradient(135deg, #10b981, #059669)",
-            color: "#ffffff",
-            padding: "14px 22px",
-            borderRadius: "14px",
-            boxShadow: "0 10px 25px rgba(16, 185, 129, 0.4)",
-            fontWeight: "600",
-            fontSize: "0.92rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            animation: "fadeIn 0.3s ease"
-          }}
-        >
-          <span>✨</span>
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
-      {/* TOP HEADER: Breadcrumb + Search + User Profile */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "14px",
-          marginBottom: "20px"
-        }}
-      >
-        {/* Left: Breadcrumb Back */}
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => onNavigateToCalendar && onNavigateToCalendar()}
-            style={{
-              padding: "7px 16px",
-              borderRadius: "12px",
-              fontSize: "0.85rem",
-              fontWeight: "700",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px"
-            }}
-          >
-            ← Quay lại Lịch
-          </button>
-          <span style={{ fontWeight: "800", fontSize: "0.98rem", color: "var(--text-main)" }}>
-            Theo dõi Thể chất
-          </span>
-        </div>
-
-        {/* Center: Search input */}
-        <div style={{ flex: "1", maxWidth: "380px", minWidth: "240px" }}>
-          <input
-            type="text"
-            placeholder="🔍 Tìm kiếm bài tập, lịch trình..."
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "9px 18px",
-              borderRadius: "20px",
-              border: "1px solid rgba(0,0,0,0.06)",
-              background: "var(--neu-bg)",
-              boxShadow: "var(--neu-shadow-inset)",
-              fontSize: "0.86rem",
-              color: "var(--text-main)",
-              outline: "none"
-            }}
-          />
-        </div>
-
-        {/* Right: User Profile Widget */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div
-            style={{
-              width: "38px",
-              height: "38px",
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #3b82f6, #6366f1)",
-              color: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: "800",
-              fontSize: "0.88rem",
-              boxShadow: "0 4px 10px rgba(59, 130, 246, 0.35)"
-            }}
-          >
-            {user?.ho_ten ? user.ho_ten.slice(0, 2).toUpperCase() : "TQ"}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", lineHeight: "1.2" }}>
-            <span style={{ fontWeight: "800", fontSize: "0.88rem", color: "var(--text-main)" }}>
-              {user?.ho_ten || "Tôn Đức Quang"}
-            </span>
-            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-              {user?.email || "quang@gmail.com"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* PAGE TITLE BAR & ACTION BUTTONS */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "16px",
-          marginBottom: "22px"
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <div
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "14px",
-              background: "rgba(239, 68, 68, 0.12)",
-              color: "#ef4444",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.5rem",
-              boxShadow: "var(--neu-shadow-sm)"
-            }}
-          >
-            ❤️
-          </div>
-          <div>
-            <h1 style={{ fontSize: "1.75rem", fontWeight: "900", margin: 0, color: "var(--text-main)" }}>
-              Tập luyện
-            </h1>
-            <p style={{ margin: "2px 0 0", fontSize: "0.86rem", color: "var(--text-muted)" }}>
-              Quản lý lịch tập, kế hoạch và theo dõi tiến độ tập luyện
+    <div className="workout-container">
+      {/* 1. Header Block & Visual Hierarchy */}
+      <div className="workout-header-block">
+        <div className="workout-title-row" style={{ alignItems: "center" }}>
+          {onNavigateToCalendar && (
+            <button
+              type="button"
+              className="btn-action-pill btn-pill-primary"
+              onClick={onNavigateToCalendar}
+              style={{ marginRight: "12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              ← Quay lại Lịch
+            </button>
+          )}
+          <div className="workout-title-icon-badge">🏋️</div>
+          <div className="workout-title-content">
+            <h1 className="workout-page-title">Thể Chất & Gym Routine</h1>
+            <p className="workout-page-subtitle">
+              Quản lý giáo án rèn luyện thể chất, theo dõi chuỗi ngày tập liên tiếp (Streak) & Heatmap 30 ngày
             </p>
           </div>
         </div>
 
-        {/* Buttons right */}
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
+        {/* Standalone Segmented Navigation Bar */}
+        <div className="workout-nav-tabs-bar">
           <button
-            type="button"
-            className="btn-primary"
-            onClick={() => setShowPlanModal(true)}
-            style={{
-              padding: "9px 16px",
-              fontSize: "0.85rem",
-              fontWeight: "700",
-              borderRadius: "12px",
-              background: "linear-gradient(135deg, #4f46e5, #6366f1)"
-            }}
+            id="workout-tab-today"
+            className={`workout-nav-tab-btn ${activeTab === "today" ? "active" : ""}`}
+            onClick={() => setActiveTab("today")}
           >
-            + Tạo kế hoạch
+            <span>📅</span> Lịch Tuần & Tập Luyện
           </button>
           <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => setShowCustomizeModal(true)}
-            style={{ padding: "9px 14px", fontSize: "0.85rem", fontWeight: "700", borderRadius: "12px" }}
+            id="workout-tab-plans"
+            className={`workout-nav-tab-btn ${activeTab === "plans" ? "active" : ""}`}
+            onClick={() => setActiveTab("plans")}
           >
-            ✏️ Tùy chỉnh buổi tập
+            <span>📋</span> Quản Lý Giáo Án ({plansList.length})
           </button>
           <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => setShowReportModal(true)}
-            style={{ padding: "9px 14px", fontSize: "0.85rem", fontWeight: "700", borderRadius: "12px" }}
+            id="workout-tab-history"
+            className={`workout-nav-tab-btn ${activeTab === "history" ? "active" : ""}`}
+            onClick={() => setActiveTab("history")}
           >
-            📊 Báo cáo
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => setShowCommunityModal(true)}
-            style={{ padding: "9px 14px", fontSize: "0.85rem", fontWeight: "700", borderRadius: "12px" }}
-          >
-            👥 Cộng đồng Gymer
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={handleShare}
-            style={{ padding: "9px 14px", fontSize: "0.85rem", fontWeight: "700", borderRadius: "12px" }}
-          >
-            🔗 Chia sẻ
+            <span>📊</span> Báo Cáo & Nhật Ký
           </button>
         </div>
       </div>
 
-      {/* SUB-TABS & ACTIVE PLAN PILL */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "14px",
-          marginBottom: "18px"
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <button
-            type="button"
-            onClick={() => setActiveSubTab("today")}
-            style={{
-              padding: "7px 18px",
-              borderRadius: "20px",
-              fontSize: "0.85rem",
-              fontWeight: "800",
-              border: "none",
-              cursor: "pointer",
-              background: activeSubTab === "today" ? "var(--neu-bg)" : "transparent",
-              color: activeSubTab === "today" ? "var(--primary)" : "var(--text-muted)",
-              boxShadow: activeSubTab === "today" ? "var(--neu-shadow-sm)" : "none",
-              transition: "all 0.2s ease"
-            }}
-          >
-            ⚡ Buổi tập hôm nay
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSubTab("plans")}
-            style={{
-              padding: "7px 18px",
-              borderRadius: "20px",
-              fontSize: "0.85rem",
-              fontWeight: "700",
-              border: "none",
-              cursor: "pointer",
-              background: activeSubTab === "plans" ? "var(--neu-bg)" : "transparent",
-              color: activeSubTab === "plans" ? "var(--primary)" : "var(--text-muted)",
-              boxShadow: activeSubTab === "plans" ? "var(--neu-shadow-sm)" : "none",
-              transition: "all 0.2s ease"
-            }}
-          >
-            📋 Kế hoạch rèn luyện (1)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSubTab("history")}
-            style={{
-              padding: "7px 18px",
-              borderRadius: "20px",
-              fontSize: "0.85rem",
-              fontWeight: "700",
-              border: "none",
-              cursor: "pointer",
-              background: activeSubTab === "history" ? "var(--neu-bg)" : "transparent",
-              color: activeSubTab === "history" ? "var(--primary)" : "var(--text-muted)",
-              boxShadow: activeSubTab === "history" ? "var(--neu-shadow-sm)" : "none",
-              transition: "all 0.2s ease"
-            }}
-          >
-            🕒 Lịch sử hoạt động
-          </button>
+      {/* 2. KPI Quick Stats Strip (4 Uniform Balanced Cards) */}
+      <div className="workout-kpi-strip">
+        <div className="workout-kpi-card">
+          <div className="workout-kpi-icon" style={{ background: "rgba(239, 68, 68, 0.14)", color: "#ef4444" }}>
+            🔥
+          </div>
+          <div className="workout-kpi-text-area">
+            <div className="workout-kpi-label">Workout Streak</div>
+            <div className="workout-kpi-val font-numeric">
+              {reportData?.streak !== undefined ? reportData.streak : 0} Ngày
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem" }}>
-          <span style={{ color: "var(--text-muted)", fontWeight: "600" }}>Kế hoạch áp dụng:</span>
-          <span
-            style={{
-              background: "#3b82f6",
-              color: "#ffffff",
-              padding: "4px 14px",
-              borderRadius: "14px",
-              fontWeight: "800",
-              fontSize: "0.82rem",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              boxShadow: "0 3px 10px rgba(59, 130, 246, 0.35)"
-            }}
-          >
-            🏷️ Push – Pull – Legs (PPL Cơ bản)
-          </span>
+        <div className="workout-kpi-card">
+          <div className="workout-kpi-icon" style={{ background: "rgba(16, 185, 129, 0.14)", color: "#10b981" }}>
+            ⏱️
+          </div>
+          <div className="workout-kpi-text-area">
+            <div className="workout-kpi-label">Tổng Thời Gian</div>
+            <div className="workout-kpi-val font-numeric">
+              {reportData?.tong_thoi_gian_phut || 0} Phút
+            </div>
+          </div>
+        </div>
+
+        <div className="workout-kpi-card">
+          <div className="workout-kpi-icon" style={{ background: "rgba(59, 130, 246, 0.15)", color: "#3b82f6" }}>
+            🎯
+          </div>
+          <div className="workout-kpi-text-area">
+            <div className="workout-kpi-label">Số Buổi Đã Tập</div>
+            <div className="workout-kpi-val font-numeric">
+              {reportData?.tong_buoi_tap || 0} Buổi
+            </div>
+          </div>
+        </div>
+
+        <div className="workout-kpi-card">
+          <div className="workout-kpi-icon" style={{ background: "rgba(245, 158, 11, 0.14)", color: "#f59e0b" }}>
+            ⚡
+          </div>
+          <div className="workout-kpi-text-area">
+            <div className="workout-kpi-label">Giáo Án Đang Dùng</div>
+            <div
+              className="workout-kpi-val font-numeric"
+              style={{ fontSize: "0.98rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              title={scheduleData?.ke_hoach?.ten_ke_hoach || "Chưa chọn giáo án"}
+            >
+              {scheduleData?.ke_hoach?.ten_ke_hoach || "Chưa có giáo án"}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* LỊCH TUẦN (WEEKLY SCHEDULE RIBBON) */}
-      <div
-        className="glass-card"
-        style={{
-          padding: "16px 20px",
-          marginBottom: "24px",
-          borderRadius: "18px"
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-          <span
-            style={{
-              background: "rgba(59, 130, 246, 0.12)",
-              color: "var(--primary)",
-              padding: "4px 12px",
-              borderRadius: "10px",
-              fontWeight: "800",
-              fontSize: "0.82rem"
-            }}
-          >
-            📅 Lịch tuần
-          </span>
-          <span style={{ color: "var(--text-muted)", fontSize: "0.85rem", fontWeight: "600" }}>
-            Phân bổ rèn luyện:
-          </span>
-        </div>
-
-        {/* 7 Cột Ngày Trong Tuần */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-            gap: "10px"
-          }}
-        >
-          {WEEKDAYS.map((w) => {
-            const isSelected = selectedDay === w.id;
-            return (
-              <div
-                key={w.id}
-                onClick={() => setSelectedDay(w.id)}
-                style={{
-                  background: isSelected
-                    ? "rgba(99, 102, 241, 0.08)"
-                    : "var(--neu-bg)",
-                  border: isSelected
-                    ? "2px solid #6366f1"
-                    : "1px solid rgba(0,0,0,0.06)",
-                  borderRadius: "14px",
-                  padding: "12px 10px",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  boxShadow: isSelected
-                    ? "0 4px 14px rgba(99, 102, 241, 0.2)"
-                    : "var(--neu-shadow-sm)",
-                  position: "relative",
-                  minHeight: "76px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between"
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span
-                    style={{
-                      fontWeight: "800",
-                      fontSize: "0.9rem",
-                      color: isSelected ? "#4f46e5" : "var(--text-main)"
-                    }}
-                  >
-                    {w.label}
+      {/* =========================================================================
+          TAB 1: HÔM NAY & LỊCH TUẦN (WEEKLY STRIP + HERO PROGRESS + CHECKLIST + TIMER)
+          ========================================================================= */}
+      {activeTab === "today" && (
+        <>
+          {/* Weekly 7-Day Strip with Separated Title & Plan Tag */}
+          <div className="schedule-strip-card">
+            <div className="schedule-header-row">
+              <div className="schedule-header-left">
+                <h3 className="schedule-header-title">
+                  <span>🗓️</span> Lịch Tập 7 Ngày Trong Tuần
+                </h3>
+                {scheduleData?.ke_hoach && (
+                  <span className="schedule-plan-badge">
+                    ⚡ {scheduleData.ke_hoach.ten_ke_hoach}
                   </span>
-                  {w.hasDot && (
-                    <span
-                      style={{
-                        width: "7px",
-                        height: "7px",
-                        borderRadius: "50%",
-                        background: "#10b981",
-                        display: "inline-block"
-                      }}
-                    />
-                  )}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "0.78rem",
-                    fontWeight: isSelected ? "700" : "600",
-                    color: w.isRest ? "var(--text-muted)" : (isSelected ? "#4f46e5" : "var(--text-main)"),
-                    marginTop: "6px",
-                    lineHeight: "1.3"
-                  }}
-                >
-                  {w.isRest ? "☕ Nghỉ" : w.defaultTitle}
-                </div>
+                )}
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* NỘI DUNG CHÍNH (2 CỘT: TIẾN ĐỘ & CHECKLIST / ĐỒNG HỒ TẬP) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1.25fr 0.95fr",
-          gap: "24px",
-          alignItems: "start",
-          marginBottom: "26px"
-        }}
-      >
-        {/* CỘT TRÁI */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Card: Tiến độ buổi tập */}
-          <div className="glass-card" style={{ padding: "18px 22px", borderRadius: "18px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "1.3rem" }}>🏆</span>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontWeight: "800", fontSize: "0.88rem", letterSpacing: "0.5px" }}>
-                      TIẾN ĐỘ BUỔI TẬP:
-                    </span>
-                    <span
-                      style={{
-                        background: "#3b82f6",
-                        color: "#ffffff",
-                        padding: "2px 10px",
-                        borderRadius: "8px",
-                        fontWeight: "800",
-                        fontSize: "0.78rem"
-                      }}
-                    >
-                      {currentDayInfo.isRest ? "Nghỉ" : currentDayInfo.defaultTitle.split(" ")[0]}
-                    </span>
-                  </div>
-                  <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "var(--text-muted)" }}>
-                    Đánh dấu bài tập trong checklist để cập nhật tiến độ thực tế
-                  </p>
-                </div>
-              </div>
-
-              <span style={{ fontWeight: "800", fontSize: "0.85rem", color: "var(--primary)" }}>
-                {completedCount} / {totalCount} bài tập hoàn thành ({progressPercent}%)
-              </span>
+              <button
+                className="btn-action-pill btn-pill-primary"
+                onClick={() => setSelectedDay(todayDayNum)}
+              >
+                📍 Hôm Nay ({DAYS_OF_WEEK.find((d) => d.day === todayDayNum)?.fullName})
+              </button>
             </div>
 
-            {/* Thanh tiến độ */}
-            <div
-              style={{
-                width: "100%",
-                height: "6px",
-                background: "rgba(0,0,0,0.06)",
-                borderRadius: "4px",
-                overflow: "hidden",
-                marginTop: "12px"
-              }}
-            >
-              <div
-                style={{
-                  width: `${progressPercent}%`,
-                  height: "100%",
-                  background: "linear-gradient(90deg, #3b82f6, #10b981)",
-                  borderRadius: "4px",
-                  transition: "width 0.3s ease"
-                }}
-              />
+            <div className="weekly-schedule-grid">
+              {DAYS_OF_WEEK.map((item) => {
+                const daySession = scheduleData?.danh_sach_buoi_tap?.find(
+                  (b) => b.ngay_trong_tuan === item.day
+                );
+                const isToday = item.day === todayDayNum;
+                const isSelected = item.day === selectedDay;
+                const isRest = daySession?.is_rest_day;
+
+                return (
+                  <div
+                    key={item.day}
+                    id={`schedule-day-${item.day}`}
+                    className={`schedule-day-box ${isToday ? "is-today" : ""} ${
+                      isSelected ? "is-selected" : ""
+                    } ${isRest ? "is-rest" : ""}`}
+                    onClick={() => setSelectedDay(item.day)}
+                  >
+                    <div className="day-code-wrap">
+                      <span className="day-code">{item.label}</span>
+                      {isToday && <span className="today-dot" title="Hôm nay" />}
+                    </div>
+                    <div className="session-name">
+                      {isRest ? "🛌 Nghỉ ngơi" : daySession?.ten_buoi_tap || "Chưa có lịch"}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Card: Checklist bài tập */}
-          <div className="glass-card" style={{ padding: "22px", borderRadius: "18px" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "14px"
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "8px",
-                    background: "rgba(59, 130, 246, 0.12)",
-                    color: "var(--primary)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: "800"
-                  }}
-                >
-                  ☑️
-                </span>
-                <div>
-                  <h3 style={{ fontSize: "1.05rem", fontWeight: "800", margin: 0 }}>
-                    Checklist bài tập
-                  </h3>
-                  <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                    {completedCount} / {totalCount} bài đã hoàn thành
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span
-                  style={{
-                    background: "rgba(59, 130, 246, 0.1)",
-                    color: "var(--primary)",
-                    padding: "3px 10px",
-                    borderRadius: "12px",
-                    fontSize: "0.8rem",
-                    fontWeight: "700"
-                  }}
-                >
-                  {totalCount} bài
-                </span>
+          {/* Nếu ngày được chọn là ngày nghỉ */}
+          {currentSession?.is_rest_day ? (
+            <div className="rest-day-card">
+              <div className="rest-day-icon-bounce">🛌</div>
+              <h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: "0 0 8px 0" }}>
+                {DAYS_OF_WEEK.find((d) => d.day === selectedDay)?.fullName}: Ngày Nghỉ Phục Hồi
+              </h3>
+              <p
+                style={{
+                  maxWidth: "540px",
+                  margin: "0 auto 18px auto",
+                  color: "var(--lp-text-muted)",
+                  fontSize: "0.88rem",
+                  lineHeight: 1.5
+                }}
+              >
+                Cơ bắp phát triển và tự chữa lành trong những ngày nghỉ ngơi. Hãy ăn uống đủ chất đạm,
+                uống nhiều nước và ngủ đủ giấc để sẵn sàng cho buổi tập tiếp theo!
+              </p>
+              <div className="d-flex justify-content-center">
                 <button
-                  type="button"
-                  onClick={handleResetChecklist}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "var(--text-muted)",
-                    fontSize: "0.82rem",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px"
-                  }}
+                  className="btn-action-pill btn-pill-primary"
+                  onClick={() => handleToggleRestDay(currentSession._id, true)}
                 >
-                  🔄 Làm mới
+                  ⚡ Chuyển thành ngày tập nếu bạn muốn
                 </button>
               </div>
             </div>
+          ) : (
+            <>
+              {/* Workout Progress Hero Banner */}
+              <div className="workout-progress-card">
+                <div className="workout-progress-left">
+                  <div className="workout-progress-icon-badge">🎯</div>
+                  <div>
+                    <h3 className="workout-progress-title">
+                      {currentSession?.ten_buoi_tap || "Buổi tập chính"}
+                    </h3>
+                    <p className="workout-progress-sub">
+                      {DAYS_OF_WEEK.find((d) => d.day === selectedDay)?.fullName} • Hoàn thành{" "}
+                      {completedCount}/{exerciseCount} bài tập
+                    </p>
+                  </div>
+                </div>
 
-            {/* Thanh tiến độ con */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: "14px" }}>
-              <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "var(--primary)" }}>
-                {progressPercent}%
+                <div className="workout-progress-bar-wrap">
+                  <div className="workout-slim-progress">
+                    <div className="progress-bar" style={{ width: `${progressPercent}%` }} />
+                  </div>
+                </div>
+
+                <div className="workout-progress-percent font-numeric">
+                  {progressPercent}%
+                </div>
+              </div>
+
+              {/* Main Workout Cards: Left = Checklist (7 cols), Right = Timer & Player (5 cols) */}
+              <div className="row g-3">
+                {/* Cột trái: Checklist bài tập */}
+                <div className="col-lg-7">
+                  <div className="workout-main-card">
+                    <div className="checklist-header-box">
+                      <div className="checklist-header-title-wrap">
+                        <span style={{ fontSize: "1.1rem" }}>📋</span>
+                        <h4 className="checklist-header-title">Danh Sách Bài Tập Cần Thực Hiện</h4>
+                      </div>
+                      <div className="checklist-header-actions">
+                        <button
+                          className="btn-action-pill btn-pill-primary"
+                          onClick={() => handleOpenAddExModal(currentSession)}
+                        >
+                          + Thêm Bài
+                        </button>
+                        <button
+                          className="btn-action-pill btn-pill-warning"
+                          onClick={() => handleToggleRestDay(currentSession._id, false)}
+                          title="Đổi ngày này thành ngày nghỉ ngơi"
+                        >
+                          🛌 Đánh Dấu Nghỉ
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Danh sách checklist */}
+                    {exerciseCount === 0 ? (
+                      <div className="text-center py-5" style={{ color: "var(--lp-text-muted)" }}>
+                        <p style={{ fontSize: "0.92rem", marginBottom: "14px" }}>
+                          Chưa có bài tập nào cho buổi này.
+                        </p>
+                        <button
+                          className="btn-action-pill btn-pill-primary"
+                          onClick={() => handleOpenAddExModal(currentSession)}
+                        >
+                          + Thêm bài tập ngay
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="workout-checklist-container">
+                        {currentSession.chi_tiet.map((item) => {
+                          const isDone = completedExercises.includes(item._id);
+                          const isActive = activeExercise?._id === item._id;
+                          const exInfo = item.bai_tap_the_chat_id;
+
+                          return (
+                            <div
+                              key={item._id}
+                              className={`checklist-exercise-item ${isDone ? "completed" : ""} ${
+                                isActive ? "active-exercise" : ""
+                              }`}
+                              onClick={() => setActiveExercise(item)}
+                            >
+                              <div
+                                className="checklist-item-checkbox-col"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExerciseCheck(item._id);
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="custom-check-box"
+                                  checked={isDone}
+                                  onChange={() => {}}
+                                />
+                              </div>
+
+                              <div className="checklist-item-content">
+                                <div className="checklist-item-title-col">
+                                  <h5 className="exercise-title">
+                                    {exInfo?.ten_bai_tap || "Bài tập"}
+                                  </h5>
+                                  {exInfo?.meo_tap && (
+                                    <div
+                                      style={{
+                                        fontSize: "0.72rem",
+                                        color: "var(--lp-text-muted)",
+                                        marginTop: "2px"
+                                      }}
+                                    >
+                                      💡 {exInfo.meo_tap}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="checklist-item-meta-col">
+                                  <span className="badge-group-tag">
+                                    {exInfo?.nhom_co || "Tổng hợp"}
+                                  </span>
+                                  <span className="badge-metric-tag font-numeric">
+                                    {item.so_sets} Sets × {item.so_reps} Reps
+                                  </span>
+                                </div>
+
+                                <div className="checklist-item-action-area">
+                                  <button
+                                    className="btn-icon-circle"
+                                    title="Sửa bài tập"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenEditDetailModal(item);
+                                    }}
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    className="btn-icon-circle text-danger"
+                                    title="Xóa bài tập"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteExercise(item._id);
+                                    }}
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Nút Hoàn Thành Buổi Tập */}
+                    <div className="mt-3 pt-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                      <span style={{ fontSize: "0.82rem", color: "var(--lp-text-muted)" }}>
+                        {completedCount === exerciseCount && exerciseCount > 0
+                          ? "🌟 Bạn đã hoàn thành toàn bộ bài tập trong buổi!"
+                          : "Tập luyện theo khả năng và ghi nhận khi hoàn thành."}
+                      </span>
+                      <button
+                        className="btn-finish-workout"
+                        onClick={handleCompleteWorkout}
+                      >
+                        ✅ Hoàn Thành Buổi Tập
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cột phải: Timer, Rest Timer & Active Exercise Player */}
+                <div className="col-lg-5">
+                  <div className="workout-main-card workout-timer-sticky">
+                    <div className="workout-timer-box">
+                      <div className="d-flex align-items-center justify-content-between mb-1">
+                        <span style={{ fontSize: "0.76rem", fontWeight: 700, textTransform: "uppercase" }}>
+                          ⏱️ Đồng Hồ Bấm Giờ
+                        </span>
+                        <span
+                          className={`workout-status-badge ${
+                            isStopwatchRunning ? "badge-running" : "badge-not-started"
+                          }`}
+                        >
+                          {isStopwatchRunning ? "Đang tập..." : "Tạm dừng"}
+                        </span>
+                      </div>
+
+                      <div className="timer-display font-numeric">{formatTime(stopwatchSeconds)}</div>
+
+                      <div className="d-flex justify-content-center gap-2 mt-2">
+                        <button
+                          className={`btn-action-pill ${isStopwatchRunning ? "btn-pill-warning" : "btn-pill-primary"}`}
+                          onClick={() => setIsStopwatchRunning(!isStopwatchRunning)}
+                        >
+                          {isStopwatchRunning ? "⏸️ Tạm Dừng" : "▶️ Bắt Đầu Tập"}
+                        </button>
+                        <button
+                          className="btn-action-pill btn-pill-primary"
+                          onClick={() => {
+                            setIsStopwatchRunning(false);
+                            setStopwatchSeconds(0);
+                          }}
+                        >
+                          🔄 Đặt Lại
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Rest Timer Countdown */}
+                    <div className="active-exercise-card mb-3 p-3 text-center">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <span style={{ fontSize: "0.78rem", fontWeight: 700 }}>
+                          🛑 Nghỉ Giữa Các Hiệp (Rest Timer)
+                        </span>
+                        <span className="font-numeric" style={{ fontWeight: 800, color: "var(--lp-warning)", fontSize: "1rem" }}>
+                          {restCountdown > 0 ? `${restCountdown}s` : "0s"}
+                        </span>
+                      </div>
+
+                      <div className="d-flex justify-content-center gap-2">
+                        <button
+                          className="btn-action-pill btn-pill-primary"
+                          style={{ height: "30px", fontSize: "0.74rem", padding: "0 10px" }}
+                          onClick={() => setRestCountdown(30)}
+                        >
+                          +30s
+                        </button>
+                        <button
+                          className="btn-action-pill btn-pill-primary"
+                          style={{ height: "30px", fontSize: "0.74rem", padding: "0 10px" }}
+                          onClick={() => setRestCountdown(60)}
+                        >
+                          +60s
+                        </button>
+                        <button
+                          className="btn-action-pill btn-pill-primary"
+                          style={{ height: "30px", fontSize: "0.74rem", padding: "0 10px" }}
+                          onClick={() => setRestCountdown(90)}
+                        >
+                          +90s
+                        </button>
+                        {restCountdown > 0 && (
+                          <button
+                            className="btn-action-pill btn-pill-warning"
+                            style={{ height: "30px", fontSize: "0.74rem", padding: "0 10px" }}
+                            onClick={() => setRestCountdown(0)}
+                          >
+                            Tắt
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Active Exercise Detail Card */}
+                    {activeExercise ? (
+                      <div className="active-exercise-card">
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                          <span className="badge-metric-tag" style={{ fontSize: "0.72rem" }}>
+                            Đang Thực Hiện
+                          </span>
+                          <span className="badge-group-tag">
+                            {activeExercise.bai_tap_the_chat_id?.nhom_co || "Nhóm cơ"}
+                          </span>
+                        </div>
+                        <h4 className="active-exercise-title">
+                          {activeExercise.bai_tap_the_chat_id?.ten_bai_tap}
+                        </h4>
+                        <div
+                          className="d-flex align-items-center gap-3 my-2 p-2 rounded"
+                          style={{ background: "var(--lp-bg-card)", border: "1px solid var(--lp-card-border)" }}
+                        >
+                          <div style={{ flex: 1, textAlign: "center" }}>
+                            <div style={{ fontSize: "0.7rem", color: "var(--lp-text-muted)" }}>Mục tiêu</div>
+                            <div className="font-numeric" style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--lp-primary)" }}>
+                              {activeExercise.so_sets} Sets
+                            </div>
+                          </div>
+                          <div style={{ width: "1px", height: "28px", background: "var(--lp-card-border)" }} />
+                          <div style={{ flex: 1, textAlign: "center" }}>
+                            <div style={{ fontSize: "0.7rem", color: "var(--lp-text-muted)" }}>Lặp lại</div>
+                            <div className="font-numeric" style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--lp-primary)" }}>
+                              {activeExercise.so_reps} Reps
+                            </div>
+                          </div>
+                        </div>
+
+                        {activeExercise.bai_tap_the_chat_id?.meo_tap && (
+                          <p style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)", margin: "8px 0 0 0" }}>
+                            📌 <b>Mẹo kỹ thuật:</b> {activeExercise.bai_tap_the_chat_id.meo_tap}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4" style={{ color: "var(--lp-text-muted)", fontSize: "0.82rem" }}>
+                        Click vào một bài tập ở danh sách bên trái để theo dõi chi tiết tại đây.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Monthly Heatmap 30 Ngày */}
+          <div className="workout-main-card mt-4">
+            <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+              <h3 style={{ fontSize: "1rem", fontWeight: "700", margin: 0 }}>
+                🟩 Tần Suất Rèn Luyện 30 Ngày Gần Nhất (Heatmap)
+              </h3>
+              <span style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)" }}>
+                Màu càng đậm thể hiện thời lượng tập càng nhiều
               </span>
             </div>
 
-            {/* Danh sách bài tập hoặc thông báo Ngày nghỉ */}
-            {currentDayInfo.isRest ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "40px 20px",
-                  background: "var(--neu-bg)",
-                  borderRadius: "14px",
-                  boxShadow: "var(--neu-shadow-inset)"
-                }}
-              >
-                <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>☕</div>
-                <h4 style={{ fontWeight: "800", marginBottom: "6px" }}>Hôm nay là ngày nghỉ ngơi phục hồi</h4>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", maxWidth: "420px", margin: "0 auto" }}>
-                  Cơ bắp phát triển trong khi nghỉ ngơi. Hãy ngủ đủ giấc, bổ sung protein và uống đủ nước để nạp lại năng lượng!
-                </p>
-              </div>
-            ) : currentExercises.length === 0 ? (
-              <p style={{ textAlign: "center", color: "var(--text-muted)", fontStyle: "italic", padding: "20px" }}>
-                Chưa có bài tập cho buổi này.
+            <div className="heatmap-grid">
+              {Array.from({ length: 30 }).map((_, idx) => {
+                const dateStr = new Date(Date.now() - (29 - idx) * 86400000).toISOString().split("T")[0];
+                const lvl = reportData?.heatmap?.[dateStr] || 0;
+                return (
+                  <div
+                    key={idx}
+                    className={`heatmap-cell ${lvl > 0 ? `heatmap-lvl-${lvl}` : ""}`}
+                    title={`${dateStr}: Mức độ rèn luyện ${lvl}/4`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* =========================================================================
+          TAB 2: QUẢN LÝ GIÁO ÁN (CRUD, KÍCH HOẠT, TÙY CHỈNH NGÀY/BÀI TẬP)
+          ========================================================================= */}
+      {activeTab === "plans" && (
+        <div>
+          <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div>
+              <h3 style={{ fontSize: "1.15rem", fontWeight: 700, margin: 0 }}>Danh Sách Giáo Án Cá Nhân</h3>
+              <p style={{ fontSize: "0.82rem", color: "var(--lp-text-muted)", margin: "4px 0 0 0" }}>
+                Tạo nhiều kế hoạch tập luyện khác nhau và chuyển đổi lịch đang sử dụng bất kỳ lúc nào.
               </p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {currentExercises.map((ex, index) => {
-                  const isChecked = !!checkedItems[ex.id];
-                  const isActive = activeExerciseIndex === index;
+            </div>
+            <button className="btn-action-pill btn-pill-primary" onClick={() => handleOpenPlanModal()}>
+              + Tạo Giáo Án Mới
+            </button>
+          </div>
+
+          {/* Danh sách các kế hoạch (Grid) */}
+          <div className="row g-3 mb-4">
+            {plansList.map((plan) => (
+              <div key={plan._id} className="col-md-6 col-lg-4">
+                <div className={`plan-card-item ${plan.is_active ? "is-active-plan" : ""}`}>
+                  <div>
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                      {plan.is_active ? (
+                        <span className="badge-metric-tag">⚡ ĐANG SỬ DỤNG</span>
+                      ) : (
+                        <span className="badge-group-tag">Giáo án lưu trữ</span>
+                      )}
+                      {plan.is_default && (
+                        <span className="badge-group-tag" style={{ fontSize: "0.68rem" }}>
+                          Mẫu mặc định
+                        </span>
+                      )}
+                    </div>
+
+                    <h4 className="plan-card-title">{plan.ten_ke_hoach}</h4>
+                    <p className="plan-card-desc">{plan.mo_ta || "Không có mô tả chi tiết."}</p>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-top">
+                    <div className="d-flex align-items-center justify-content-between mb-3" style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)" }}>
+                      <span>💪 {plan.so_buoi_tap || 0} Ngày tập</span>
+                      <span>🛌 {plan.so_ngay_nghi || 0} Ngày nghỉ</span>
+                    </div>
+
+                    <div className="d-flex align-items-center gap-2 flex-wrap">
+                      {!plan.is_active && (
+                        <button
+                          className="btn-action-pill btn-pill-primary"
+                          style={{ height: "30px", fontSize: "0.74rem" }}
+                          onClick={() => handleActivatePlan(plan._id)}
+                        >
+                          ⚡ Kích Hoạt
+                        </button>
+                      )}
+                      <button
+                        className="btn-action-pill btn-pill-primary"
+                        style={{ height: "30px", fontSize: "0.74rem" }}
+                        onClick={() => loadPlanForEdit(plan)}
+                      >
+                        ⚙️ Chi Tiết
+                      </button>
+                      <button
+                        className="btn-icon-circle"
+                        style={{ width: "30px", height: "30px" }}
+                        onClick={() => handleOpenPlanModal(plan)}
+                        title="Đổi tên giáo án"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="btn-icon-circle text-danger"
+                        style={{ width: "30px", height: "30px" }}
+                        onClick={() => {
+                          setPlanToDelete(plan);
+                          setShowDeleteModal(true);
+                        }}
+                        title="Xóa giáo án này"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Trình Tùy Chỉnh 7 Ngày Trong Tuần Của Kế Hoạch Đang Chọn */}
+          {selectedPlanForEdit && (
+            <div className="workout-main-card mt-4">
+              <div className="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <div>
+                  <h4 style={{ fontSize: "1.05rem", fontWeight: 700, margin: 0 }}>
+                    🛠️ Tùy Chỉnh 7 Ngày: {selectedPlanForEdit.ten_ke_hoach}
+                  </h4>
+                  <span style={{ fontSize: "0.8rem", color: "var(--lp-text-muted)" }}>
+                    Điều chỉnh ngày tập, đánh dấu ngày nghỉ và thêm/sửa/xóa bài tập cho từng ngày
+                  </span>
+                </div>
+                <button
+                  className="btn-action-pill btn-pill-primary"
+                  onClick={() => setSelectedPlanForEdit(null)}
+                >
+                  Đóng ✕
+                </button>
+              </div>
+
+              <div className="d-flex flex-column gap-3">
+                {DAYS_OF_WEEK.map((d) => {
+                  const s = planDetailSessions?.find((b) => b.ngay_trong_tuan === d.day);
+                  if (!s) return null;
+
                   return (
                     <div
-                      key={ex.id}
-                      onClick={() => setActiveExerciseIndex(index)}
+                      key={d.day}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "12px 16px",
+                        padding: "16px",
                         borderRadius: "14px",
-                        background: isActive ? "rgba(99, 102, 241, 0.05)" : "var(--neu-bg)",
-                        border: isActive ? "1.5px solid #6366f1" : "1px solid rgba(0,0,0,0.06)",
-                        boxShadow: isChecked ? "none" : "var(--neu-shadow-sm)",
-                        cursor: "pointer",
-                        transition: "all 0.2s ease"
+                        background: s.is_rest_day ? "var(--lp-bg-surface)" : "var(--lp-bg-card)",
+                        border: s.is_rest_day ? "1.5px dashed var(--lp-card-border)" : "1px solid var(--lp-card-border)"
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            handleToggleCheck(ex.id);
-                          }}
-                          style={{
-                            width: "18px",
-                            height: "18px",
-                            cursor: "pointer",
-                            accentColor: "#3b82f6"
-                          }}
-                        />
-                        <span
-                          style={{
-                            fontWeight: "700",
-                            fontSize: "0.9rem",
-                            color: isChecked ? "var(--text-muted)" : "var(--text-main)",
-                            textDecoration: isChecked ? "line-through" : "none"
-                          }}
-                        >
-                          {ex.name}
-                        </span>
+                      <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                        <div className="d-flex align-items-center gap-2">
+                          <span className="badge-metric-tag">{d.fullName}</span>
+                          <input
+                            type="text"
+                            defaultValue={s.ten_buoi_tap}
+                            onBlur={(e) => handleUpdateSessionName(s._id, e.target.value)}
+                            style={{
+                              border: "none",
+                              background: "transparent",
+                              fontWeight: 700,
+                              fontSize: "0.92rem",
+                              color: "var(--lp-text-main)",
+                              borderBottom: "1px dashed var(--lp-card-border)",
+                              outline: "none"
+                            }}
+                          />
+                        </div>
+
+                        <div className="d-flex align-items-center gap-2">
+                          <button
+                            className={`btn-action-pill ${s.is_rest_day ? "btn-pill-warning" : "btn-pill-primary"}`}
+                            style={{ height: "30px", fontSize: "0.74rem" }}
+                            onClick={() => handleToggleRestDay(s._id, s.is_rest_day)}
+                          >
+                            {s.is_rest_day ? "🛌 Đang Là Ngày Nghỉ" : "💪 Đang Là Ngày Tập"}
+                          </button>
+                          {!s.is_rest_day && (
+                            <button
+                              className="btn-action-pill btn-pill-primary"
+                              style={{ height: "30px", fontSize: "0.74rem" }}
+                              onClick={() => handleOpenAddExModal(s)}
+                            >
+                              + Thêm Bài Tập
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span
-                          style={{
-                            background: "rgba(59, 130, 246, 0.08)",
-                            color: "#3b82f6",
-                            padding: "4px 10px",
-                            borderRadius: "8px",
-                            fontWeight: "700",
-                            fontSize: "0.78rem"
-                          }}
-                        >
-                          {ex.setsReps}
-                        </span>
-                        <span
-                          style={{
-                            background: "rgba(0,0,0,0.05)",
-                            color: "var(--text-muted)",
-                            padding: "4px 10px",
-                            borderRadius: "8px",
-                            fontWeight: "600",
-                            fontSize: "0.78rem"
-                          }}
-                        >
-                          {ex.muscle}
-                        </span>
-                      </div>
+                      {/* Bài tập trong ngày */}
+                      {!s.is_rest_day && (
+                        <div className="ps-2">
+                          {s.chi_tiet && s.chi_tiet.length > 0 ? (
+                            <div className="d-flex flex-column gap-2 mt-2">
+                              {s.chi_tiet.map((it) => (
+                                <div
+                                  key={it._id}
+                                  className="d-flex align-items-center justify-content-between p-2 rounded"
+                                  style={{
+                                    background: "var(--lp-bg-surface)",
+                                    border: "1px solid var(--lp-card-border)",
+                                    fontSize: "0.82rem"
+                                  }}
+                                >
+                                  <div>
+                                    <span style={{ fontWeight: 600 }}>
+                                      {it.bai_tap_the_chat_id?.ten_bai_tap}
+                                    </span>
+                                    <span className="badge-group-tag ms-2">
+                                      {it.bai_tap_the_chat_id?.nhom_co}
+                                    </span>
+                                    <span className="badge-metric-tag ms-2 font-numeric">
+                                      {it.so_sets} Sets × {it.so_reps} Reps
+                                    </span>
+                                  </div>
+                                  <div className="d-flex gap-1">
+                                    <button
+                                      className="btn-icon-circle"
+                                      onClick={() => handleOpenEditDetailModal(it)}
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      className="btn-icon-circle text-danger"
+                                      onClick={() => handleDeleteExercise(it._id)}
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: "0.8rem", color: "var(--lp-text-muted)", marginTop: "6px" }}>
+                              Chưa có bài tập nào. Hãy bấm "+ Thêm Bài Tập".
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
-            )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 3: BÁO CÁO & NHẬT KÝ TẬP LUYỆN
+          ========================================================================= */}
+      {activeTab === "history" && (
+        <div className="workout-main-card">
+          <h3 style={{ fontSize: "1.15rem", fontWeight: 700, margin: "0 0 6px 0" }}>
+            📊 Nhật Ký & Lịch Sử Rèn Luyện
+          </h3>
+          <p style={{ fontSize: "0.82rem", color: "var(--lp-text-muted)", margin: "0 0 16px 0" }}>
+            Toàn bộ các buổi tập đã hoàn thành được ghi nhận bền vững và bảo toàn trong hệ thống.
+          </p>
+
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Ngày Tập</th>
+                  <th>Buổi Tập / Nội Dung</th>
+                  <th>Thời Gian</th>
+                  <th>Ghi Chú</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reportData?.recent_logs && reportData.recent_logs.length > 0 ? (
+                  reportData.recent_logs.map((log) => (
+                    <tr key={log._id}>
+                      <td className="font-numeric" style={{ fontWeight: 600 }}>
+                        {new Date(log.ngay_tap).toLocaleDateString("vi-VN", {
+                          weekday: "short",
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit"
+                        })}
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: 700, color: "var(--lp-primary)" }}>
+                          {log.ten_buoi_tap || "Buổi tập hoàn thành"}
+                        </span>
+                      </td>
+                      <td className="font-numeric">{log.thoi_gian_tap_phut || 45} phút</td>
+                      <td style={{ color: "var(--lp-text-muted)", fontSize: "0.82rem" }}>
+                        {log.ghi_chu || "—"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="text-center py-5 text-muted">
+                      Chưa có nhật ký tập luyện nào được ghi nhận. Hãy hoàn thành buổi tập đầu tiên của bạn!
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
+      )}
 
-        {/* CỘT PHẢI: ĐỒNG HỒ TẬP */}
-        <div className="glass-card" style={{ padding: "24px", borderRadius: "18px" }}>
-          {/* Header Đồng hồ */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: "800", fontSize: "1.05rem" }}>
-              <span>⏱️</span>
-              <span>Đồng hồ tập</span>
-            </div>
-            <span
-              style={{
-                fontSize: "0.8rem",
-                fontWeight: "700",
-                padding: "4px 12px",
-                borderRadius: "12px",
-                background: isTimerRunning
-                  ? "rgba(16, 185, 129, 0.15)"
-                  : "rgba(0,0,0,0.06)",
-                color: isTimerRunning ? "#059669" : "var(--text-muted)"
-              }}
-            >
-              {isTimerRunning ? "🟢 Đang tập" : "⚫ Chưa bắt đầu"}
-            </span>
-          </div>
+      {/* =========================================================================
+          MODALS (GLASSMORPHIC & CLEAN)
+          ========================================================================= */}
 
-          {/* Vùng bấm giờ */}
-          <div
-            style={{
-              textAlign: "center",
-              padding: "24px 16px",
-              background: "var(--neu-bg)",
-              borderRadius: "16px",
-              boxShadow: "var(--neu-shadow-inset)",
-              marginBottom: "18px"
-            }}
-          >
-            <div
-              style={{
-                fontSize: "2.8rem",
-                fontWeight: "900",
-                letterSpacing: "2px",
-                color: "var(--text-main)",
-                fontFamily: "monospace"
-              }}
-            >
-              {formatStopwatch(timerSeconds)}
-            </div>
-            <p style={{ margin: "6px 0 0", fontSize: "0.8rem", color: "var(--text-muted)" }}>
-              {isTimerRunning
-                ? "Thời gian rèn luyện đang được ghi nhận..."
-                : 'Bấm "Bắt đầu tập" để tính thời gian rèn luyện'}
-            </p>
-          </div>
-
-          {/* Hộp hiển thị bài tập hiện tại */}
-          <div
-            style={{
-              textAlign: "center",
-              padding: "16px",
-              borderRadius: "14px",
-              background: "rgba(59, 130, 246, 0.04)",
-              border: "1px dashed rgba(59, 130, 246, 0.2)",
-              marginBottom: "18px"
-            }}
-          >
-            {activeExerciseObj ? (
-              <>
-                <div style={{ fontWeight: "800", fontSize: "0.95rem", color: "var(--text-main)" }}>
-                  {activeExerciseObj.name}
-                </div>
-                <div style={{ fontSize: "0.82rem", color: "var(--primary)", fontWeight: "700", marginTop: "4px" }}>
-                  {activeExerciseObj.setsReps} ({activeExerciseObj.muscle})
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ fontWeight: "600", fontSize: "0.88rem", color: "var(--text-muted)" }}>
-                  Chưa có bài tập trong buổi này
-                </div>
-                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                  -- × --
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Nút to: Bắt đầu tập */}
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={handleToggleTimer}
-            style={{
-              width: "100%",
-              padding: "13px",
-              fontSize: "1rem",
-              fontWeight: "800",
-              borderRadius: "14px",
-              background: isTimerRunning
-                ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                : "linear-gradient(135deg, #4f46e5, #3b82f6)",
-              marginBottom: "10px",
-              boxShadow: isTimerRunning
-                ? "0 8px 20px rgba(245, 158, 11, 0.35)"
-                : "0 8px 20px rgba(79, 70, 229, 0.35)"
-            }}
-          >
-            {isTimerRunning ? "⏸ Tạm dừng tập" : "▶ Bắt đầu tập"}
-          </button>
-
-          {/* 2 nút hàng dưới: Bài tiếp theo & Hoàn thành */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "22px" }}>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={handleNextExercise}
-              style={{
-                padding: "10px",
-                fontSize: "0.84rem",
-                fontWeight: "700",
-                borderRadius: "12px",
-                textAlign: "center"
-              }}
-            >
-              ⏭ Bài tiếp theo
-            </button>
-            <button
-              type="button"
-              onClick={handleFinishWorkout}
-              style={{
-                padding: "10px",
-                fontSize: "0.84rem",
-                fontWeight: "800",
-                borderRadius: "12px",
-                background: "#10b981",
-                color: "#ffffff",
-                border: "none",
-                cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.35)"
-              }}
-            >
-              ✅ Hoàn thành
-            </button>
-          </div>
-
-          {/* Các buổi tập trong kế hoạch */}
-          <div>
-            <div style={{ fontSize: "0.78rem", fontWeight: "800", color: "var(--text-muted)", marginBottom: "10px", letterSpacing: "0.5px" }}>
-              CÁC BUỔI TẬP TRONG KẾ HOẠCH:
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              <button
-                type="button"
-                onClick={() => setSelectedDay(2)}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: "10px",
-                  fontSize: "0.78rem",
-                  fontWeight: "700",
-                  border: "none",
-                  cursor: "pointer",
-                  background: selectedDay === 2 ? "#3b82f6" : "var(--neu-bg)",
-                  color: selectedDay === 2 ? "#ffffff" : "var(--text-main)",
-                  boxShadow: selectedDay === 2 ? "0 4px 10px rgba(59, 130, 246, 0.35)" : "var(--neu-shadow-sm)"
-                }}
-              >
-                Push (Ngực, Vai, Tay sau)
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedDay(4)}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: "10px",
-                  fontSize: "0.78rem",
-                  fontWeight: "700",
-                  border: "none",
-                  cursor: "pointer",
-                  background: selectedDay === 4 ? "#3b82f6" : "var(--neu-bg)",
-                  color: selectedDay === 4 ? "#ffffff" : "var(--text-main)",
-                  boxShadow: selectedDay === 4 ? "0 4px 10px rgba(59, 130, 246, 0.35)" : "var(--neu-shadow-sm)"
-                }}
-              >
-                Pull (Lưng, Xô, Tay trước)
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedDay(6)}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: "10px",
-                  fontSize: "0.78rem",
-                  fontWeight: "700",
-                  border: "none",
-                  cursor: "pointer",
-                  background: selectedDay === 6 ? "#3b82f6" : "var(--neu-bg)",
-                  color: selectedDay === 6 ? "#ffffff" : "var(--text-main)",
-                  boxShadow: selectedDay === 6 ? "0 4px 10px rgba(59, 130, 246, 0.35)" : "var(--neu-shadow-sm)"
-                }}
-              >
-                Legs & Core (Đùi, Mông, Bụng)
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* DƯỚI CÙNG: 4 THẺ THỐNG KÊ (BOTTOM KPI CARDS) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-          gap: "18px"
-        }}
-      >
-        {/* Card 1: Chuỗi rèn luyện */}
-        <div className="glass-card" style={{ padding: "18px 20px", borderRadius: "18px", display: "flex", alignItems: "center", gap: "16px" }}>
-          <div
-            style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "14px",
-              background: "rgba(239, 68, 68, 0.1)",
-              color: "#ef4444",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.3rem"
-            }}
-          >
-            🔥
-          </div>
-          <div>
-            <div style={{ fontSize: "0.75rem", fontWeight: "800", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
-              CHUỖI RÈN LUYỆN
-            </div>
-            <div style={{ fontSize: "1.25rem", fontWeight: "900", color: "var(--text-main)", marginTop: "2px" }}>
-              {reportData?.chuoi_ren_luyen || 2} ngày 🔥
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Buổi tập tuần này */}
-        <div className="glass-card" style={{ padding: "18px 20px", borderRadius: "18px", display: "flex", alignItems: "center", gap: "16px" }}>
-          <div
-            style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "14px",
-              background: "rgba(59, 130, 246, 0.1)",
-              color: "#3b82f6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.3rem"
-            }}
-          >
-            📅
-          </div>
-          <div>
-            <div style={{ fontSize: "0.75rem", fontWeight: "800", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
-              BUỔI TẬP TUẦN NÀY
-            </div>
-            <div style={{ fontSize: "1.25rem", fontWeight: "900", color: "var(--text-main)", marginTop: "2px" }}>
-              {reportData?.buoi_tap_tuan_nay || 2} buổi
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Thời gian hôm nay */}
-        <div className="glass-card" style={{ padding: "18px 20px", borderRadius: "18px", display: "flex", alignItems: "center", gap: "16px" }}>
-          <div
-            style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "14px",
-              background: "rgba(16, 185, 129, 0.1)",
-              color: "#10b981",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.3rem"
-            }}
-          >
-            ⏱️
-          </div>
-          <div>
-            <div style={{ fontSize: "0.75rem", fontWeight: "800", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
-              THỜI GIAN HÔM NAY
-            </div>
-            <div style={{ fontSize: "1.25rem", fontWeight: "900", color: "var(--text-main)", marginTop: "2px" }}>
-              {reportData?.thoi_gian_hom_nay || 60} phút
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Tổng tích lũy */}
-        <div className="glass-card" style={{ padding: "18px 20px", borderRadius: "18px", display: "flex", alignItems: "center", gap: "16px" }}>
-          <div
-            style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "14px",
-              background: "rgba(139, 92, 246, 0.1)",
-              color: "#8b5cf6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.3rem"
-            }}
-          >
-            🏆
-          </div>
-          <div>
-            <div style={{ fontSize: "0.75rem", fontWeight: "800", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
-              TỔNG TÍCH LŨY
-            </div>
-            <div style={{ fontSize: "1.25rem", fontWeight: "900", color: "var(--text-main)", marginTop: "2px" }}>
-              {reportData?.tong_tich_luy || 8} buổi
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* MODAL 1: TẠO KẾ HOẠCH */}
+      {/* Modal 1: Tạo / Sửa Kế Hoạch */}
       {showPlanModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: "520px" }}>
-            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", marginBottom: "8px" }}>➕ Tạo Kế Hoạch Tập Luyện Mới</h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "18px" }}>
-              Chọn hoặc thiết lập giáo án thể chất cá nhân hóa phù hợp mục tiêu của bạn
-            </p>
-            <form onSubmit={(e) => { e.preventDefault(); setShowPlanModal(false); showToast("Đã lưu kế hoạch mới thành công!"); }}>
-              <div className="form-group">
-                <label>Tên kế hoạch</label>
-                <input type="text" required defaultValue="Upper - Lower Split (4 Buổi)" />
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
+                  {editingPlan ? "✏️ Chỉnh Sửa Kế Hoạch" : "➕ Tạo Kế Hoạch Mới"}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowPlanModal(false)}
+                />
               </div>
-              <div className="form-group">
-                <label>Mục tiêu</label>
-                <select defaultValue="hypertrophy">
-                  <option value="hypertrophy">Tăng cơ bắp (Hypertrophy)</option>
-                  <option value="fatloss">Giảm mỡ & Săn chắc (Fat Loss)</option>
-                  <option value="strength">Tăng sức mạnh (Strength)</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Số buổi tập mỗi tuần</label>
-                <input type="number" min="2" max="7" defaultValue="4" />
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowPlanModal(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Lưu Kế Hoạch</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: TÙY CHỈNH BUỔI TẬP */}
-      {showCustomizeModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: "520px" }}>
-            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", marginBottom: "8px" }}>✏️ Tùy Chỉnh Buổi Tập {currentDayInfo.label}</h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "18px" }}>
-              Thêm bài tập mới vào danh sách cho buổi {currentDayInfo.defaultTitle}
-            </p>
-            <form onSubmit={(e) => { e.preventDefault(); setShowCustomizeModal(false); showToast("Đã cập nhật bài tập cho buổi!"); }}>
-              <div className="form-group">
-                <label>Tên bài tập mới</label>
-                <input type="text" required placeholder="VD: Cable Flyes" />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                <div className="form-group">
-                  <label>Số Sets</label>
-                  <input type="number" defaultValue="3" min="1" max="10" />
-                </div>
-                <div className="form-group">
-                  <label>Số Reps</label>
-                  <input type="text" defaultValue="12-15" />
-                </div>
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowCustomizeModal(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Thêm Bài Tập</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: BÁO CÁO TẬP LUYỆN & HEATMAP */}
-      {showReportModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: "600px" }}>
-            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", marginBottom: "8px" }}>📊 Báo Cáo Rèn Luyện & Tần Suất</h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "18px" }}>
-              Theo dõi tần suất tập luyện hàng tháng (Heatmap) và hiệu suất thể chất
-            </p>
-
-            <div style={{ marginBottom: "20px" }}>
-              <div style={{ fontWeight: "700", fontSize: "0.88rem", marginBottom: "8px" }}>
-                Tần suất rèn luyện 30 ngày qua:
-              </div>
-              <div className="heatmap-grid">
-                {Array.from({ length: 30 }).map((_, idx) => {
-                  const dateStr = new Date(Date.now() - (29 - idx) * 86400000).toISOString().split("T")[0];
-                  const lvl = reportData?.heatmap?.[dateStr] || (idx % 2 === 0 ? 2 : 0);
-                  return (
-                    <div
-                      key={idx}
-                      className={`heatmap-cell ${lvl > 0 ? `heatmap-lvl-${lvl}` : ""}`}
-                      title={`${dateStr}: Mức độ ${lvl}`}
+              <form onSubmit={handleSavePlan}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                      Tên Kế Hoạch / Giáo Án *
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="VD: Giáo Án Push Pull Legs, Tăng Cơ 4 Buổi..."
+                      value={planForm.ten_ke_hoach}
+                      onChange={(e) => setPlanForm({ ...planForm, ten_ke_hoach: e.target.value })}
+                      required
                     />
-                  );
-                })}
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "18px" }}>
-              <div style={{ background: "var(--neu-bg)", padding: "14px", borderRadius: "12px", boxShadow: "var(--neu-shadow-inset)" }}>
-                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Tổng thời gian tập</div>
-                <div style={{ fontWeight: "800", fontSize: "1.1rem", color: "var(--primary)" }}>
-                  {reportData?.tong_thoi_gian_phut || 360} phút
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                      Mô Tả Kế Hoạch
+                    </label>
+                    <textarea
+                      className="form-control"
+                      rows="3"
+                      placeholder="Mục tiêu tập luyện, phân bổ nhóm cơ..."
+                      value={planForm.mo_ta}
+                      onChange={(e) => setPlanForm({ ...planForm, mo_ta: e.target.value })}
+                    />
+                  </div>
+                  {!editingPlan && (
+                    <div className="form-check">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="setAsActivePlan"
+                        checked={planForm.is_active}
+                        onChange={(e) => setPlanForm({ ...planForm, is_active: e.target.checked })}
+                      />
+                      <label className="form-check-label" htmlFor="setAsActivePlan" style={{ fontSize: "0.85rem" }}>
+                        Kích hoạt làm giáo án sử dụng chính ngay sau khi tạo
+                      </label>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div style={{ background: "var(--neu-bg)", padding: "14px", borderRadius: "12px", boxShadow: "var(--neu-shadow-inset)" }}>
-                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Tổng số buổi tập</div>
-                <div style={{ fontWeight: "800", fontSize: "1.1rem", color: "#10b981" }}>
-                  {reportData?.tong_buoi_tap || 8} buổi
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn-action-pill btn-pill-primary"
+                    onClick={() => setShowPlanModal(false)}
+                  >
+                    Hủy Bỏ
+                  </button>
+                  <button type="submit" className="btn-action-pill btn-pill-primary" style={{ background: "var(--lp-primary)", color: "#fff" }}>
+                    {editingPlan ? "Cập Nhật" : "Tạo Kế Hoạch"}
+                  </button>
                 </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button type="button" className="btn-secondary" onClick={() => setShowReportModal(false)}>Đóng</button>
+              </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 4: CỘNG ĐỒNG GYMER */}
-      {showCommunityModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: "560px" }}>
-            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", marginBottom: "8px" }}>👥 Cộng Đồng Gymer Life Planner</h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "18px" }}>
-              Giao lưu chia sẻ kinh nghiệm tập luyện, dinh dưỡng và mẹo tăng cơ giảm mỡ
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
-              <div style={{ background: "var(--neu-bg)", padding: "14px", borderRadius: "12px", boxShadow: "var(--neu-shadow-inset)" }}>
-                <div style={{ fontWeight: "700", fontSize: "0.9rem" }}>💡 Tip: Tối ưu phục hồi cơ bắp</div>
-                <p style={{ margin: "4px 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-                  Nghỉ ngơi từ 48-72 giờ giữa các buổi tập cùng một nhóm cơ giúp cơ bắp tái tạo mô tốt nhất.
-                </p>
+      {/* Modal 2: Xác Nhận Xóa Kế Hoạch */}
+      {showDeleteModal && planToDelete && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header border-danger">
+                <h5 className="modal-title text-danger font-weight-bold" style={{ fontSize: "1.05rem" }}>
+                  ⚠️ Xác Nhận Xóa Kế Hoạch
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowDeleteModal(false)}
+                />
               </div>
-              <div style={{ background: "var(--neu-bg)", padding: "14px", borderRadius: "12px", boxShadow: "var(--neu-shadow-inset)" }}>
-                <div style={{ fontWeight: "700", fontSize: "0.9rem" }}>🥗 Dinh dưỡng trước và sau tập</div>
-                <p style={{ margin: "4px 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-                  Nạp tinh bột hấp thu chậm trước tập 1.5 - 2 tiếng và 20-30g protein sau buổi tập để chống dị hóa cơ.
+              <div className="modal-body">
+                <p style={{ fontSize: "0.92rem", marginBottom: "12px" }}>
+                  Bạn có chắc chắn muốn xóa giáo án <b>"{planToDelete.ten_ke_hoach}"</b>?
                 </p>
+                <div
+                  className="p-3 rounded"
+                  style={{
+                    backgroundColor: "rgba(239, 68, 68, 0.08)",
+                    border: "1px solid rgba(239, 68, 68, 0.2)",
+                    fontSize: "0.82rem",
+                    color: "var(--lp-danger)",
+                    lineHeight: 1.5
+                  }}
+                >
+                  🛡️ <b>Bảo toàn dữ liệu:</b> Các buổi tập trong giáo án này sẽ bị xóa, nhưng toàn bộ{" "}
+                  <b>Lịch sử tập luyện, Chuỗi Streak và Heatmap</b> trước đây của bạn vẫn được lưu giữ an toàn!
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-action-pill btn-pill-primary"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="button"
+                  className="btn-action-pill btn-pill-warning"
+                  style={{ background: "var(--lp-danger)", color: "#fff", border: "none" }}
+                  onClick={handleConfirmDeletePlan}
+                >
+                  Xác Nhận Xóa Vĩnh Viễn
+                </button>
               </div>
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button type="button" className="btn-secondary" onClick={() => setShowCommunityModal(false)}>Đóng</button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Thêm Bài Tập Vào Buổi */}
+      {showAddExModal && currentBuoiForEx && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
+                  ➕ Thêm Bài Tập Vào: {currentBuoiForEx.ten_buoi_tap}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowAddExModal(false)}
+                />
+              </div>
+              <form onSubmit={handleSaveExercise}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                      Chọn Từ Danh Mục Bài Tập Mẫu
+                    </label>
+                    <select
+                      className="form-select"
+                      value={exForm.bai_tap_the_chat_id}
+                      onChange={(e) => setExForm({ ...exForm, bai_tap_the_chat_id: e.target.value })}
+                    >
+                      <option value="">-- Hoặc nhập bài tập tùy chỉnh bên dưới --</option>
+                      {exerciseCatalog.map((ex) => (
+                        <option key={ex._id} value={ex._id}>
+                          [{ex.nhom_co}] {ex.ten_bai_tap}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {!exForm.bai_tap_the_chat_id && (
+                    <div className="p-3 mb-3 rounded" style={{ background: "var(--lp-bg-surface)" }}>
+                      <div className="mb-2">
+                        <label className="form-label" style={{ fontSize: "0.82rem", fontWeight: 600 }}>
+                          Tên Bài Tập Tùy Chỉnh *
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="VD: Hít đất, Kéo xà đơn..."
+                          value={exForm.ten_bai_tap}
+                          onChange={(e) => setExForm({ ...exForm, ten_bai_tap: e.target.value })}
+                        />
+                      </div>
+                      <div className="row g-2">
+                        <div className="col-6">
+                          <label className="form-label" style={{ fontSize: "0.82rem" }}>
+                            Nhóm Cơ
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Ngực, Lưng, Chân..."
+                            value={exForm.nhom_co}
+                            onChange={(e) => setExForm({ ...exForm, nhom_co: e.target.value })}
+                          />
+                        </div>
+                        <div className="col-6">
+                          <label className="form-label" style={{ fontSize: "0.82rem" }}>
+                            Loại
+                          </label>
+                          <select
+                            className="form-select"
+                            value={exForm.loai_bai_tap}
+                            onChange={(e) => setExForm({ ...exForm, loai_bai_tap: e.target.value })}
+                          >
+                            <option value="strength">Sức mạnh (Strength)</option>
+                            <option value="cardio">Cardio</option>
+                            <option value="core">Core / Bụng</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="row g-2">
+                    <div className="col-4">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                        Số Sets
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        className="form-control font-numeric"
+                        value={exForm.so_sets}
+                        onChange={(e) => setExForm({ ...exForm, so_sets: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-4">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                        Số Reps
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        className="form-control font-numeric"
+                        value={exForm.so_reps}
+                        onChange={(e) => setExForm({ ...exForm, so_reps: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-4">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                        Phút (Tùy chọn)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="180"
+                        className="form-control font-numeric"
+                        value={exForm.thoi_luong_phut}
+                        onChange={(e) => setExForm({ ...exForm, thoi_luong_phut: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn-action-pill btn-pill-primary"
+                    onClick={() => setShowAddExModal(false)}
+                  >
+                    Hủy Bỏ
+                  </button>
+                  <button type="submit" className="btn-action-pill btn-pill-primary" style={{ background: "var(--lp-primary)", color: "#fff" }}>
+                    Thêm Vào Buổi Tập
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 4: Sửa Thông Số Bài Tập */}
+      {showEditDetailModal && editingDetail && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
+                  ✏️ Sửa Thông Số: {editingDetail.bai_tap_the_chat_id?.ten_bai_tap}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowEditDetailModal(false)}
+                />
+              </div>
+              <form onSubmit={handleSaveEditDetail}>
+                <div className="modal-body">
+                  <div className="row g-2">
+                    <div className="col-6">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                        Số Sets
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        className="form-control font-numeric"
+                        value={detailForm.so_sets}
+                        onChange={(e) => setDetailForm({ ...detailForm, so_sets: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                        Số Reps
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        className="form-control font-numeric"
+                        value={detailForm.so_reps}
+                        onChange={(e) => setDetailForm({ ...detailForm, so_reps: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn-action-pill btn-pill-primary"
+                    onClick={() => setShowEditDetailModal(false)}
+                  >
+                    Hủy Bỏ
+                  </button>
+                  <button type="submit" className="btn-action-pill btn-pill-primary" style={{ background: "var(--lp-primary)", color: "#fff" }}>
+                    Lưu Thay Đổi
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

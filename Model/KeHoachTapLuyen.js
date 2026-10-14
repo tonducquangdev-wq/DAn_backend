@@ -6,6 +6,7 @@ const keHoachTapLuyenSchema = new mongoose.Schema(
         ten_ke_hoach: { type: String, required: true, trim: true },
         mo_ta: { type: String, default: null },
         is_active: { type: Boolean, default: false },
+        is_default: { type: Boolean, default: false },
         share_code: { type: String, default: null, sparse: true }
     },
     { timestamps: true }
