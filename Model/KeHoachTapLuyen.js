@@ -14,7 +14,12 @@ const keHoachTapLuyenSchema = new mongoose.Schema(
         dong_bo_lich: { type: Boolean, default: true },
         is_active: { type: Boolean, default: false },
         is_default: { type: Boolean, default: false },
-        share_code: { type: String, default: null, sparse: true }
+        share_code: { type: String, default: null, sparse: true, uppercase: true, trim: true },
+        is_public_community: { type: Boolean, default: false },
+        luot_tai: { type: Number, default: 0 },
+        luot_thich: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+        tac_gia_ten: { type: String, default: null },
+        the_loai: { type: String, default: "Tổng hợp" }
     },
     { timestamps: true }
 );

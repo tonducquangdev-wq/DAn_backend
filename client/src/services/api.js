@@ -88,6 +88,13 @@ export const api = {
   deleteExerciseDetail: (id) => request(`/tap-luyen/chi-tiet/${id}`, { method: "DELETE" }),
   getExerciseCatalog: () => request("/tap-luyen/exercises"),
 
+  // Cộng đồng Gymmer & Chia sẻ mã code giáo án
+  createShareCode: (planId, data = {}) => request(`/tap-luyen/plans/${planId}/share-code`, { method: "POST", body: JSON.stringify(data) }),
+  previewPlanByCode: (code) => request(`/tap-luyen/community/preview/${encodeURIComponent(code)}`),
+  importPlanByCode: (data) => request("/tap-luyen/community/import", { method: "POST", body: JSON.stringify(data) }),
+  getCommunityPlans: (params = "") => request(`/tap-luyen/community/explore${params}`),
+  toggleLikeCommunityPlan: (planId) => request(`/tap-luyen/community/${planId}/like`, { method: "POST" }),
+
   // Dự án & Task
   getDuAn: () => request("/du-an"),
   createDuAn: (data) => request("/du-an", { method: "POST", body: JSON.stringify(data) }),

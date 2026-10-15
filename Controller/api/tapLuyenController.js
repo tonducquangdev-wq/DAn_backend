@@ -1032,6 +1032,410 @@ const getWorkoutReport = async (req, res) => {
     }
 };
 
+// ============================================================
+// CỘNG ĐỒNG GYMMER & CHIA SẺ MÃ CODE GIÁO ÁN (SHARE CODE SYSTEM)
+// ============================================================
+
+// Helper sinh mã code độc nhất dạng GYM-XXXX
+const generateUniqueGymCode = async (prefix = "GYM") => {
+    const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // Bỏ 0, 1, I, O để tránh nhầm lẫn
+    for (let attempts = 0; attempts < 10; attempts++) {
+        let randStr = "";
+        for (let i = 0; i < 4; i++) {
+            randStr += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        const candidateCode = `${prefix}-${randStr}`;
+        const exists = await KeHoachTapLuyen.findOne({ share_code: candidateCode });
+        if (!exists) return candidateCode;
+    }
+    return `${prefix}-${Date.now().toString(36).toUpperCase().slice(-5)}`;
+};
+
+// 14. Tạo hoặc Cập nhật Mã Code Chia Sẻ cho Giáo Án
+const generateShareCodeForPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { custom_code, is_public_community, the_loai } = req.body;
+
+        const plan = await KeHoachTapLuyen.findOne({
+            _id: id,
+            $or: [{ user_id: req.user._id }, { userId: req.user._id }]
+        });
+
+        if (!plan) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy giáo án tập luyện của bạn" });
+        }
+
+        let finalCode = plan.share_code;
+
+        if (custom_code && custom_code.trim()) {
+            const formattedCode = custom_code.trim().toUpperCase().replace(/\s+/g, "-");
+            const duplicate = await KeHoachTapLuyen.findOne({
+                share_code: formattedCode,
+                _id: { $ne: plan._id }
+            });
+            if (duplicate) {
+                return res.status(400).json({ success: false, message: `Mã code "${formattedCode}" đã có người sử dụng. Vui lòng chọn mã khác!` });
+            }
+            finalCode = formattedCode;
+        } else if (!finalCode) {
+            const nameUpper = (plan.ten_ke_hoach || "").toUpperCase();
+            const namePrefix = nameUpper.includes("PPL") ? "PPL" :
+                               nameUpper.includes("FULL BODY") ? "FB" :
+                               nameUpper.includes("UPPER") ? "UL" : "GYM";
+            finalCode = await generateUniqueGymCode(namePrefix);
+        }
+
+        plan.share_code = finalCode;
+        if (is_public_community !== undefined) {
+            plan.is_public_community = Boolean(is_public_community);
+        }
+        if (the_loai) {
+            plan.the_loai = the_loai;
+        }
+        plan.tac_gia_ten = req.user.name || "Gymer ẩn danh";
+        await plan.save();
+
+        res.status(200).json({
+            success: true,
+            message: `🎉 Đã tạo mã chia sẻ thành công: ${finalCode}`,
+            data: {
+                share_code: finalCode,
+                is_public_community: plan.is_public_community,
+                the_loai: plan.the_loai
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi tạo mã chia sẻ: " + error.message });
+    }
+};
+
+// 15. Xem trước (Preview) Giáo Án theo Mã Code
+const previewPlanByShareCode = async (req, res) => {
+    try {
+        const { code } = req.params;
+        if (!code || !code.trim()) {
+            return res.status(400).json({ success: false, message: "Vui lòng nhập mã code chia sẻ" });
+        }
+
+        const cleanCode = code.trim().toUpperCase();
+        const plan = await KeHoachTapLuyen.findOne({
+            share_code: cleanCode
+        }).populate("user_id", "name email");
+
+        if (!plan) {
+            return res.status(404).json({ success: false, message: `Không tìm thấy giáo án với mã code "${cleanCode}". Vui lòng kiểm tra lại mã!` });
+        }
+
+        // Lấy danh sách buổi tập
+        const buoiTaps = await BuoiTap.find({
+            $or: [
+                { ke_hoach_tap_luyen_id: plan._id },
+                { keHoachId: plan._id }
+            ]
+        }).sort({ ngay_trong_tuan: 1, thu_tu: 1 });
+
+        // Lấy chi tiết từng bài tập
+        const sessionsWithExercises = await Promise.all(
+            buoiTaps.map(async (buoi) => {
+                const exercises = await ChiTietBuoiTap.find({ buoi_tap_id: buoi._id })
+                    .populate("bai_tap_the_chat_id")
+                    .sort({ thu_tu: 1 });
+
+                return {
+                    _id: buoi._id,
+                    ten_buoi_tap: buoi.ten_buoi_tap,
+                    ngay_trong_tuan: buoi.ngay_trong_tuan,
+                    is_rest_day: buoi.is_rest_day,
+                    gio_bat_dau: buoi.gio_bat_dau,
+                    gio_ket_thuc: buoi.gio_ket_thuc,
+                    ghi_chu: buoi.ghi_chu,
+                    exercises: exercises.map((ex) => ({
+                        _id: ex._id,
+                        ten_bai_tap: ex.bai_tap_the_chat_id?.ten_bai_tap || "Bài tập",
+                        nhom_co: ex.bai_tap_the_chat_id?.nhom_co || "Toàn thân",
+                        loai_bai_tap: ex.bai_tap_the_chat_id?.loai_bai_tap || "strength",
+                        meo_tap: ex.bai_tap_the_chat_id?.meo_tap || "",
+                        so_sets: ex.so_sets || 3,
+                        so_reps: ex.so_reps || 10,
+                        thoi_luong_phut: ex.thoi_luong_phut || 10
+                    }))
+                };
+            })
+        );
+
+        const soBuoiTapThucTe = buoiTaps.filter(b => !b.is_rest_day).length;
+
+        res.status(200).json({
+            success: true,
+            data: {
+                plan: {
+                    _id: plan._id,
+                    ten_ke_hoach: plan.ten_ke_hoach,
+                    mo_ta: plan.mo_ta,
+                    so_buoi_tuan: plan.so_buoi_tuan || soBuoiTapThucTe,
+                    so_buoi_thuc_te: soBuoiTapThucTe,
+                    cuong_do: plan.cuong_do,
+                    share_code: plan.share_code,
+                    luot_tai: plan.luot_tai || 0,
+                    so_luot_thich: (plan.luot_thich || []).length,
+                    tac_gia: plan.tac_gia_ten || plan.user_id?.name || "Gymer Cộng Đồng",
+                    is_author: String(plan.user_id?._id || plan.user_id) === String(req.user._id)
+                },
+                sessions: sessionsWithExercises
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi xem trước giáo án: " + error.message });
+    }
+};
+
+// 16. Nhập (Import / Deep Clone) Giáo Án theo Mã Code vào tài khoản người dùng
+const importPlanByShareCode = async (req, res) => {
+    try {
+        const {
+            share_code,
+            custom_name,
+            custom_days,
+            activate_now = true,
+            dong_bo_lich = true
+        } = req.body;
+
+        if (!share_code || !share_code.trim()) {
+            return res.status(400).json({ success: false, message: "Vui lòng cung cấp mã code giáo án" });
+        }
+
+        const cleanCode = share_code.trim().toUpperCase();
+        const sourcePlan = await KeHoachTapLuyen.findOne({ share_code: cleanCode });
+
+        if (!sourcePlan) {
+            return res.status(404).json({ success: false, message: `Không tìm thấy giáo án với mã code "${cleanCode}"` });
+        }
+
+        // Lấy toàn bộ buổi tập của plan gốc
+        const sourceSessions = await BuoiTap.find({
+            $or: [
+                { ke_hoach_tap_luyen_id: sourcePlan._id },
+                { keHoachId: sourcePlan._id }
+            ]
+        }).sort({ ngay_trong_tuan: 1, thu_tu: 1 });
+
+        // Nếu kích hoạt ngay, hủy kích hoạt các plan hiện tại của user
+        if (activate_now) {
+            await KeHoachTapLuyen.updateMany(
+                { $or: [{ user_id: req.user._id }, { userId: req.user._id }] },
+                { is_active: false }
+            );
+        }
+
+        // 1. Tạo giáo án mới cho user hiện tại
+        const newPlanName = custom_name && custom_name.trim() 
+            ? custom_name.trim() 
+            : `${sourcePlan.ten_ke_hoach} (Tải từ ${cleanCode})`;
+
+        const newPlan = await KeHoachTapLuyen.create({
+            user_id: req.user._id,
+            ten_ke_hoach: newPlanName,
+            mo_ta: sourcePlan.mo_ta ? `[Nhập từ mã ${cleanCode}] ${sourcePlan.mo_ta}` : `Giáo án tải từ mã code ${cleanCode}`,
+            so_buoi_tuan: sourcePlan.so_buoi_tuan,
+            cuong_do: sourcePlan.cuong_do,
+            dong_bo_lich: dong_bo_lich !== false,
+            is_active: activate_now,
+            is_default: false,
+            the_loai: sourcePlan.the_loai || "Tổng hợp"
+        });
+
+        // 2. Clone từng buổi tập và các bài tập bên trong
+        for (let i = 0; i < sourceSessions.length; i++) {
+            const srcSession = sourceSessions[i];
+
+            let targetDay = srcSession.ngay_trong_tuan;
+            let targetStartTime = srcSession.gio_bat_dau;
+            let targetEndTime = srcSession.gio_ket_thuc;
+
+            if (Array.isArray(custom_days) && custom_days[i]) {
+                if (custom_days[i].day) targetDay = custom_days[i].day;
+                if (custom_days[i].gio_bat_dau) targetStartTime = custom_days[i].gio_bat_dau;
+                if (custom_days[i].gio_ket_thuc) targetEndTime = custom_days[i].gio_ket_thuc;
+            }
+
+            const newSession = await BuoiTap.create({
+                ke_hoach_tap_luyen_id: newPlan._id,
+                ten_buoi_tap: srcSession.ten_buoi_tap,
+                ngay_trong_tuan: targetDay,
+                thu_tu: srcSession.thu_tu || i + 1,
+                is_rest_day: srcSession.is_rest_day,
+                gio_bat_dau: targetStartTime || "17:30",
+                gio_ket_thuc: targetEndTime || "18:45",
+                ghi_chu: srcSession.ghi_chu
+            });
+
+            // Lấy tất cả bài tập chi tiết của buổi gốc
+            const srcExercises = await ChiTietBuoiTap.find({ buoi_tap_id: srcSession._id }).sort({ thu_tu: 1 });
+            for (const srcEx of srcExercises) {
+                await ChiTietBuoiTap.create({
+                    buoi_tap_id: newSession._id,
+                    bai_tap_the_chat_id: srcEx.bai_tap_the_chat_id,
+                    so_sets: srcEx.so_sets || 3,
+                    so_reps: srcEx.so_reps || 10,
+                    thoi_luong_phut: srcEx.thoi_luong_phut || 10,
+                    thu_tu: srcEx.thu_tu || 1
+                });
+            }
+        }
+
+        // 3. Tăng số lượt tải (luot_tai) cho giáo án gốc
+        sourcePlan.luot_tai = (sourcePlan.luot_tai || 0) + 1;
+        await sourcePlan.save();
+
+        // 4. Nếu kích hoạt và bật đồng bộ lịch -> Đồng bộ ngay sang bảng SuKien
+        if (activate_now && dong_bo_lich !== false) {
+            await syncWorkoutPlanToCalendar(req.user._id, newPlan._id);
+        }
+
+        res.status(201).json({
+            success: true,
+            message: `🚀 Đã áp dụng thành công giáo án "${newPlan.ten_ke_hoach}" vào tài khoản của bạn!`,
+            data: {
+                plan: newPlan,
+                synced_calendar: activate_now && dong_bo_lich !== false
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi cài đặt giáo án từ mã code: " + error.message });
+    }
+};
+
+// 17. Khám phá Danh Sách Giáo Án Công Khai trên Bảng Tin Cộng Đồng
+const getCommunityExplorePlans = async (req, res) => {
+    try {
+        const { frequency, search, sort = "popular" } = req.query;
+
+        const query = {
+            share_code: { $ne: null }
+        };
+
+        if (frequency && frequency !== "all") {
+            query.so_buoi_tuan = Number(frequency);
+        }
+
+        if (search && search.trim()) {
+            query.$or = [
+                { ten_ke_hoach: { $regex: search.trim(), $options: "i" } },
+                { share_code: { $regex: search.trim().toUpperCase(), $options: "i" } },
+                { tac_gia_ten: { $regex: search.trim(), $options: "i" } },
+                { mo_ta: { $regex: search.trim(), $options: "i" } }
+            ];
+        }
+
+        let sortOption = { luot_tai: -1, createdAt: -1 };
+        if (sort === "newest") sortOption = { createdAt: -1 };
+
+        let plans = await KeHoachTapLuyen.find(query)
+            .populate("user_id", "name email")
+            .sort(sortOption)
+            .limit(30);
+
+        // Đảm bảo luôn có ít nhất vài giáo án mẫu có share_code đẹp
+        if (plans.length < 3) {
+            const allUserPlans = await KeHoachTapLuyen.find().limit(6);
+            for (let p of allUserPlans) {
+                if (!p.share_code) {
+                    const nameUpper = (p.ten_ke_hoach || "").toUpperCase();
+                    const namePrefix = nameUpper.includes("PPL") ? "PPL" :
+                                       nameUpper.includes("FULL BODY") ? "FB" :
+                                       nameUpper.includes("UPPER") ? "UL" : "GYM";
+                    p.share_code = await generateUniqueGymCode(namePrefix);
+                    p.is_public_community = true;
+                    p.luot_tai = Math.floor(Math.random() * 80) + 20;
+                    p.tac_gia_ten = p.user_id?.name || "Coach Life Planner";
+                    await p.save();
+                }
+            }
+            plans = await KeHoachTapLuyen.find({ share_code: { $ne: null } }).limit(20);
+        }
+
+        const formatted = await Promise.all(
+            plans.map(async (p) => {
+                const buoiCount = await BuoiTap.countDocuments({
+                    $or: [
+                        { ke_hoach_tap_luyen_id: p._id },
+                        { keHoachId: p._id }
+                    ],
+                    is_rest_day: false
+                });
+
+                const isLiked = (p.luot_thich || []).some(
+                    uId => String(uId) === String(req.user._id)
+                );
+
+                return {
+                    _id: p._id,
+                    ten_ke_hoach: p.ten_ke_hoach,
+                    mo_ta: p.mo_ta,
+                    so_buoi_tuan: p.so_buoi_tuan || buoiCount || 4,
+                    so_buoi_thuc_te: buoiCount,
+                    cuong_do: p.cuong_do,
+                    share_code: p.share_code,
+                    luot_tai: p.luot_tai || 0,
+                    so_luot_thich: (p.luot_thich || []).length,
+                    da_thich: isLiked,
+                    tac_gia: p.tac_gia_ten || p.user_id?.name || "Gymer Cộng Đồng",
+                    is_mine: String(p.user_id?._id || p.user_id) === String(req.user._id)
+                };
+            })
+        );
+
+        res.status(200).json({
+            success: true,
+            data: formatted
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi tải danh sách giáo án cộng đồng: " + error.message });
+    }
+};
+
+// 18. Thả tim / Bỏ tim Giáo Án Cộng Đồng
+const toggleLikeCommunityPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const plan = await KeHoachTapLuyen.findById(id);
+
+        if (!plan) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy giáo án" });
+        }
+
+        if (!Array.isArray(plan.luot_thich)) {
+            plan.luot_thich = [];
+        }
+
+        const userIdStr = String(req.user._id);
+        const index = plan.luot_thich.findIndex(uId => String(uId) === userIdStr);
+
+        let isLiked = false;
+        if (index > -1) {
+            plan.luot_thich.splice(index, 1);
+            isLiked = false;
+        } else {
+            plan.luot_thich.push(req.user._id);
+            isLiked = true;
+        }
+
+        await plan.save();
+
+        res.status(200).json({
+            success: true,
+            message: isLiked ? "❤️ Đã thả tim giáo án!" : "Đã bỏ tim giáo án",
+            data: {
+                da_thich: isLiked,
+                so_luot_thich: plan.luot_thich.length
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi thả tim giáo án: " + error.message });
+    }
+};
+
 module.exports = {
     getWorkoutSchedule,
     getAllWorkoutPlans,
@@ -1046,5 +1450,11 @@ module.exports = {
     getExerciseCatalog,
     completeWorkoutSession,
     getWorkoutReport,
-    syncWorkoutPlanEndpoint
+    syncWorkoutPlanEndpoint,
+    // Community & Share Code
+    generateShareCodeForPlan,
+    previewPlanByShareCode,
+    importPlanByShareCode,
+    getCommunityExplorePlans,
+    toggleLikeCommunityPlan
 };

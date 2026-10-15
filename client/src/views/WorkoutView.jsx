@@ -593,6 +593,25 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
   const [editingDetail, setEditingDetail] = useState(null);
   const [detailForm, setDetailForm] = useState({ so_sets: 3, so_reps: 10, thoi_luong_phut: "" });
 
+  // =========================================================================
+  // STATE CỘNG ĐỒNG GYMMER & CHIA SẺ MÃ CODE (COMMUNITY & SHARE CODE)
+  // =========================================================================
+  const [communityPlans, setCommunityPlans] = useState([]);
+  const [loadingCommunity, setLoadingCommunity] = useState(false);
+  const [communityFreqFilter, setCommunityFreqFilter] = useState("all");
+  const [communitySearch, setCommunitySearch] = useState("");
+  const [quickCodeInput, setQuickCodeInput] = useState("");
+  const [previewModalData, setPreviewModalData] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [isImportingPlan, setIsImportingPlan] = useState(false);
+  const [importForm, setImportForm] = useState({ custom_name: "", activate_now: true, dong_bo_lich: true });
+  const [shareModalPlan, setShareModalPlan] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareForm, setShareForm] = useState({ custom_code: "", is_public_community: true, the_loai: "Tăng cơ - Hypertrophy" });
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState("");
+
   // Nạp toàn bộ dữ liệu khi khởi động
   const loadAllData = async () => {
     try {
@@ -615,8 +634,180 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
     }
   };
 
+  // Nạp danh sách giáo án cộng đồng khám phá
+  const loadCommunityPlans = async (freq = communityFreqFilter, search = communitySearch) => {
+    try {
+      setLoadingCommunity(true);
+      let queryStr = "";
+      const params = new URLSearchParams();
+      if (freq && freq !== "all") params.append("frequency", freq);
+      if (search && search.trim()) params.append("search", search.trim());
+      const pStr = params.toString();
+      if (pStr) queryStr = `?${pStr}`;
+
+      const res = await api.getCommunityPlans(queryStr);
+      if (res.success) {
+        setCommunityPlans(res.data || []);
+      }
+    } catch (err) {
+      console.error("Lỗi tải kế hoạch cộng đồng:", err);
+    } finally {
+      setLoadingCommunity(false);
+    }
+  };
+
+  // Thả tim giáo án cộng đồng (Optimistic Update)
+  const handleToggleLike = async (planId) => {
+    try {
+      setCommunityPlans((prev) =>
+        prev.map((p) => {
+          if (p._id === planId) {
+            const nextLiked = !p.da_thich;
+            return {
+              ...p,
+              da_thich: nextLiked,
+              so_luot_thich: nextLiked ? (p.so_luot_thich || 0) + 1 : Math.max(0, (p.so_luot_thich || 1) - 1)
+            };
+          }
+          return p;
+        })
+      );
+      await api.toggleLikeCommunityPlan(planId);
+    } catch (err) {
+      console.error("Lỗi thả tim:", err);
+    }
+  };
+
+  // Mở modal chia sẻ giáo án
+  const handleOpenShareModal = (plan) => {
+    setShareModalPlan(plan);
+    setShareForm({
+      custom_code: plan.share_code || "",
+      is_public_community: plan.is_public_community !== false,
+      the_loai: plan.the_loai || "Tăng cơ - Hypertrophy"
+    });
+    setCopyFeedback("");
+    setShowShareModal(true);
+  };
+
+  // Sinh hoặc cập nhật mã chia sẻ
+  const handleGenerateShareCode = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!shareModalPlan) return;
+    try {
+      setIsGeneratingCode(true);
+      const res = await api.createShareCode(shareModalPlan._id, shareForm);
+      if (res.success) {
+        const updatedCode = res.data.share_code;
+        setShareModalPlan((prev) => ({
+          ...prev,
+          share_code: updatedCode,
+          is_public_community: res.data.is_public_community,
+          the_loai: res.data.the_loai
+        }));
+        setPlansList((prev) =>
+          prev.map((p) =>
+            p._id === shareModalPlan._id
+              ? { ...p, share_code: updatedCode, is_public_community: res.data.is_public_community, the_loai: res.data.the_loai }
+              : p
+          )
+        );
+        setCopyFeedback("🎉 Đã tạo mã chia sẻ thành công: " + updatedCode);
+        setTimeout(() => setCopyFeedback(""), 3500);
+      } else {
+        alert("⚠️ " + res.message);
+      }
+    } catch (err) {
+      console.error("Lỗi tạo share code:", err);
+      alert("Không thể tạo mã code: " + err.message);
+    } finally {
+      setIsGeneratingCode(false);
+    }
+  };
+
+  // Copy mã code vào clipboard
+  const handleCopyCode = (code) => {
+    if (!code) return;
+    navigator.clipboard.writeText(code);
+    setCopyFeedback(`Đã sao chép mã [ ${code} ] vào bộ nhớ tạm!`);
+    setTimeout(() => setCopyFeedback(""), 3000);
+  };
+
+  // Xem trước giáo án theo mã code
+  const handleQuickPreviewByCode = async (codeToPreview) => {
+    const targetCode = (codeToPreview || quickCodeInput || "").trim().toUpperCase();
+    if (!targetCode) {
+      alert("Vui lòng nhập mã code giáo án (VD: PPL-PRO, GYM-XXXX)!");
+      return;
+    }
+    try {
+      setIsPreviewLoading(true);
+      const res = await api.previewPlanByCode(targetCode);
+      if (res.success && res.data) {
+        setPreviewModalData(res.data);
+        setImportForm({
+          custom_name: res.data.plan.ten_ke_hoach,
+          activate_now: true,
+          dong_bo_lich: true
+        });
+        setShowPreviewModal(true);
+      } else {
+        alert("⚠️ " + (res.message || "Không tìm thấy giáo án với mã code này. Vui lòng kiểm tra lại!"));
+      }
+    } catch (err) {
+      console.error("Lỗi xem trước giáo án:", err);
+      alert("Lỗi kết nối máy chủ: " + err.message);
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  // Tiến hành nhập (Clone) giáo án vào tài khoản
+  const handleExecuteImportPlan = async () => {
+    if (!previewModalData?.plan?.share_code) return;
+    try {
+      setIsImportingPlan(true);
+      const payload = {
+        share_code: previewModalData.plan.share_code,
+        custom_name: importForm.custom_name,
+        activate_now: importForm.activate_now,
+        dong_bo_lich: importForm.dong_bo_lich
+      };
+      const res = await api.importPlanByCode(payload);
+      if (res.success) {
+        alert("🎉 " + (res.message || "Đã nhập giáo án thành công!"));
+        setShowPreviewModal(false);
+        setQuickCodeInput("");
+        await loadAllData();
+        setActiveTab("plans");
+      } else {
+        alert("⚠️ " + res.message);
+      }
+    } catch (err) {
+      console.error("Lỗi nhập giáo án:", err);
+      alert("Lỗi nhập giáo án: " + err.message);
+    } finally {
+      setIsImportingPlan(false);
+    }
+  };
+
   useEffect(() => {
     loadAllData();
+    loadCommunityPlans();
+
+    // Hỗ trợ chia sẻ đường dẫn trực tiếp: ?code=XYZ
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const codeParam = urlParams.get("code");
+      if (codeParam) {
+        const cleanCode = codeParam.trim().toUpperCase();
+        setQuickCodeInput(cleanCode);
+        handleQuickPreviewByCode(cleanCode);
+        setActiveTab("community");
+      }
+    } catch (e) {
+      // Ignored
+    }
   }, []);
 
   // Quản lý Stopwatch
@@ -2107,6 +2298,16 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
             <span>✨</span> Thiết Kế Giáo Án Mới
           </button>
           <button
+            id="workout-tab-community"
+            className={`workout-nav-tab-btn ${activeTab === "community" ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab("community");
+              loadCommunityPlans();
+            }}
+          >
+            <span>🌐</span> Cộng Đồng Gymmer
+          </button>
+          <button
             id="workout-tab-history"
             className={`workout-nav-tab-btn ${activeTab === "history" ? "active" : ""}`}
             onClick={() => setActiveTab("history")}
@@ -2612,14 +2813,25 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                 <div className={`plan-card-item ${plan.is_active ? "is-active-plan" : ""}`}>
                   <div>
                     <div className="d-flex align-items-center justify-content-between mb-2">
-                      {plan.is_active ? (
-                        <span className="badge-metric-tag">⚡ ĐANG SỬ DỤNG</span>
-                      ) : (
-                        <span className="badge-group-tag">Giáo án lưu trữ</span>
-                      )}
-                      {plan.is_default && (
-                        <span className="badge-group-tag" style={{ fontSize: "0.68rem" }}>
-                          Mẫu mặc định
+                      <div className="d-flex align-items-center gap-1 flex-wrap">
+                        {plan.is_active ? (
+                          <span className="badge-metric-tag">⚡ ĐANG SỬ DỤNG</span>
+                        ) : (
+                          <span className="badge-group-tag">Giáo án lưu trữ</span>
+                        )}
+                        {plan.is_default && (
+                          <span className="badge-group-tag" style={{ fontSize: "0.68rem" }}>
+                            Mẫu mặc định
+                          </span>
+                        )}
+                      </div>
+                      {plan.share_code && (
+                        <span
+                          className="community-code-badge"
+                          onClick={() => handleCopyCode(plan.share_code)}
+                          title="Click để sao chép mã chia sẻ"
+                        >
+                          🔗 {plan.share_code}
                         </span>
                       )}
                     </div>
@@ -2650,6 +2862,14 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                         onClick={() => loadPlanForEdit(plan)}
                       >
                         ⚙️ Chi Tiết
+                      </button>
+                      <button
+                        className="btn-action-pill btn-pill-primary"
+                        style={{ height: "30px", fontSize: "0.74rem", borderColor: "var(--lp-primary)" }}
+                        onClick={() => handleOpenShareModal(plan)}
+                        title="Chia sẻ mã code cho bạn bè hoặc cộng đồng"
+                      >
+                        🔗 Chia Sẻ
                       </button>
                       <button
                         className="btn-icon-circle"
@@ -2836,6 +3056,237 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
           </div>
 
           {renderWizardDesigner(true)}
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 2.8: CỘNG ĐỒNG GYMMER & CHIA SẺ MÃ CODE GIÁO ÁN
+          ========================================================================= */}
+      {activeTab === "community" && (
+        <div className="community-hub-container">
+          {/* Hero Banner with Quick Code Input */}
+          <div className="community-hero-card">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <span className="community-hero-badge">🌐 Mạng Lưới Gymer Độc Lập</span>
+              {copyFeedback && (
+                <span className="badge bg-success text-white py-1 px-3" style={{ fontSize: "0.8rem", borderRadius: "999px" }}>
+                  {copyFeedback}
+                </span>
+              )}
+            </div>
+            
+            <h2 className="community-hero-title">Cộng Đồng Giáo Án & Chia Sẻ Mã Code 🏋️‍♂️</h2>
+            <p className="community-hero-subtitle">
+              Chia sẻ giáo án độc quyền của bạn cho bạn bè qua mã Code ngắn gọn. Khi bạn bè nhập mã, hệ thống sẽ tự động sao chép toàn bộ buổi tập và các bài tập khoa học vào tài khoản của họ ngay lập tức!
+            </p>
+
+            {/* Quick Code Entry Bar */}
+            <div className="community-code-box-wrap">
+              <input
+                type="text"
+                className="community-code-input"
+                placeholder="NHẬP MÃ CODE (VD: GYM-8X92, PPL-4D2K)..."
+                value={quickCodeInput}
+                onChange={(e) => setQuickCodeInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleQuickPreviewByCode();
+                }}
+              />
+              <button
+                type="button"
+                className="community-code-import-btn"
+                disabled={isPreviewLoading || !quickCodeInput.trim()}
+                onClick={() => handleQuickPreviewByCode()}
+              >
+                {isPreviewLoading ? "⏳ Đang tra cứu..." : "🔍 Xem Trước & Nhập"}
+              </button>
+            </div>
+
+            {/* Quick Suggestions Tags */}
+            <div className="community-quick-tags">
+              <span style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)", fontWeight: 600 }}>Mã gợi ý phổ biến:</span>
+              {["PPL-PRO", "FB-3DAYS", "UPPER-LOWER-4", "BULK-5DAYS"].map((codeTag) => (
+                <button
+                  key={codeTag}
+                  type="button"
+                  className="community-quick-pill"
+                  onClick={() => {
+                    setQuickCodeInput(codeTag);
+                    handleQuickPreviewByCode(codeTag);
+                  }}
+                >
+                  ⚡ {codeTag}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Filter Bar: Frequency & Search */}
+          <div className="community-filter-bar">
+            <div className="community-pills-group">
+              {[
+                { label: "Tất Cả", value: "all" },
+                { label: "3 Buổi / Tuần", value: "3" },
+                { label: "4 Buổi / Tuần", value: "4" },
+                { label: "5 Buổi / Tuần", value: "5" },
+                { label: "6 Buổi / Tuần", value: "6" }
+              ].map((pill) => (
+                <button
+                  key={pill.value}
+                  type="button"
+                  className={`community-filter-pill-btn ${communityFreqFilter === pill.value ? "active" : ""}`}
+                  onClick={() => {
+                    setCommunityFreqFilter(pill.value);
+                    loadCommunityPlans(pill.value, communitySearch);
+                  }}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="d-flex align-items-center gap-2">
+              <div className="community-search-box">
+                <span>🔍</span>
+                <input
+                  type="text"
+                  className="community-search-input"
+                  placeholder="Tìm tên giáo án, tác giả, mã..."
+                  value={communitySearch}
+                  onChange={(e) => {
+                    setCommunitySearch(e.target.value);
+                    loadCommunityPlans(communityFreqFilter, e.target.value);
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                className="btn-action-pill btn-pill-primary"
+                onClick={() => loadCommunityPlans(communityFreqFilter, communitySearch)}
+                title="Làm mới bảng tin"
+              >
+                🔄
+              </button>
+            </div>
+          </div>
+
+          {/* Grid of Community Plan Cards */}
+          {loadingCommunity ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status" />
+              <div className="mt-2 text-muted" style={{ fontSize: "0.85rem" }}>Đang tải danh sách giáo án cộng đồng...</div>
+            </div>
+          ) : communityPlans.length === 0 ? (
+            <div className="workout-main-card text-center py-5">
+              <div style={{ fontSize: "3rem" }}>🏋️‍♂️</div>
+              <h4 style={{ fontWeight: 700, margin: "12px 0 6px 0" }}>Chưa có giáo án cộng đồng nào phù hợp</h4>
+              <p style={{ color: "var(--lp-text-muted)", fontSize: "0.85rem", maxWidth: "480px", margin: "0 auto 16px auto" }}>
+                Hãy chia sẻ giáo án đầu tiên của bạn lên cộng đồng hoặc xóa bộ lọc tìm kiếm để xem thêm các lịch tập khác!
+              </p>
+              <button
+                type="button"
+                className="btn-action-pill btn-pill-primary"
+                onClick={() => {
+                  setCommunityFreqFilter("all");
+                  setCommunitySearch("");
+                  loadCommunityPlans("all", "");
+                }}
+              >
+                Xóa Bộ Lọc
+              </button>
+            </div>
+          ) : (
+            <div className="community-grid">
+              {communityPlans.map((cPlan) => (
+                <div key={cPlan._id} className="community-plan-card">
+                  <div>
+                    {/* Header: Author & Like */}
+                    <div className="community-card-author-row">
+                      <div className="community-card-author-info">
+                        <div className="community-card-avatar">
+                          {(cPlan.tac_gia || "G").charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="community-card-author-name">
+                            {cPlan.tac_gia || "Gymer Cộng Đồng"}
+                            {cPlan.is_mine && <span className="ms-1 badge bg-primary" style={{ fontSize: "0.62rem" }}>Bạn</span>}
+                          </div>
+                          <div className="community-card-author-role">Huấn luyện viên / Gymer</div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className={`community-like-btn ${cPlan.da_thich ? "liked" : ""}`}
+                        onClick={() => handleToggleLike(cPlan._id)}
+                        title={cPlan.da_thich ? "Bỏ thích" : "Thả tim"}
+                      >
+                        <span>{cPlan.da_thich ? "❤️" : "🤍"}</span>
+                        <span>{cPlan.so_luot_thich || 0}</span>
+                      </button>
+                    </div>
+
+                    {/* Title & Desc */}
+                    <h3 className="community-plan-title">{cPlan.ten_ke_hoach}</h3>
+                    <p className="community-plan-desc">
+                      {cPlan.mo_ta || "Giáo án tập luyện chuẩn khoa học được chia sẻ bởi thành viên cộng đồng."}
+                    </p>
+
+                    {/* Meta Badges */}
+                    <div className="community-plan-meta-row">
+                      <span className="community-meta-badge">
+                        ⚡ {cPlan.so_buoi_tuan || cPlan.so_buoi_thuc_te || 4} Buổi / Tuần
+                      </span>
+                      <span className="community-meta-badge">
+                        📥 {cPlan.luot_tai || 0} Lượt nhập
+                      </span>
+                      {cPlan.cuong_do && (
+                        <span className="community-meta-badge">
+                          🔥 {cPlan.cuong_do === "beginner" ? "Cơ bản" : cPlan.cuong_do === "intermediate" ? "Trung cấp" : "Nâng cao"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Footer: Code Chip & Actions */}
+                  <div className="community-card-footer">
+                    <div className="community-code-chip-box">
+                      <div>
+                        <div className="community-code-chip-label">Mã chia sẻ:</div>
+                        <div className="community-code-chip-val">{cPlan.share_code}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="community-code-chip-btn"
+                        onClick={() => handleCopyCode(cPlan.share_code)}
+                        title="Sao chép mã chia sẻ"
+                      >
+                        📋 Sao chép
+                      </button>
+                    </div>
+
+                    <div className="community-action-row">
+                      <button
+                        type="button"
+                        className="community-btn-preview"
+                        onClick={() => handleQuickPreviewByCode(cPlan.share_code)}
+                        title="Xem chi tiết các buổi và bài tập"
+                      >
+                        👁️ Xem chi tiết
+                      </button>
+                      <button
+                        type="button"
+                        className="community-btn-import"
+                        onClick={() => handleQuickPreviewByCode(cPlan.share_code)}
+                      >
+                        ⚡ Dùng Giáo Án Này
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -3425,6 +3876,315 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: CHIA SẺ GIÁO ÁN LÊN CỘNG ĐỒNG & TẠO MÃ CODE
+          ========================================================================= */}
+      {showShareModal && shareModalPlan && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
+                  🔗 Chia Sẻ Giáo Án & Tạo Mã Code
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowShareModal(false)}
+                />
+              </div>
+
+              <form onSubmit={handleGenerateShareCode}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: "0.85rem" }}>
+                      Giáo án đang chọn
+                    </label>
+                    <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--lp-primary)" }}>
+                      {shareModalPlan.ten_ke_hoach}
+                    </div>
+                  </div>
+
+                  {shareModalPlan.share_code ? (
+                    <div className="share-modal-code-display">
+                      <div style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)", marginBottom: "4px" }}>
+                        MÃ CODE CHIA SẺ HIỆN TẠI
+                      </div>
+                      <div className="share-modal-code-text">{shareModalPlan.share_code}</div>
+                      <div className="d-flex justify-content-center gap-2 mt-2">
+                        <button
+                          type="button"
+                          className="btn-action-pill btn-pill-primary"
+                          style={{ height: "32px", fontSize: "0.76rem" }}
+                          onClick={() => handleCopyCode(shareModalPlan.share_code)}
+                        >
+                          📋 Sao chép mã code
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-action-pill btn-pill-primary"
+                          style={{ height: "32px", fontSize: "0.76rem" }}
+                          onClick={() => {
+                            const shareUrl = `${window.location.origin}/workout?code=${shareModalPlan.share_code}`;
+                            navigator.clipboard.writeText(shareUrl);
+                            setCopyFeedback("Đã sao chép link chia sẻ!");
+                            setTimeout(() => setCopyFeedback(""), 3000);
+                          }}
+                        >
+                          🔗 Sao chép link
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="alert alert-info py-2" style={{ fontSize: "0.82rem" }}>
+                      💡 Giáo án này chưa có mã chia sẻ. Hãy bấm "Tạo Mã Code" bên dưới để hệ thống sinh mã độc quyền cho bạn!
+                    </div>
+                  )}
+
+                  {copyFeedback && (
+                    <div className="alert alert-success py-2 mb-3 text-center" style={{ fontSize: "0.82rem" }}>
+                      {copyFeedback}
+                    </div>
+                  )}
+
+                  <div className="mb-3">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.84rem" }}>
+                      Mã Code Tự Chọn (Tùy chọn)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control font-numeric"
+                      placeholder="VD: PPL-PRO, CHONG-DAY-VIP..."
+                      value={shareForm.custom_code}
+                      onChange={(e) => setShareForm({ ...shareForm, custom_code: e.target.value.toUpperCase() })}
+                      style={{ letterSpacing: "1.5px", fontWeight: 700 }}
+                    />
+                    <small className="text-muted" style={{ fontSize: "0.74rem" }}>
+                      Để trống để hệ thống tự động sinh mã ngẫu nhiên duy nhất (VD: GYM-9X4A).
+                    </small>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.84rem" }}>
+                      Thể Loại Giáo Án
+                    </label>
+                    <select
+                      className="form-select"
+                      value={shareForm.the_loai}
+                      onChange={(e) => setShareForm({ ...shareForm, the_loai: e.target.value })}
+                    >
+                      <option value="Tăng cơ - Hypertrophy">Tăng cơ - Hypertrophy</option>
+                      <option value="Sức mạnh - Strength">Sức mạnh - Strength</option>
+                      <option value="Giảm mỡ & Siết cơ">Giảm mỡ & Siết cơ</option>
+                      <option value="Tối giản cho người bận rộn">Tối giản cho người bận rộn</option>
+                      <option value="Calisthenics & Bodyweight">Calisthenics & Bodyweight</option>
+                      <option value="Thể lực & Cardio">Thể lực & Cardio</option>
+                    </select>
+                  </div>
+
+                  <div className="form-check mb-2">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="publicCommunityCheck"
+                      checked={shareForm.is_public_community}
+                      onChange={(e) => setShareForm({ ...shareForm, is_public_community: e.target.checked })}
+                    />
+                    <label className="form-check-label" htmlFor="publicCommunityCheck" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                      🌐 Công khai trên Bảng Tin Cộng Đồng Gymmer
+                    </label>
+                  </div>
+                  <small className="text-muted d-block mb-3" style={{ fontSize: "0.74rem", marginLeft: "24px" }}>
+                    Khi bật, mọi người trong cộng đồng có thể nhìn thấy, đánh giá và tải giáo án này về lịch của họ.
+                  </small>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn-action-pill btn-pill-primary"
+                    onClick={() => setShowShareModal(false)}
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-action-pill btn-pill-primary"
+                    style={{ background: "var(--lp-primary)", color: "#fff" }}
+                    disabled={isGeneratingCode}
+                  >
+                    {isGeneratingCode ? "⏳ Đang tạo..." : shareModalPlan.share_code ? "🔄 Cập Nhật Mã" : "✨ Tạo Mã Chia Sẻ"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: XEM TRƯỚC & NHẬP GIÁO ÁN VÀO TÀI KHOẢN (PREVIEW & IMPORT)
+          ========================================================================= */}
+      {showPreviewModal && previewModalData && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
+        >
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <div>
+                  <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.1rem" }}>
+                    ⚡ Xem Trước & Nhập Giáo Án Theo Mã Code
+                  </h5>
+                  <div style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)" }}>
+                    Mã code: <strong style={{ color: "var(--lp-primary)", letterSpacing: "1px" }}>{previewModalData.plan.share_code}</strong> • Tác giả: <strong>{previewModalData.plan.tac_gia || "Gymer Cộng Đồng"}</strong>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowPreviewModal(false)}
+                />
+              </div>
+
+              <div className="modal-body">
+                {/* Thông tin giáo án */}
+                <div className="workout-main-card mb-3" style={{ padding: "16px" }}>
+                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                    <h4 style={{ fontWeight: 800, fontSize: "1.15rem", margin: 0, color: "var(--lp-text-main)" }}>
+                      {previewModalData.plan.ten_ke_hoach}
+                    </h4>
+                    <span className="badge-metric-tag">
+                      {previewModalData.plan.so_buoi_tuan || previewModalData.plan.so_buoi_thuc_te || 4} Buổi / Tuần
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "0.84rem", color: "var(--lp-text-muted)", margin: "0 0 10px 0" }}>
+                    {previewModalData.plan.mo_ta || "Không có mô tả chi tiết."}
+                  </p>
+                  <div className="d-flex align-items-center gap-3" style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)" }}>
+                    <span>📥 {previewModalData.plan.luot_tai || 0} Lượt tải về</span>
+                    <span>❤️ {previewModalData.plan.so_luot_thich || 0} Lượt thích</span>
+                  </div>
+                </div>
+
+                {/* Danh sách các buổi tập trong giáo án */}
+                <h6 style={{ fontWeight: 700, fontSize: "0.88rem", marginBottom: "10px" }}>
+                  📋 Chi Tiết Các Buổi Tập ({previewModalData.sessions?.length || 0} ngày):
+                </h6>
+                <div className="preview-sessions-scroll mb-3">
+                  {previewModalData.sessions?.map((session, sIdx) => {
+                    const dayLabel = DAYS_OF_WEEK.find(d => d.day === session.ngay_trong_tuan)?.fullName || `Thứ ${session.ngay_trong_tuan}`;
+                    return (
+                      <div key={session._id || sIdx} className="preview-session-item">
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                          <div className="d-flex align-items-center gap-2">
+                            <span className="badge-group-tag" style={{ fontSize: "0.72rem" }}>{dayLabel}</span>
+                            <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--lp-text-main)" }}>
+                              {session.ten_buoi_tap}
+                            </span>
+                          </div>
+                          {session.is_rest_day ? (
+                            <span className="badge bg-secondary" style={{ fontSize: "0.7rem" }}>Nghỉ ngơi</span>
+                          ) : (
+                            <span className="badge bg-primary" style={{ fontSize: "0.7rem" }}>
+                              {session.exercises?.length || 0} bài tập • {session.gio_bat_dau || "17:30"} - {session.gio_ket_thuc || "18:45"}
+                            </span>
+                          )}
+                        </div>
+
+                        {!session.is_rest_day && session.exercises && session.exercises.length > 0 && (
+                          <div className="d-flex flex-wrap">
+                            {session.exercises.map((ex, exIdx) => (
+                              <div key={ex._id || exIdx} className="preview-ex-chip">
+                                <span style={{ fontWeight: 700 }}>{ex.ten_bai_tap}</span>
+                                <span style={{ color: "var(--lp-text-muted)", fontSize: "0.7rem" }}>
+                                  ({ex.so_sets}x{ex.so_reps})
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Tùy chỉnh khi nhập */}
+                <div className="workout-main-card" style={{ padding: "16px" }}>
+                  <h6 style={{ fontWeight: 700, fontSize: "0.88rem", marginBottom: "12px" }}>
+                    ⚙️ Tùy Chỉnh Của Bạn Khi Nhập:
+                  </h6>
+                  <div className="mb-3">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                      Tên Kế Hoạch Lưu Vào Tài Khoản
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={importForm.custom_name}
+                      onChange={(e) => setImportForm({ ...importForm, custom_name: e.target.value })}
+                      placeholder="Tên kế hoạch cá nhân..."
+                      required
+                    />
+                  </div>
+
+                  <div className="form-check mb-2">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="importActivateCheck"
+                      checked={importForm.activate_now}
+                      onChange={(e) => setImportForm({ ...importForm, activate_now: e.target.checked })}
+                    />
+                    <label className="form-check-label" htmlFor="importActivateCheck" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                      ⚡ Kích hoạt làm lịch tập chính ngay sau khi nhập
+                    </label>
+                  </div>
+
+                  <div className="form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="importSyncCalendarCheck"
+                      checked={importForm.dong_bo_lich}
+                      onChange={(e) => setImportForm({ ...importForm, dong_bo_lich: e.target.checked })}
+                    />
+                    <label className="form-check-label" htmlFor="importSyncCalendarCheck" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                      📅 Tự động đồng bộ các buổi tập này lên trang Lịch (SuKien)
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-action-pill btn-pill-primary"
+                  onClick={() => setShowPreviewModal(false)}
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="button"
+                  className="btn-action-pill btn-pill-primary"
+                  style={{ background: "var(--lp-primary)", color: "#fff", padding: "9px 20px" }}
+                  disabled={isImportingPlan}
+                  onClick={handleExecuteImportPlan}
+                >
+                  {isImportingPlan ? "⏳ Đang Thiết Lập Lịch..." : "🚀 Áp Dụng Lịch Tập Này"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
