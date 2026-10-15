@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
-export const FloatingMenu = ({ activeTab, setActiveTab }) => {
+export const FloatingMenu = ({ activeTab, setActiveTab, onOpenProfile }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout, theme, toggleTheme } = useAuth();
 
@@ -14,6 +14,13 @@ export const FloatingMenu = ({ activeTab, setActiveTab }) => {
   ];
 
   const handleSelect = (id) => {
+    if (id === "profile") {
+      setIsOpen(false);
+      if (onOpenProfile) {
+        onOpenProfile();
+      }
+      return;
+    }
     setActiveTab(id);
     setIsOpen(false);
   };
@@ -23,7 +30,15 @@ export const FloatingMenu = ({ activeTab, setActiveTab }) => {
       {/* POPUP MENU */}
       <div className="neu-floating-popup">
         <div className="neu-popup-header">
-          <div className="user-mini-badge">
+          <div 
+            className="user-mini-badge"
+            onClick={() => {
+              setIsOpen(false);
+              if (onOpenProfile) onOpenProfile();
+            }}
+            title="Xem và chỉnh sửa cài đặt cá nhân"
+            style={{ cursor: "pointer" }}
+          >
             <div className="user-avatar-small">
               {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
             </div>

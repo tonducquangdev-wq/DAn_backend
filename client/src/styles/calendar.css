@@ -2,7 +2,8 @@
    CALENDAR FIRST MODULE - NOTION & GOOGLE CALENDAR STYLE (LIFE PLANNER)
    ========================================================================== */
 
-:root {
+.calendar-first-module,
+.calendar-grid-container {
     --primary-color: #4f46e5;
     --primary-hover: #4338ca;
     --card-radius: 28px;

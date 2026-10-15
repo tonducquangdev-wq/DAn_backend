@@ -127,7 +127,7 @@ const updateProfile = async (req, res) => {
     try {
         const { 
             name, email, theme_mode, language, 
-            notify_events, notify_deadlines, notify_workouts, notify_sound 
+            notify_events, notify_deadlines, notify_workouts, notify_sound, notify_lead_time
         } = req.body;
 
         const user = await User.findById(req.user._id);
@@ -140,6 +140,7 @@ const updateProfile = async (req, res) => {
         if (typeof notify_deadlines === "boolean") user.notify_deadlines = notify_deadlines;
         if (typeof notify_workouts === "boolean") user.notify_workouts = notify_workouts;
         if (typeof notify_sound === "boolean") user.notify_sound = notify_sound;
+        if (notify_lead_time !== undefined) user.notify_lead_time = Number(notify_lead_time) || 15;
 
         await user.save();
 

@@ -11,6 +11,14 @@ const duAnSchema = new mongoose.Schema(
             enum: ["dang_thuc_hien", "hoan_thanh", "tam_dung"],
             default: "dang_thuc_hien"
         },
+        loai_du_an: {
+            type: String,
+            enum: ["cong_viec_chinh", "part_time", "du_an_tu_do"],
+            default: "part_time"
+        },
+        luong_theo_gio: { type: Number, default: 0 },
+        luong_co_ban: { type: Number, default: 0 },
+        dia_chi: { type: String, default: null },
         ngay_bat_dau: { type: Date, default: null },
         ngay_ket_thuc: { type: Date, default: null }
     },

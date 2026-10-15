@@ -13,7 +13,8 @@ const {
     deleteExerciseDetail,
     getExerciseCatalog,
     completeWorkoutSession, 
-    getWorkoutReport 
+    getWorkoutReport,
+    syncWorkoutPlanEndpoint
 } = require("../Controller/api/tapLuyenController");
 const authMiddleware = require("../Middleware/authMiddleware");
 
@@ -30,6 +31,7 @@ router.get("/plans", getAllWorkoutPlans);
 router.post("/plans", createWorkoutPlan);
 router.put("/plans/:id", updateWorkoutPlan);
 router.patch("/plans/:id/activate", activateWorkoutPlan);
+router.post("/plans/:id/dong-bo-lich", syncWorkoutPlanEndpoint);
 router.delete("/plans/:id", deleteWorkoutPlan);
 
 // 3. Quản lý Buổi tập & Bài tập

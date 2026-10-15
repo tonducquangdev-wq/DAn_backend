@@ -1,52 +1,63 @@
 /* ==========================================================================
    MODULE THỂ CHẤT & TẬP LUYỆN (TAP-LUYEN.CSS)
-   LIFE PLANNER - MODERN FITNESS & GYM ROUTINE DASHBOARD
-   Thiết kế: Dark Glassmorphism, Clean, Professional, Balanced & Responsive
+   LIFE PLANNER - SYNCHRONIZED NEUMORPHIC MASTER DESIGN SYSTEM (2026)
+   Đồng bộ 100% với phong cách Soft UI Neumorphic của Trang Lịch (CalendarView)
+   Hỗ trợ hoàn hảo cả 2 chế độ Sáng (Light Neumorphism) & Tối (Deep Obsidian Navy)
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. DESIGN TOKENS (LIGHT & DARK GLASSMORPHISM)
+   1. DESIGN TOKENS & ALIASES (Tích hợp sâu với Master System trong index.css)
    -------------------------------------------------------------------------- */
 :root {
-  --lp-primary: #3B82F6;
-  --lp-primary-hover: #2563EB;
-  --lp-primary-subtle: rgba(59, 130, 246, 0.12);
-  --lp-primary-border: rgba(59, 130, 246, 0.28);
-  --lp-success: #10B981;
-  --lp-success-subtle: rgba(16, 185, 129, 0.12);
-  --lp-warning: #F59E0B;
-  --lp-warning-subtle: rgba(245, 158, 11, 0.12);
-  --lp-danger: #EF4444;
-  --lp-danger-subtle: rgba(239, 68, 68, 0.12);
+  --lp-primary: var(--primary, #2563eb);
+  --lp-primary-hover: var(--primary-hover, #1d4ed8);
+  --lp-primary-subtle: var(--primary-light, rgba(37, 99, 235, 0.12));
+  --lp-primary-border: rgba(37, 99, 235, 0.28);
+  
+  --lp-success: var(--accent-success, #10b981);
+  --lp-success-subtle: rgba(16, 185, 129, 0.14);
+  --lp-warning: var(--accent-warning, #f59e0b);
+  --lp-warning-subtle: rgba(245, 158, 11, 0.14);
+  --lp-danger: var(--accent-danger, #ef4444);
+  --lp-danger-subtle: rgba(239, 68, 68, 0.14);
 
-  --lp-card-radius: 16px;
-  --lp-item-radius: 10px;
+  --lp-card-radius: var(--radius-lg, 24px);
+  --lp-item-radius: var(--radius-sm, 14px);
 
-  /* Light Theme Defaults */
-  --lp-card-border: rgba(226, 232, 240, 0.9);
-  --lp-bg-card: rgba(255, 255, 255, 0.9);
-  --lp-bg-surface: #F8FAFC;
-  --lp-text-main: #0F172A;
-  --lp-text-muted: #64748B;
-  --lp-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --lp-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+  /* Light Neumorphic Surfaces & Dual Shadows */
+  --lp-card-border: var(--border-color, rgba(255, 255, 255, 0.6));
+  --lp-bg-card: var(--neu-bg, #e7ebf0);
+  --lp-bg-surface: var(--neu-bg, #e7ebf0);
+  --lp-bg-recessed: var(--bg-recessed, #dde2e8);
+  --lp-text-main: var(--text-main, #2d3748);
+  --lp-text-muted: var(--text-muted, #718096);
+  
+  --lp-shadow-card: var(--neu-card-shadow, 14px 14px 28px var(--neu-shadow-dark), -14px -14px 28px var(--neu-shadow-light));
+  --lp-shadow-card-hover: var(--neu-card-shadow-hover, 18px 18px 36px var(--neu-shadow-dark), -18px -18px 36px var(--neu-shadow-light));
+  --lp-shadow-item: 4px 4px 10px var(--neu-shadow-dark), -4px -4px 10px var(--neu-shadow-light);
+  --lp-shadow-item-hover: 6px 6px 14px var(--neu-shadow-dark), -6px -6px 14px var(--neu-shadow-light);
+  --lp-shadow-inset: inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light);
 }
 
-/* Strict Dark Glassmorphism Theme (Active when data-theme="dark" or data-bs-theme="dark") */
 [data-theme="dark"],
 [data-bs-theme="dark"] {
-  --lp-primary: #3B82F6;
-  --lp-primary-hover: #60A5FA;
-  --lp-primary-subtle: rgba(59, 130, 246, 0.16);
-  --lp-primary-border: rgba(59, 130, 246, 0.35);
+  --lp-primary: var(--primary, #38bdf8);
+  --lp-primary-hover: var(--primary-hover, #60a5fa);
+  --lp-primary-subtle: var(--primary-light, rgba(56, 189, 248, 0.2));
+  --lp-primary-border: rgba(56, 189, 248, 0.35);
 
-  --lp-card-border: rgba(255, 255, 255, 0.08);
-  --lp-bg-card: rgba(24, 30, 46, 0.85);
-  --lp-bg-surface: rgba(16, 21, 34, 0.9);
-  --lp-text-main: #F1F5F9;
-  --lp-text-muted: #94A3B8;
-  --lp-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
-  --lp-shadow-md: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --lp-card-border: var(--border-color, rgba(255, 255, 255, 0.12));
+  --lp-bg-card: var(--neu-bg, #161f30);
+  --lp-bg-surface: var(--neu-bg, #161f30);
+  --lp-bg-recessed: var(--bg-recessed, #0e1422);
+  --lp-text-main: var(--text-main, #ffffff);
+  --lp-text-muted: var(--text-muted, #94a3b8);
+  
+  --lp-shadow-card: var(--neu-card-shadow, 8px 8px 20px var(--neu-shadow-dark), -8px -8px 20px var(--neu-shadow-light));
+  --lp-shadow-card-hover: var(--neu-card-shadow-hover, 10px 10px 24px var(--neu-shadow-dark), -10px -10px 24px var(--neu-shadow-light));
+  --lp-shadow-item: 3px 3px 8px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light);
+  --lp-shadow-item-hover: 5px 5px 12px var(--neu-shadow-dark), -2px -2px 8px var(--neu-shadow-light);
+  --lp-shadow-inset: inset 3px 3px 7px var(--neu-inset-dark), inset -1px -1px 3px var(--neu-inset-light);
 }
 
 /* Typography & General Utilities */
@@ -56,20 +67,28 @@
 
 .workout-container {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1300px;
   margin: 0 auto;
-  padding: 8px 0 140px 0; /* 140px bottom padding so floating button NEVER covers content */
+  padding: 4px 0 140px 0;
   box-sizing: border-box;
 }
 
 /* --------------------------------------------------------------------------
-   2. PAGE HEADER & TITLE HIERARCHY
+   2. PAGE HEADER BLOCK & SEGMENTED TABS (ĐỒNG BỘ THEO CAL-HEADER-BAR)
    -------------------------------------------------------------------------- */
 .workout-header-block {
-  margin-bottom: 20px;
+  background: var(--lp-bg-card);
+  border-radius: var(--lp-card-radius);
+  padding: 14px 20px;
+  border: 1px solid var(--lp-card-border);
+  box-shadow: var(--lp-shadow-card);
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
+  margin-bottom: 22px;
+  transition: all 0.25s ease;
 }
 
 .workout-title-row {
@@ -79,17 +98,17 @@
 }
 
 .workout-title-icon-badge {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.35) 100%);
-  border: 1px solid var(--lp-primary-border);
+  width: 46px;
+  height: 46px;
+  border-radius: var(--lp-item-radius);
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-card-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.2);
+  box-shadow: var(--lp-shadow-item);
 }
 
 .workout-title-content {
@@ -97,7 +116,7 @@
 }
 
 .workout-page-title {
-  font-size: clamp(1.4rem, 2.4vw, 1.85rem);
+  font-size: clamp(1.25rem, 2.2vw, 1.65rem);
   font-weight: 800;
   letter-spacing: -0.025em;
   color: var(--lp-text-main);
@@ -106,77 +125,82 @@
 }
 
 .workout-page-subtitle {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--lp-text-muted);
-  margin: 4px 0 0 0;
-  line-height: 1.45;
+  margin: 3px 0 0 0;
+  line-height: 1.4;
+  font-weight: 500;
 }
 
-/* Standalone Modern Segmented Control Tab Bar */
+/* Standalone Segmented Navigation Bar (Khớp với .cal-view-switcher trên Lịch) */
 .workout-nav-tabs-bar {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: var(--lp-bg-surface);
+  background: var(--lp-bg-card);
+  padding: 4px;
+  gap: 4px;
+  border-radius: var(--radius-pill, 50px);
+  box-shadow: var(--lp-shadow-inset);
   border: 1px solid var(--lp-card-border);
-  padding: 5px;
-  border-radius: 9999px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  width: fit-content;
   max-width: 100%;
   overflow-x: auto;
-  box-shadow: var(--lp-shadow-sm);
 }
 
 .workout-nav-tab-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 18px;
-  border-radius: 9999px;
+  padding: 7px 18px;
+  border-radius: var(--radius-pill, 50px);
   border: none;
   background: transparent;
   color: var(--lp-text-muted);
   font-size: 0.84rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
 }
 
 .workout-nav-tab-btn:hover {
   color: var(--lp-text-main);
-  background: rgba(255, 255, 255, 0.05);
 }
 
 .workout-nav-tab-btn.active {
-  background: var(--lp-primary);
-  color: #FFFFFF !important;
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
+  background: var(--lp-bg-card);
+  color: var(--lp-primary) !important;
+  font-weight: 800;
+  box-shadow: var(--lp-shadow-item);
+}
+
+[data-theme="dark"] .workout-nav-tab-btn.active,
+[data-bs-theme="dark"] .workout-nav-tab-btn.active {
+  background: var(--lp-bg-card);
+  color: var(--lp-primary) !important;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.6), -1px -1px 3px rgba(255, 255, 255, 0.08);
 }
 
 /* --------------------------------------------------------------------------
-   3. KPI QUICK STATS STRIP (4 BALANCED CARDS)
+   3. KPI QUICK STATS STRIP (4 BALANCED CARDS - PHONG CÁCH WIDGET LỊCH)
    -------------------------------------------------------------------------- */
 .workout-kpi-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  gap: 16px;
   margin-bottom: 22px;
 }
 
 @media (max-width: 1024px) {
   .workout-kpi-strip {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 14px;
   }
 }
 
 @media (max-width: 576px) {
   .workout-kpi-strip {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 12px;
   }
 }
 
@@ -184,22 +208,19 @@
   background: var(--lp-bg-card);
   border: 1px solid var(--lp-card-border);
   border-radius: var(--lp-card-radius);
-  padding: 14px 18px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 14px;
   min-height: 84px;
   box-sizing: border-box;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--lp-shadow-sm);
+  box-shadow: var(--lp-shadow-card);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .workout-kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--lp-shadow-md);
-  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: var(--lp-shadow-card-hover);
 }
 
 .workout-kpi-icon {
@@ -211,6 +232,8 @@
   justify-content: center;
   font-size: 1.25rem;
   flex-shrink: 0;
+  box-shadow: var(--lp-shadow-inset);
+  border: 1px solid var(--lp-card-border);
 }
 
 .workout-kpi-text-area {
@@ -226,28 +249,26 @@
   color: var(--lp-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .workout-kpi-val {
-  font-size: 1.22rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--lp-text-main);
   line-height: 1.2;
 }
 
 /* --------------------------------------------------------------------------
-   4. WEEKLY SCHEDULE STRIP (7-DAY GRID WITH NO CLASHING TEXT)
+   4. WEEKLY SCHEDULE STRIP (LƯỚI LỊCH TUẦN NỔI BẬT THEO CALENDAR GRID)
    -------------------------------------------------------------------------- */
 .schedule-strip-card {
   background: var(--lp-bg-card);
   border: 1px solid var(--lp-card-border);
   border-radius: var(--lp-card-radius);
-  padding: 16px 20px;
+  padding: 18px 22px;
   margin-bottom: 22px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--lp-shadow-sm);
+  box-shadow: var(--lp-shadow-card);
 }
 
 .schedule-header-row {
@@ -267,41 +288,48 @@
 }
 
 .schedule-header-title {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.05rem;
+  font-weight: 800;
   color: var(--lp-text-main);
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .schedule-plan-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
-  border-radius: 9999px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill, 50px);
   background: var(--lp-primary-subtle);
-  border: 1px solid var(--lp-primary-border);
+  border: 1px solid var(--lp-card-border);
   color: var(--lp-primary);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
+/* Recessed Well Grid Container (Khớp với .cal-month-body của trang lịch) */
 .weekly-schedule-grid {
+  background: var(--lp-bg-recessed);
+  border-radius: var(--radius, 20px);
+  padding: 10px;
+  border: 1px solid var(--lp-card-border);
+  box-shadow: var(--lp-shadow-inset);
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 900px) {
   .weekly-schedule-grid {
     display: flex;
     overflow-x: auto;
-    gap: 8px;
-    padding-bottom: 6px;
+    gap: 10px;
+    padding-bottom: 8px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
   }
@@ -311,28 +339,28 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--lp-bg-surface);
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: var(--lp-bg-card);
   border: 1px solid var(--lp-card-border);
-  min-height: 76px;
+  min-height: 80px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
   text-decoration: none;
+  box-shadow: var(--lp-shadow-item);
 }
 
 @media (max-width: 900px) {
   .schedule-day-box {
-    min-width: 105px;
+    min-width: 110px;
     flex: 0 0 auto;
   }
 }
 
 .schedule-day-box:hover {
   transform: translateY(-2px);
-  border-color: rgba(59, 130, 246, 0.4);
-  background: rgba(255, 255, 255, 0.03);
+  box-shadow: var(--lp-shadow-item-hover);
 }
 
 .schedule-day-box .day-code-wrap {
@@ -343,7 +371,7 @@
 }
 
 .schedule-day-box .day-code {
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   font-weight: 800;
   color: var(--lp-text-muted);
 }
@@ -353,7 +381,7 @@
   height: 7px;
   border-radius: 50%;
   background-color: var(--lp-danger);
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
   display: inline-block;
   animation: pulseToday 2s infinite ease-in-out;
 }
@@ -365,9 +393,9 @@
 
 .schedule-day-box .session-name {
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--lp-text-main);
-  line-height: 1.3;
+  line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -377,19 +405,23 @@
 
 /* Today highlight */
 .schedule-day-box.is-today {
-  border-color: var(--lp-primary);
-  background: rgba(59, 130, 246, 0.08);
+  border: 2px solid var(--lp-primary) !important;
 }
 
 .schedule-day-box.is-today .day-code {
-  color: var(--lp-primary);
+  color: var(--lp-primary) !important;
 }
 
-/* Selected highlight */
+/* Selected highlight - Trạng thái nổi bật dứt khoát */
 .schedule-day-box.is-selected {
+  background: var(--lp-primary) !important;
   border: 2px solid var(--lp-primary) !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 4px 12px rgba(59, 130, 246, 0.2);
-  background: rgba(59, 130, 246, 0.12) !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45) !important;
+}
+
+.schedule-day-box.is-selected .day-code,
+.schedule-day-box.is-selected .session-name {
+  color: #FFFFFF !important;
 }
 
 /* Rest day highlight */
@@ -416,9 +448,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--lp-shadow-sm);
+  box-shadow: var(--lp-shadow-card);
   flex-wrap: wrap;
 }
 
@@ -430,54 +460,58 @@
 }
 
 .workout-progress-icon-badge {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   background: var(--lp-warning-subtle);
   color: var(--lp-warning);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   flex-shrink: 0;
+  box-shadow: var(--lp-shadow-inset);
+  border: 1px solid var(--lp-card-border);
 }
 
 .workout-progress-title {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.98rem;
+  font-weight: 800;
   color: var(--lp-text-main);
   margin: 0;
 }
 
 .workout-progress-sub {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--lp-text-muted);
   margin: 2px 0 0 0;
+  font-weight: 500;
 }
 
 .workout-progress-bar-wrap {
   flex-grow: 1;
   min-width: 180px;
-  max-width: 360px;
+  max-width: 380px;
 }
 
 .workout-slim-progress {
-  height: 8px !important;
-  background-color: var(--lp-bg-surface);
+  height: 10px !important;
+  background-color: var(--lp-bg-recessed);
   border: 1px solid var(--lp-card-border);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 50px);
+  box-shadow: var(--lp-shadow-inset);
   overflow: hidden;
 }
 
 .workout-slim-progress .progress-bar {
   background: linear-gradient(90deg, #10B981 0%, #059669 100%);
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 50px);
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100%;
 }
 
 .workout-progress-percent {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: var(--lp-success);
   min-width: 48px;
@@ -485,16 +519,14 @@
 }
 
 /* --------------------------------------------------------------------------
-   6. CHECKLIST & TIMER 2-COLUMN MAIN LAYOUT
+   6. CHECKLIST & TIMER 2-COLUMN MAIN LAYOUT (CARD PHONG CÁCH LỊCH)
    -------------------------------------------------------------------------- */
 .workout-main-card {
   background: var(--lp-bg-card);
   border: 1px solid var(--lp-card-border);
   border-radius: var(--lp-card-radius);
-  padding: 18px 20px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--lp-shadow-sm);
+  padding: 20px 22px;
+  box-shadow: var(--lp-shadow-card);
   box-sizing: border-box;
 }
 
@@ -504,7 +536,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--lp-card-border);
   flex-wrap: wrap;
@@ -517,8 +549,8 @@
 }
 
 .checklist-header-title {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.05rem;
+  font-weight: 800;
   color: var(--lp-text-main);
   margin: 0;
 }
@@ -529,31 +561,41 @@
   gap: 8px;
 }
 
-/* Standardized Action Pills */
+/* Standardized Action Pills (Nút bấm Neumorphic) */
 .btn-action-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 9999px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill, 50px);
+  font-size: 0.8rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-card-border);
+  color: var(--lp-text-main);
+  box-shadow: var(--lp-shadow-item);
+}
+
+.btn-action-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--lp-shadow-item-hover);
 }
 
 .btn-pill-primary {
-  background: var(--lp-primary-subtle);
-  border: 1px solid var(--lp-primary-border);
-  color: var(--lp-primary);
+  background: var(--lp-primary) !important;
+  color: #FFFFFF !important;
+  border-color: var(--lp-primary) !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
 }
 
 .btn-pill-primary:hover {
-  background: var(--lp-primary);
-  color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+  background: var(--lp-primary-hover) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45) !important;
 }
 
 .btn-pill-warning {
@@ -565,15 +607,14 @@
 .btn-pill-warning:hover {
   background: var(--lp-warning);
   color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
 }
 
-/* Checklist items container & row items */
+/* Checklist items container & row items (Khớp với .today-event-item & .deadline-item) */
 .workout-checklist-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 480px;
+  gap: 9px;
+  max-height: 520px;
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-width: thin;
@@ -582,32 +623,32 @@
 .checklist-exercise-item {
   display: flex;
   align-items: center;
-  min-height: 54px;
-  padding: 10px 14px;
-  background: var(--lp-bg-surface);
+  min-height: 56px;
+  padding: 11px 15px;
+  background: var(--lp-bg-card);
   border: 1px solid var(--lp-card-border);
-  border-left: 3.5px solid var(--lp-card-border) !important;
+  border-left: 4px solid var(--lp-card-border) !important;
   border-radius: var(--lp-item-radius);
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
   box-sizing: border-box;
+  box-shadow: var(--lp-shadow-item);
 }
 
 .checklist-exercise-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  transform: translateY(-1px);
-  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: var(--lp-shadow-item-hover);
 }
 
 .checklist-exercise-item.active-exercise {
   border-left-color: var(--lp-primary) !important;
-  background: var(--lp-primary-subtle);
+  background: var(--lp-primary-subtle) !important;
 }
 
 .checklist-exercise-item.completed {
   border-left-color: var(--lp-success) !important;
-  background: var(--lp-success-subtle);
+  background: var(--lp-success-subtle) !important;
 }
 
 .checklist-exercise-item.completed .exercise-title {
@@ -626,9 +667,9 @@
 }
 
 .custom-check-box {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
+  width: 19px;
+  height: 19px;
+  border-radius: 5px;
   cursor: pointer;
   accent-color: var(--lp-success);
 }
@@ -648,11 +689,11 @@
 }
 
 .exercise-title {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--lp-text-main);
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .checklist-item-meta-col {
@@ -663,70 +704,70 @@
 }
 
 .badge-group-tag {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 9999px;
-  background: var(--lp-bg-card);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill, 50px);
+  background: var(--lp-bg-recessed);
   border: 1px solid var(--lp-card-border);
   color: var(--lp-text-muted);
 }
 
 .badge-metric-tag {
-  font-size: 0.74rem;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 9999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 3px 11px;
+  border-radius: var(--radius-pill, 50px);
   background: var(--lp-primary-subtle);
   color: var(--lp-primary);
   font-variant-numeric: tabular-nums;
+  border: 1px solid var(--lp-card-border);
 }
 
 .checklist-item-action-area {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   flex-shrink: 0;
 }
 
 .btn-icon-circle {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 1px solid var(--lp-card-border);
-  background: transparent;
+  background: var(--lp-bg-card);
   color: var(--lp-text-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
+  box-shadow: 2px 2px 5px var(--neu-shadow-dark), -2px -2px 5px var(--neu-shadow-light);
 }
 
 .btn-icon-circle:hover {
   color: var(--lp-primary);
   border-color: var(--lp-primary);
-  background: var(--lp-primary-subtle);
   transform: scale(1.08);
 }
 
 .btn-icon-circle.text-danger:hover {
   color: var(--lp-danger) !important;
   border-color: var(--lp-danger) !important;
-  background: var(--lp-danger-subtle) !important;
 }
 
 /* Big Finish Workout Button */
 .btn-finish-workout {
   height: 44px;
   padding: 0 24px;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill, 50px);
   background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   border: none;
   color: #FFFFFF;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.92rem;
+  font-weight: 800;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
   transition: all 0.22s ease;
@@ -745,7 +786,7 @@
    -------------------------------------------------------------------------- */
 .workout-timer-sticky {
   position: sticky;
-  top: 80px; /* Aligns with sticky header */
+  top: 80px;
   z-index: 10;
 }
 
@@ -756,12 +797,13 @@
 }
 
 .workout-timer-box {
-  background: var(--lp-bg-surface);
+  background: var(--lp-bg-card);
   border: 1px solid var(--lp-card-border);
-  border-radius: 14px;
-  padding: 16px 20px;
-  margin-bottom: 16px;
+  border-radius: var(--lp-card-radius);
+  padding: 18px 20px;
+  margin-bottom: 18px;
   text-align: center;
+  box-shadow: var(--lp-shadow-card);
 }
 
 .timer-display {
@@ -770,18 +812,23 @@
   color: var(--lp-text-main);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
-  margin: 6px 0 10px 0;
+  margin: 10px 0 14px 0;
   line-height: 1;
+  background: var(--lp-bg-recessed);
+  border-radius: var(--radius, 20px);
+  border: 1px solid var(--lp-card-border);
+  box-shadow: var(--lp-shadow-inset);
+  padding: 14px 18px;
 }
 
 .workout-status-badge {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 9999px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill, 50px);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .badge-running {
@@ -792,7 +839,7 @@
 }
 
 .badge-not-started {
-  background: rgba(148, 163, 184, 0.15);
+  background: var(--lp-bg-recessed);
   color: var(--lp-text-muted);
   border: 1px solid var(--lp-card-border);
 }
@@ -803,15 +850,16 @@
 }
 
 .active-exercise-card {
-  background: var(--lp-bg-surface);
+  background: var(--lp-bg-card);
   border: 1px solid var(--lp-card-border);
-  border-radius: 14px;
-  padding: 16px 18px;
+  border-radius: var(--lp-card-radius);
+  padding: 18px 20px;
+  box-shadow: var(--lp-shadow-card);
 }
 
 .active-exercise-title {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.05rem;
+  font-weight: 800;
   color: var(--lp-text-main);
   margin: 6px 0 8px 0;
 }
@@ -821,11 +869,11 @@
    -------------------------------------------------------------------------- */
 .rest-day-card {
   background: var(--lp-bg-card);
-  border: 1.5px dashed var(--lp-card-border);
+  border: 2px dashed var(--lp-card-border);
   border-radius: var(--lp-card-radius);
-  padding: 40px 24px;
+  padding: 42px 24px;
   text-align: center;
-  box-shadow: var(--lp-shadow-sm);
+  box-shadow: var(--lp-shadow-card);
   margin: 18px 0;
 }
 
@@ -852,9 +900,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--lp-shadow-sm);
+  box-shadow: var(--lp-shadow-card);
   transition: all 0.22s ease;
   height: 100%;
   box-sizing: border-box;
@@ -862,24 +908,23 @@
 
 .plan-card-item:hover {
   transform: translateY(-3px);
-  box-shadow: var(--lp-shadow-md);
-  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: var(--lp-shadow-card-hover);
 }
 
 .plan-card-item.is-active-plan {
-  border-color: var(--lp-primary);
-  box-shadow: 0 0 0 2px var(--lp-primary), 0 8px 24px rgba(59, 130, 246, 0.2);
+  border: 2px solid var(--lp-primary) !important;
+  box-shadow: 0 0 0 2px var(--lp-primary), var(--lp-shadow-card) !important;
 }
 
 .plan-card-title {
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--lp-text-main);
   margin: 8px 0 6px 0;
 }
 
 .plan-card-desc {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: var(--lp-text-muted);
   line-height: 1.45;
   margin: 0;
@@ -890,11 +935,17 @@
    10. MONTHLY HEATMAP 30 DAYS
    -------------------------------------------------------------------------- */
 .heatmap-grid {
+  background: var(--lp-bg-recessed);
+  border-radius: var(--radius, 20px);
+  padding: 16px;
+  border: 1px solid var(--lp-card-border);
+  box-shadow: var(--lp-shadow-inset);
   display: grid;
   grid-template-columns: repeat(30, minmax(0, 1fr));
   gap: 6px;
   width: 100%;
-  margin-top: 10px;
+  margin-top: 12px;
+  box-sizing: border-box;
 }
 
 @media (max-width: 900px) {
@@ -906,14 +957,16 @@
 .heatmap-cell {
   aspect-ratio: 1 / 1;
   border-radius: 6px;
-  background-color: var(--lp-bg-surface);
+  background-color: var(--lp-bg-card);
   border: 1px solid var(--lp-card-border);
+  box-shadow: var(--lp-shadow-item);
   transition: transform 0.15s ease, background-color 0.15s ease;
   cursor: pointer;
 }
 
 .heatmap-cell:hover {
-  transform: scale(1.2);
+  transform: scale(1.25);
+  z-index: 2;
 }
 
 .heatmap-lvl-1 { background-color: rgba(16, 185, 129, 0.25) !important; border-color: rgba(16, 185, 129, 0.4) !important; }
@@ -922,16 +975,76 @@
 .heatmap-lvl-4 { background-color: #10B981 !important; border-color: #059669 !important; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
 
 /* --------------------------------------------------------------------------
-   11. MODAL DIALOGS (GLASSMORPHIC & CLEAN)
+   11. DATA TABLES (ĐỒNG BỘ NHẬT KÝ & LỊCH SỬ TẬP)
    -------------------------------------------------------------------------- */
+.workout-main-card .table-responsive {
+  background: var(--lp-bg-recessed);
+  border-radius: var(--radius, 20px);
+  padding: 12px 14px;
+  border: 1px solid var(--lp-card-border);
+  box-shadow: var(--lp-shadow-inset);
+  overflow-x: auto;
+}
+
+.workout-main-card table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  background: transparent !important;
+}
+
+.workout-main-card thead th {
+  padding: 12px 16px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--lp-text-muted);
+  border-bottom: 1px solid var(--lp-card-border) !important;
+  background: transparent !important;
+}
+
+.workout-main-card tbody td {
+  padding: 14px 16px;
+  font-size: 0.88rem;
+  color: var(--lp-text-main);
+  border-bottom: 1px solid var(--lp-card-border) !important;
+  background: transparent !important;
+  vertical-align: middle;
+}
+
+.workout-main-card tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. MODAL DIALOGS & FORMS (ĐỒNG BỘ THEO POPUP TRANG LỊCH)
+   -------------------------------------------------------------------------- */
+.modal.d-block {
+  background: rgba(11, 15, 25, 0.65) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-dialog {
+  max-width: 560px;
+}
+
 .modal-content {
-  background: var(--lp-bg-card) !important;
-  border: 1px solid var(--lp-card-border) !important;
-  border-radius: 20px !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: var(--radius-lg, 24px) !important;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.25), 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
   color: var(--lp-text-main) !important;
+  padding: 8px 12px;
+}
+
+[data-theme="dark"] .modal-content,
+[data-bs-theme="dark"] .modal-content {
+  background: #161f30 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.8) !important;
+  color: #ffffff !important;
 }
 
 .modal-header {
@@ -939,19 +1052,387 @@
   padding: 16px 20px !important;
 }
 
+.modal-header .modal-title {
+  color: var(--lp-text-main);
+  font-weight: 800;
+}
+
+.modal-body {
+  padding: 18px 20px !important;
+  color: var(--lp-text-main);
+}
+
 .modal-footer {
   border-top: 1px solid var(--lp-card-border) !important;
   padding: 14px 20px !important;
 }
 
-.form-control, .form-select {
-  background: var(--lp-bg-surface) !important;
-  border: 1px solid var(--lp-card-border) !important;
-  color: var(--lp-text-main) !important;
-  border-radius: 10px !important;
+/* Đảo màu nút X close trong Dark mode */
+[data-theme="dark"] .btn-close,
+[data-bs-theme="dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-.form-control:focus, .form-select:focus {
-  border-color: var(--lp-primary) !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+.form-label {
+  color: var(--lp-text-main);
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
 }
+
+.form-control,
+.form-select,
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  background: var(--lp-bg-card) !important;
+  border: 1px solid var(--lp-card-border) !important;
+  color: var(--lp-text-main) !important;
+  border-radius: var(--lp-item-radius) !important;
+  box-shadow: var(--lp-shadow-inset) !important;
+  padding: 10px 14px !important;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.modal-content .form-control,
+.modal-content .form-select,
+.modal-content input[type="text"],
+.modal-content input[type="number"],
+.modal-content select,
+.modal-content textarea {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+  color: var(--lp-text-main) !important;
+  box-shadow: inset 2px 2px 5px rgba(148, 163, 184, 0.25) !important;
+}
+
+[data-theme="dark"] .modal-content .form-control,
+[data-theme="dark"] .modal-content .form-select,
+[data-theme="dark"] .modal-content input[type="text"],
+[data-theme="dark"] .modal-content input[type="number"],
+[data-theme="dark"] .modal-content select,
+[data-theme="dark"] .modal-content textarea {
+  background: #0e1422 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  box-shadow: inset 3px 3px 7px rgba(0, 0, 0, 0.8) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--lp-primary) !important;
+  box-shadow: var(--lp-shadow-inset), 0 0 0 2px var(--lp-primary) !important;
+  outline: none;
+}
+
+.form-control::placeholder,
+textarea::placeholder {
+  color: var(--lp-text-muted) !important;
+  opacity: 0.75;
+}
+
+[data-theme="dark"] select option,
+[data-bs-theme="dark"] select option {
+  background: #161f30 !important;
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. WORKOUT PLAN CREATION WIZARD (NEUMORPHIC GUIDED SETUP)
+   -------------------------------------------------------------------------- */
+.wizard-stepper-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 12px 18px;
+  background: var(--lp-bg-surface);
+  border-radius: var(--lp-card-radius);
+  border: 1px solid var(--lp-card-border);
+  box-shadow: var(--lp-shadow-inset);
+  position: relative;
+  gap: 8px;
+}
+
+.wizard-step-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: all 0.25s ease;
+  flex: 1;
+}
+
+.wizard-step-node.active {
+  opacity: 1;
+}
+
+.wizard-step-node.completed {
+  opacity: 0.85;
+}
+
+.wizard-step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: var(--lp-bg-card);
+  border: 1.5px solid var(--lp-card-border);
+  color: var(--lp-text-muted);
+  box-shadow: var(--lp-shadow-item);
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.wizard-step-node.active .wizard-step-circle {
+  background: var(--lp-primary);
+  color: #ffffff;
+  border-color: var(--lp-primary);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.45);
+}
+
+.wizard-step-node.completed .wizard-step-circle {
+  background: var(--lp-success);
+  color: #ffffff;
+  border-color: var(--lp-success);
+}
+
+.wizard-step-text-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--lp-text-main);
+  line-height: 1.2;
+}
+
+.wizard-step-text-sub {
+  font-size: 0.72rem;
+  color: var(--lp-text-muted);
+  display: block;
+}
+
+.wizard-step-divider {
+  width: 24px;
+  height: 2px;
+  background: var(--lp-card-border);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.wizard-selection-card {
+  padding: 16px;
+  border-radius: var(--lp-item-radius);
+  background: var(--lp-bg-card);
+  border: 1.5px solid var(--lp-card-border);
+  box-shadow: var(--lp-shadow-item);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.wizard-selection-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--lp-shadow-item-hover);
+  border-color: rgba(37, 99, 235, 0.4);
+}
+
+.wizard-selection-card.selected {
+  border-color: var(--lp-primary) !important;
+  background: var(--lp-bg-card);
+  box-shadow: 0 0 0 2px var(--lp-primary-subtle), var(--lp-shadow-item);
+}
+
+.wizard-time-preset-pill {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--lp-card-border);
+  background: var(--lp-bg-surface);
+  color: var(--lp-text-main);
+  transition: all 0.2s ease;
+  box-shadow: var(--lp-shadow-item);
+}
+
+.wizard-time-preset-pill:hover {
+  background: var(--lp-primary-subtle);
+  border-color: var(--lp-primary);
+  color: var(--lp-primary);
+}
+
+.wizard-day-preview-chip {
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--lp-card-border);
+  background: var(--lp-bg-card);
+  box-shadow: var(--lp-shadow-item);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  min-width: 62px;
+}
+
+.wizard-day-preview-chip:hover {
+  border-color: var(--lp-primary);
+}
+
+.wizard-day-preview-chip.active {
+  background: var(--lp-primary);
+  border-color: var(--lp-primary);
+  color: #ffffff !important;
+}
+
+.wizard-day-preview-chip.active .sub-badge {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Day Toggle Cards in Step 1 */
+.wizard-day-toggle-card {
+  padding: 12px 6px;
+  border-radius: 14px;
+  border: 1.5px solid var(--lp-card-border);
+  background: var(--lp-bg-card);
+  box-shadow: var(--lp-shadow-item);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 82px;
+}
+
+.wizard-day-toggle-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--lp-primary);
+}
+
+.wizard-day-toggle-card.is-active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.2) 100%);
+  border-color: var(--lp-primary);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.22);
+}
+
+.wizard-day-toggle-card.is-active .day-chip-label {
+  color: var(--lp-primary);
+  font-weight: 700;
+}
+
+.wizard-day-toggle-card.is-rest {
+  opacity: 0.7;
+  background: var(--lp-bg-surface);
+  border-style: dashed;
+}
+
+.wizard-day-toggle-card.is-rest:hover {
+  opacity: 0.95;
+  border-color: rgba(37, 99, 235, 0.5);
+}
+
+.wizard-day-preset-pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--lp-card-border);
+  background: var(--lp-bg-surface);
+  color: var(--lp-text-main);
+  transition: all 0.2s ease;
+  box-shadow: var(--lp-shadow-item);
+}
+
+.wizard-day-preset-pill:hover {
+  background: var(--lp-primary-subtle);
+  border-color: var(--lp-primary);
+  color: var(--lp-primary);
+}
+
+.wizard-day-preset-pill.active {
+  background: var(--lp-primary);
+  border-color: var(--lp-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.wizard-session-row {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--lp-bg-surface);
+  border: 1px solid var(--lp-card-border);
+  box-shadow: var(--lp-shadow-inset);
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
+}
+
+.wizard-session-row.is-rest {
+  opacity: 0.8;
+  border-style: dashed;
+}
+
+/* ==========================================================================
+   WIZARD STEP SLIDE TRANSITIONS (SLIDE FROM RIGHT / SLIDE FROM LEFT)
+   ========================================================================== */
+.wizard-steps-slider-wrap {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: 420px;
+}
+
+@keyframes wizardSlideFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(75px);
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes wizardSlideFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-75px);
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.wizard-slide-next {
+  animation: wizardSlideFromRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.wizard-slide-prev {
+  animation: wizardSlideFromLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+

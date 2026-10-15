@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { api } from "../services/api";
-import "../styles/calendar.css";
+import { LEAD_TIME_OPTIONS, formatLeadTime } from "../services/notificationService";
 
 // Ánh xạ Loại Sự Kiện cho Filter Pills & Badges
 const EVENT_TYPE_MAP = {
@@ -62,6 +62,7 @@ export const CalendarView = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
+  const [selectedDayDate, setSelectedDayDate] = useState(null);
 
   // State Form Thêm/Sửa
   const [formData, setFormData] = useState({
@@ -73,6 +74,8 @@ export const CalendarView = () => {
     mo_ta: "",
     mau_sac: "#3b82f6",
     quy_tac_lap: "once",
+    bat_thong_bao: true,
+    thoi_gian_nhac_truoc: 15,
     update_mode: "single"
   });
 
@@ -132,6 +135,17 @@ export const CalendarView = () => {
     return filteredEvents.filter((ev) => isSameDay(ev.thoi_gian_bat_dau, today));
   }, [filteredEvents]);
 
+  // Danh sách sự kiện thuộc Ô Ngày được chọn
+  const selectedDayEvents = useMemo(() => {
+    if (!selectedDayDate) return [];
+    return filteredEvents.filter((ev) => isSameDay(ev.thoi_gian_bat_dau, selectedDayDate));
+  }, [filteredEvents, selectedDayDate]);
+
+  // Xử lý khi bấm vào 1 ô lịch (ngày trong tháng hoặc cột tuần) -> hiện tab danh sách sự kiện trước
+  const handleDayClick = (date) => {
+    setSelectedDayDate(new Date(date));
+  };
+
   // Danh sách DEADLINE SẮP TỚI
   const upcomingDeadlines = useMemo(() => {
     const now = new Date();
@@ -140,7 +154,7 @@ export const CalendarView = () => {
     return events
       .filter((ev) => ev.loai_su_kien === "deadline" || ev.loai_su_kien === "hoc-tap")
       .map((ev) => {
-        const endDate = new Date(ev.thoi_gian_ket_thuc);
+        const endDate = new Date(ev.thoi_gian_ket_thuc || ev.thoi_gian_bat_dau);
         const diffMs = endDate.getTime() - startOfToday.getTime();
         const diffDays = Math.ceil(diffMs / (1000 * 3600 * 24));
         return { ...ev, endDate, diffDays };
@@ -190,6 +204,8 @@ export const CalendarView = () => {
       mo_ta: "",
       mau_sac: "#3b82f6",
       quy_tac_lap: "once",
+      bat_thong_bao: true,
+      thoi_gian_nhac_truoc: 15,
       update_mode: "single"
     });
     setShowModal(true);
@@ -210,9 +226,57 @@ export const CalendarView = () => {
       mo_ta: event.mo_ta || "",
       mau_sac: event.mau_sac || "#3b82f6",
       quy_tac_lap: event.quy_tac_lap || "once",
+      bat_thong_bao: event.bat_thong_bao !== false,
+      thoi_gian_nhac_truoc: event.thoi_gian_nhac_truoc !== undefined ? Number(event.thoi_gian_nhac_truoc) : 15,
       update_mode: "single"
     });
     setShowModal(true);
+  };
+
+  // Bật/tắt nhanh thông báo cho sự kiện (1-click)
+  const handleQuickToggleNotification = async (event) => {
+    try {
+      const nextBatThongBao = !(event.bat_thong_bao !== false);
+      const res = await api.updateSuKien(event._id, {
+        bat_thong_bao: nextBatThongBao,
+        thoi_gian_nhac_truoc: event.thoi_gian_nhac_truoc !== undefined ? Number(event.thoi_gian_nhac_truoc) : 15
+      });
+      if (res.success) {
+        const updated = { ...event, bat_thong_bao: nextBatThongBao };
+        if (detailEvent && detailEvent._id === event._id) {
+          setDetailEvent(updated);
+        }
+        showToast(nextBatThongBao ? `Đã bật thông báo cho "${event.tieu_de}"! 🔔` : `Đã tắt thông báo cho "${event.tieu_de}"! 🔕`, "success");
+        await loadEvents();
+      } else {
+        showToast(res.message || "Không thể cập nhật thông báo", "danger");
+      }
+    } catch (err) {
+      showToast("Lỗi cập nhật: " + err.message, "danger");
+    }
+  };
+
+  // Đổi nhanh số phút thông báo trước cho sự kiện
+  const handleQuickChangeLeadTime = async (event, newMinutes) => {
+    try {
+      const minutes = Number(newMinutes);
+      const res = await api.updateSuKien(event._id, {
+        thoi_gian_nhac_truoc: minutes,
+        bat_thong_bao: true
+      });
+      if (res.success) {
+        const updated = { ...event, thoi_gian_nhac_truoc: minutes, bat_thong_bao: true };
+        if (detailEvent && detailEvent._id === event._id) {
+          setDetailEvent(updated);
+        }
+        showToast(`Đã đổi thời gian nhắc sự kiện: ${formatLeadTime(minutes)}! ⏰`, "success");
+        await loadEvents();
+      } else {
+        showToast(res.message || "Không thể cập nhật thời gian nhắc", "danger");
+      }
+    } catch (err) {
+      showToast("Lỗi cập nhật: " + err.message, "danger");
+    }
   };
 
   // Submit Form
@@ -225,22 +289,36 @@ export const CalendarView = () => {
       return;
     }
 
-    if (!formData.thoi_gian_bat_dau || !formData.thoi_gian_ket_thuc) {
-      setFormError("Vui lòng nhập đầy đủ thời gian bắt đầu và kết thúc.");
-      return;
-    }
+    const isDeadline = formData.loai_su_kien === "deadline";
 
-    const start = new Date(formData.thoi_gian_bat_dau);
-    const end = new Date(formData.thoi_gian_ket_thuc);
+    if (isDeadline) {
+      if (!formData.thoi_gian_bat_dau) {
+        setFormError("Vui lòng chọn thời hạn cho deadline.");
+        return;
+      }
+      const start = new Date(formData.thoi_gian_bat_dau);
+      if (isNaN(start.getTime())) {
+        setFormError("Định dạng thời hạn deadline không hợp lệ.");
+        return;
+      }
+    } else {
+      if (!formData.thoi_gian_bat_dau || !formData.thoi_gian_ket_thuc) {
+        setFormError("Vui lòng nhập đầy đủ thời gian bắt đầu và kết thúc.");
+        return;
+      }
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      setFormError("Định dạng ngày giờ không hợp lệ.");
-      return;
-    }
+      const start = new Date(formData.thoi_gian_bat_dau);
+      const end = new Date(formData.thoi_gian_ket_thuc);
 
-    if (end.getTime() <= start.getTime()) {
-      setFormError("Thời gian kết thúc phải diễn ra sau thời gian bắt đầu.");
-      return;
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        setFormError("Định dạng ngày giờ không hợp lệ.");
+        return;
+      }
+
+      if (end.getTime() <= start.getTime()) {
+        setFormError("Thời gian kết thúc phải diễn ra sau thời gian bắt đầu.");
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -250,11 +328,13 @@ export const CalendarView = () => {
         tieu_de: formData.tieu_de.trim(),
         loai_su_kien: formData.loai_su_kien,
         thoi_gian_bat_dau: formData.thoi_gian_bat_dau,
-        thoi_gian_ket_thuc: formData.thoi_gian_ket_thuc,
+        thoi_gian_ket_thuc: isDeadline ? formData.thoi_gian_bat_dau : formData.thoi_gian_ket_thuc,
         dia_diem: formData.dia_diem ? formData.dia_diem.trim() : null,
         mo_ta: formData.mo_ta ? formData.mo_ta.trim() : null,
         mau_sac: formData.mau_sac,
-        quy_tac_lap: formData.quy_tac_lap
+        quy_tac_lap: formData.quy_tac_lap,
+        bat_thong_bao: formData.bat_thong_bao,
+        thoi_gian_nhac_truoc: Number(formData.thoi_gian_nhac_truoc) || 15
       };
 
       if (editingEvent) {
@@ -370,7 +450,7 @@ export const CalendarView = () => {
   const rowCount = monthDaysGrid.length > 35 ? 6 : 5;
 
   return (
-    <div className="calendar-page-container h-100 d-flex flex-column gap-3">
+    <div className="calendar-page-container h-100 d-flex flex-column gap-2">
       {/* Toast Notification Banner */}
       {toast && (
         <div
@@ -432,11 +512,7 @@ export const CalendarView = () => {
             return (
               <button
                 key={typeKey}
-                className={`filter-pill ${isActive ? "active-type" : ""}`}
-                style={{
-                  background: isActive ? info.color : info.pillBg,
-                  color: isActive ? "#ffffff" : info.textColor
-                }}
+                className={`filter-pill pill-${typeKey} ${isActive ? "active-type" : ""}`}
                 onClick={() => setFilterType(typeKey)}
               >
                 <span>●</span> {info.label}
@@ -445,30 +521,41 @@ export const CalendarView = () => {
           })}
         </div>
 
-        {/* View Mode Switcher: Tuần / Tháng */}
-        <div className="cal-view-switcher">
+        {/* View Mode Switcher & Nút Tạo Sự Kiện Nhanh */}
+        <div className="d-flex align-items-center gap-2">
+          <div className="cal-view-switcher">
+            <button
+              className={`view-switcher-btn ${viewMode === "week" ? "active" : ""}`}
+              onClick={() => setViewMode("week")}
+            >
+              📅 Tuần
+            </button>
+            <button
+              className={`view-switcher-btn ${viewMode === "month" ? "active" : ""}`}
+              onClick={() => setViewMode("month")}
+            >
+              🗓️ Tháng
+            </button>
+          </div>
+
           <button
-            className={`view-switcher-btn ${viewMode === "week" ? "active" : ""}`}
-            onClick={() => setViewMode("week")}
+            className="btn-primary d-none d-sm-flex align-items-center gap-1.5"
+            style={{ padding: "6px 14px", fontSize: "0.82rem", whiteSpace: "nowrap" }}
+            onClick={() => handleOpenCreateModal(currentDate)}
           >
-            📅 Tuần
-          </button>
-          <button
-            className={`view-switcher-btn ${viewMode === "month" ? "active" : ""}`}
-            onClick={() => setViewMode("month")}
-          >
-            🗓️ Tháng
+            <span>➕</span>
+            <span>Tạo sự kiện</span>
           </button>
         </div>
       </div>
 
       {/* ============================================================
-          MAIN BOOTSTRAP RESPONSIVE GRID (DESKTOP: 100VH FIT / TABLET & MOBILE RESPONSIVE)
+          MAIN 2-COLUMN GRID LAYOUT (DESKTOP: GRID / MOBILE: FLEX)
           ============================================================ */}
-      <div className="cal-main-layout row g-3 flex-grow-1 min-vh-0">
+      <div className="cal-main-layout flex-grow-1 min-vh-0">
 
-        {/* LEFT COLUMN: CỘT CHÍNH LỊCH (COL-12 COL-MD-7 COL-LG-8 COL-XL-9) */}
-        <div className="cal-left-column col-12 col-md-7 col-lg-8 col-xl-9 d-flex flex-column h-100 min-vh-0 p-1 pe-md-2">
+        {/* LEFT COLUMN: CỘT CHÍNH LỊCH */}
+        <div className="cal-left-column d-flex flex-column h-100 min-vh-0">
 
           {/* HIỂN THỊ CHẾ ĐỘ XEM THÁNG (MONTH VIEW - 100VH GRID FIT) */}
           {viewMode === "month" && (
@@ -478,8 +565,7 @@ export const CalendarView = () => {
                 {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map((dName, idx) => (
                   <div
                     key={idx}
-                    className="month-header-cell"
-                    style={{ color: idx === 0 || idx === 6 ? "#ef4444" : "#64748b" }}
+                    className={`month-header-cell ${idx === 0 || idx === 6 ? "weekend" : ""}`}
                   >
                     {dName}
                   </div>
@@ -490,7 +576,7 @@ export const CalendarView = () => {
               <div
                 className="cal-month-body flex-grow-1 min-vh-0"
                 style={{
-                  gridTemplateRows: `repeat(${rowCount}, 1fr)`
+                  gridTemplateRows: `repeat(${rowCount}, minmax(0, 1fr))`
                 }}
               >
                 {monthDaysGrid.map((item, index) => {
@@ -501,7 +587,7 @@ export const CalendarView = () => {
                     <div
                       key={index}
                       className={`month-day-cell ${!item.isCurrentMonth ? "other-month" : ""} ${isToday ? "today-cell" : ""}`}
-                      onClick={() => handleOpenCreateModal(item.date)}
+                      onClick={() => handleDayClick(item.date)}
                     >
                       {/* Tiêu đề Ngày */}
                       <div className="day-cell-top flex-shrink-0">
@@ -522,12 +608,14 @@ export const CalendarView = () => {
                               style={{ background: ev.mau_sac || typeInfo.color }}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setDetailEvent(ev);
+                                handleDayClick(item.date);
                               }}
                               title={ev.tieu_de}
                             >
                               <span className="event-chip-dot">●</span>
-                              <span className="event-chip-title">{ev.tieu_de}</span>
+                              <span className="event-chip-title">
+                                {ev.tieu_de} {ev.bat_thong_bao !== false ? "🔔" : ""}
+                              </span>
                             </div>
                           );
                         })}
@@ -537,8 +625,7 @@ export const CalendarView = () => {
                             className="event-overflow-text"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setCurrentDate(item.date);
-                              setViewMode("week");
+                              handleDayClick(item.date);
                             }}
                           >
                             +{dayEvents.length - 2} sự kiện
@@ -565,7 +652,7 @@ export const CalendarView = () => {
                     <div
                       key={idx}
                       className={`week-day-column ${isToday ? "active-week-column" : ""}`}
-                      onClick={() => handleOpenCreateModal(dayDate)}
+                      onClick={() => handleDayClick(dayDate)}
                     >
                       <div className="week-day-header">
                         <span className="week-day-name">{dayName}</span>
@@ -585,16 +672,19 @@ export const CalendarView = () => {
                                 key={ev._id}
                                 className="week-event-card"
                                 style={{
-                                  background: isToday ? "rgba(255,255,255,0.2)" : (ev.mau_sac ? `${ev.mau_sac}15` : "#eff6ff"),
-                                  borderLeft: `4px solid ${isToday ? "#ffffff" : (ev.mau_sac || "#3b82f6")}`
+                                  borderLeft: `4px solid ${ev.mau_sac || "#3b82f6"}`
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setDetailEvent(ev);
+                                  handleDayClick(dayDate);
                                 }}
                               >
-                                <div className="week-event-title">📖 {ev.tieu_de}</div>
-                                <div className="week-event-time">🕒 {startTime} - {endTime}</div>
+                                <div className="week-event-title">📖 {ev.tieu_de} {ev.bat_thong_bao !== false ? "🔔" : ""}</div>
+                                {ev.loai_su_kien === "deadline" ? (
+                                  <div className="week-event-time">⏰ Hạn: {startTime}</div>
+                                ) : (
+                                  <div className="week-event-time">🕒 {startTime} - {endTime}</div>
+                                )}
                                 {ev.dia_diem && <div className="week-event-loc">📍 {ev.dia_diem}</div>}
                               </div>
                             );
@@ -610,11 +700,11 @@ export const CalendarView = () => {
 
         </div>
 
-        {/* RIGHT COLUMN: WIDGETS PHỤ BOOTSTRAP (COL-12 COL-MD-5 COL-LG-4 COL-XL-3) */}
-        <div className="cal-right-column col-12 col-md-5 col-lg-4 col-xl-3 d-flex flex-column gap-3">
+        {/* RIGHT COLUMN: WIDGETS PHỤ (LỊCH TRÌNH & DEADLINE) */}
+        <div className="cal-right-column d-flex flex-column gap-2 h-100 min-vh-0">
           
           {/* WIDGET 1: LỊCH TRÌNH HÔM NAY */}
-          <div className="widget-card flex-shrink-0">
+          <div className="widget-card">
             <div className="widget-header">
               <div className="widget-title">
                 <span>🕒</span>
@@ -637,7 +727,7 @@ export const CalendarView = () => {
                       style={{ borderLeftColor: ev.mau_sac || "#3b82f6" }}
                       onClick={() => setDetailEvent(ev)}
                     >
-                      <div className="today-event-title">● {ev.tieu_de}</div>
+                      <div className="today-event-title">● {ev.tieu_de} {ev.bat_thong_bao !== false ? "🔔" : ""}</div>
                       <div className="today-event-meta">
                         <span>🕒 {new Date(ev.thoi_gian_bat_dau).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>
                         {ev.dia_diem && <span>📍 {ev.dia_diem}</span>}
@@ -704,6 +794,197 @@ export const CalendarView = () => {
       </div>
 
       {/* ============================================================
+          CỬA SỔ MODAL DANH SÁCH SỰ KIỆN TRONG Ô LỊCH (DAY EVENTS LIST)
+          ============================================================ */}
+      {selectedDayDate && (
+        <div className="modal-overlay" onClick={() => setSelectedDayDate(null)}>
+          <div
+            className="modal-content day-events-modal"
+            style={{ maxWidth: "560px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="day-modal-header d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <div className="d-flex align-items-center gap-2">
+                  <span style={{ fontSize: "1.3rem" }}>📋</span>
+                  <h3 style={{ fontSize: "1.25rem", fontWeight: "800", margin: 0, color: "var(--text-main)" }}>
+                    Sự Kiện Trong Ngày
+                  </h3>
+                  <span className="badge badge-primary" style={{ fontSize: "0.75rem", padding: "4px 8px" }}>
+                    {selectedDayEvents.length} sự kiện
+                  </span>
+                </div>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "4px", fontWeight: "600" }}>
+                  📅 {selectedDayDate.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDayDate(null)}
+                style={{ background: "none", border: "none", fontSize: "1.3rem", cursor: "pointer", color: "var(--text-muted)", lineHeight: 1 }}
+                title="Đóng"
+              >
+                ✖
+              </button>
+            </div>
+
+            {/* Danh sách sự kiện hoặc Trạng thái trống */}
+            <div className="day-modal-body" style={{ maxHeight: "380px", overflowY: "auto", paddingRight: "4px" }}>
+              {selectedDayEvents.length === 0 ? (
+                <div className="day-modal-empty text-center py-4">
+                  <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>☕</div>
+                  <h5 style={{ fontWeight: "700", color: "var(--text-main)", marginBottom: "6px", fontSize: "1rem" }}>
+                    Chưa có sự kiện nào trong ngày này
+                  </h5>
+                  <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>
+                    Bạn có thể bấm nút "Thêm sự kiện mới" bên dưới để lên kế hoạch học tập, tập luyện hoặc công việc!
+                  </p>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-2.5">
+                  {selectedDayEvents.map((ev) => {
+                    const typeInfo = EVENT_TYPE_MAP[ev.loai_su_kien] || {
+                      label: "Sự kiện",
+                      icon: "📌",
+                      badgeClass: "badge-primary",
+                      color: ev.mau_sac || "#3b82f6"
+                    };
+                    const startTime = new Date(ev.thoi_gian_bat_dau).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+                    const endTime = new Date(ev.thoi_gian_ket_thuc).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+
+                    return (
+                      <div
+                        key={ev._id}
+                        className="day-modal-event-card"
+                        style={{
+                          borderLeft: `5px solid ${ev.mau_sac || typeInfo.color}`
+                        }}
+                        onClick={() => {
+                          setSelectedDayDate(null);
+                          setDetailEvent(ev);
+                        }}
+                        title="Bấm để xem chi tiết sự kiện"
+                      >
+                        <div className="d-flex justify-content-between align-items-start gap-2">
+                          <div className="flex-grow-1 min-w-0">
+                            {/* Phân loại & Quy tắc lặp */}
+                            <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                              <span className={`badge ${typeInfo.badgeClass}`} style={{ fontSize: "0.72rem", padding: "2px 8px" }}>
+                                {typeInfo.icon} {typeInfo.label}
+                              </span>
+                              {ev.quy_tac_lap && ev.quy_tac_lap !== "once" && (
+                                <span style={{ fontSize: "0.72rem", color: "var(--accent-success)", fontWeight: "700" }}>
+                                  🔄 {REPEAT_RULE_MAP[ev.quy_tac_lap]}
+                                </span>
+                              )}
+                              {ev.bat_thong_bao !== false ? (
+                                <span style={{ fontSize: "0.72rem", color: "#10b981", fontWeight: "700", background: "rgba(16, 185, 129, 0.12)", padding: "2px 8px", borderRadius: "6px" }}>
+                                  🔔 Nhắc trước {formatLeadTime(ev.thoi_gian_nhac_truoc !== undefined ? ev.thoi_gian_nhac_truoc : 15)}
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", background: "rgba(100, 116, 139, 0.12)", padding: "2px 8px", borderRadius: "6px" }}>
+                                  🔕 Tắt thông báo
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Tiêu đề */}
+                            <div className="day-modal-event-title" style={{ fontWeight: "800", fontSize: "0.95rem", color: "var(--text-main)", marginBottom: "4px" }}>
+                              {ev.tieu_de}
+                            </div>
+
+                            {/* Thời gian & Địa điểm */}
+                            <div className="d-flex align-items-center gap-3 flex-wrap" style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                              {ev.loai_su_kien === "deadline" ? (
+                                <span>⏰ Hạn chót: {startTime}</span>
+                              ) : (
+                                <span>🕒 {startTime} - {endTime}</span>
+                              )}
+                              {ev.dia_diem && <span>📍 {ev.dia_diem}</span>}
+                            </div>
+
+                            {/* Mô tả tóm tắt nếu có */}
+                            {ev.mo_ta && (
+                              <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                📝 {ev.mo_ta}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Buttons: 🔔 Bật/Tắt, ✏️ Sửa & 🗑️ Xóa */}
+                          <div className="day-modal-event-actions d-flex align-items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              className="day-action-btn"
+                              style={{
+                                color: ev.bat_thong_bao !== false ? "#10b981" : "var(--text-muted)",
+                                background: ev.bat_thong_bao !== false ? "rgba(16, 185, 129, 0.12)" : "rgba(100, 116, 139, 0.12)",
+                                padding: "4px 8px",
+                                fontSize: "0.78rem",
+                                borderRadius: "6px"
+                              }}
+                              onClick={() => handleQuickToggleNotification(ev)}
+                              title={ev.bat_thong_bao !== false ? "Bấm để TẮT thông báo" : "Bấm để BẬT thông báo"}
+                            >
+                              {ev.bat_thong_bao !== false ? "🔔 Bật" : "🔕 Tắt"}
+                            </button>
+                            <button
+                              type="button"
+                              className="day-action-btn edit-btn"
+                              onClick={() => {
+                                setSelectedDayDate(null);
+                                handleOpenEditModal(ev);
+                              }}
+                              title="Chỉnh sửa sự kiện"
+                            >
+                              ✏️ Sửa
+                            </button>
+                            <button
+                              type="button"
+                              className="day-action-btn delete-btn"
+                              onClick={() => {
+                                setSelectedDayDate(null);
+                                handleOpenDeleteModal(ev);
+                              }}
+                              title="Xóa sự kiện"
+                            >
+                              🗑️ Xóa
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="day-modal-footer d-flex justify-content-between align-items-center mt-3 pt-3" style={{ borderTop: "1px solid var(--border-color)" }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setSelectedDayDate(null)}
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  const targetDate = selectedDayDate;
+                  setSelectedDayDate(null);
+                  handleOpenCreateModal(targetDate);
+                }}
+              >
+                ➕ Thêm Sự Kiện Mới
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
           CỬA SỔ MODAL CHI TIẾT SỰ KIỆN (EVENT DETAIL MODAL)
           ============================================================ */}
       {detailEvent && (
@@ -726,18 +1007,101 @@ export const CalendarView = () => {
             </h3>
 
             {detailEvent.mo_ta && (
-              <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", background: "rgba(0,0,0,0.03)", padding: "12px", borderRadius: "12px", marginBottom: "16px" }}>
+              <div className="modal-desc-box">
                 {detailEvent.mo_ta}
-              </p>
+              </div>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.88rem", color: "var(--text-main)", marginBottom: "24px" }}>
-              <div>⏰ <strong>Thời gian bắt đầu:</strong> {new Date(detailEvent.thoi_gian_bat_dau).toLocaleString("vi-VN", { dateStyle: "full", timeStyle: "short" })}</div>
-              <div>⌛ <strong>Thời gian kết thúc:</strong> {new Date(detailEvent.thoi_gian_ket_thuc).toLocaleString("vi-VN", { dateStyle: "full", timeStyle: "short" })}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.88rem", color: "var(--text-main)", marginBottom: "20px" }}>
+              {detailEvent.loai_su_kien === "deadline" ? (
+                <div>⏰ <strong>Hạn Deadline:</strong> {new Date(detailEvent.thoi_gian_bat_dau).toLocaleString("vi-VN", { dateStyle: "full", timeStyle: "short" })}</div>
+              ) : (
+                <>
+                  <div>⏰ <strong>Thời gian bắt đầu:</strong> {new Date(detailEvent.thoi_gian_bat_dau).toLocaleString("vi-VN", { dateStyle: "full", timeStyle: "short" })}</div>
+                  {detailEvent.thoi_gian_ket_thuc && (
+                    <div>⌛ <strong>Thời gian kết thúc:</strong> {new Date(detailEvent.thoi_gian_ket_thuc).toLocaleString("vi-VN", { dateStyle: "full", timeStyle: "short" })}</div>
+                  )}
+                </>
+              )}
               {detailEvent.dia_diem && <div>📍 <strong>Địa điểm:</strong> {detailEvent.dia_diem}</div>}
               {detailEvent.quy_tac_lap !== "once" && (
-                <div style={{ color: "#10b981", fontWeight: "700" }}>
+                <div style={{ color: "var(--accent-success)", fontWeight: "700" }}>
                   🔄 <strong>Quy tắc lặp:</strong> {REPEAT_RULE_MAP[detailEvent.quy_tac_lap]}
+                </div>
+              )}
+            </div>
+
+            {/* THẺ ĐIỀU KHIỂN BẬT/TẮT THÔNG BÁO CHO SỰ KIỆN */}
+            <div
+              style={{
+                background: detailEvent.bat_thong_bao !== false ? "rgba(16, 185, 129, 0.08)" : "rgba(100, 116, 139, 0.08)",
+                border: `1px solid ${detailEvent.bat_thong_bao !== false ? "rgba(16, 185, 129, 0.25)" : "rgba(100, 116, 139, 0.25)"}`,
+                borderRadius: "14px",
+                padding: "14px 16px",
+                marginBottom: "20px"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "1.3rem" }}>
+                    {detailEvent.bat_thong_bao !== false ? "🔔" : "🔕"}
+                  </span>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: "0.9rem", color: detailEvent.bat_thong_bao !== false ? "var(--accent-success)" : "var(--text-muted)" }}>
+                      {detailEvent.bat_thong_bao !== false ? "Thông báo ĐANG BẬT" : "Thông báo ĐANG TẮT"}
+                    </div>
+                    <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                      {detailEvent.bat_thong_bao !== false
+                        ? `Nhắc trước: ${formatLeadTime(detailEvent.thoi_gian_nhac_truoc !== undefined ? detailEvent.thoi_gian_nhac_truoc : 15)}`
+                        : "Sự kiện này hiện không gửi thông báo chuông"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nút bật/tắt nhanh 1-click */}
+                <button
+                  type="button"
+                  className={detailEvent.bat_thong_bao !== false ? "btn-secondary" : "btn-primary"}
+                  onClick={() => handleQuickToggleNotification(detailEvent)}
+                  style={{
+                    padding: "6px 14px",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    borderRadius: "9999px",
+                    whiteSpace: "nowrap"
+                  }}
+                  title={detailEvent.bat_thong_bao !== false ? "Bấm để Tắt thông báo cho sự kiện này" : "Bấm để Bật thông báo cho sự kiện này"}
+                >
+                  {detailEvent.bat_thong_bao !== false ? "🔕 Tắt thông báo" : "🔔 Bật thông báo"}
+                </button>
+              </div>
+
+              {/* Lựa chọn số phút nhắc trước khi đang bật */}
+              {detailEvent.bat_thong_bao !== false && (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "12px", paddingTop: "10px", borderTop: "1px dashed rgba(16, 185, 129, 0.25)" }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", whiteSpace: "nowrap" }}>
+                    ⏰ Nhắc trước:
+                  </label>
+                  <select
+                    value={detailEvent.thoi_gian_nhac_truoc !== undefined ? detailEvent.thoi_gian_nhac_truoc : 15}
+                    onChange={(e) => handleQuickChangeLeadTime(detailEvent, e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: "6px 10px",
+                      borderRadius: "8px",
+                      fontSize: "0.82rem",
+                      border: "1px solid var(--border-color)",
+                      background: "var(--card-bg)",
+                      color: "var(--text-main)",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {LEAD_TIME_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
             </div>
@@ -776,7 +1140,7 @@ export const CalendarView = () => {
             </div>
 
             {formError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", padding: "12px 16px", borderRadius: "14px", fontSize: "0.85rem", fontWeight: "600", marginBottom: "16px" }}>
+              <div style={{ background: "rgba(239, 68, 68, 0.15)", color: "var(--accent-danger)", border: "1px solid rgba(239, 68, 68, 0.3)", padding: "12px 16px", borderRadius: "14px", fontSize: "0.85rem", fontWeight: "600", marginBottom: "16px" }}>
                 ⚠️ {formError}
               </div>
             )}
@@ -798,7 +1162,23 @@ export const CalendarView = () => {
                   <label>Loại sự kiện *</label>
                   <select
                     value={formData.loai_su_kien}
-                    onChange={(e) => setFormData({ ...formData, loai_su_kien: e.target.value })}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      const nextData = { ...formData, loai_su_kien: newType };
+                      if (newType === "deadline") {
+                        if (formData.mau_sac === "#3b82f6" || !formData.mau_sac) {
+                          nextData.mau_sac = "#f59e0b";
+                        }
+                        nextData.thoi_gian_ket_thuc = formData.thoi_gian_bat_dau;
+                      } else {
+                        const start = new Date(formData.thoi_gian_bat_dau || Date.now());
+                        const end = new Date(formData.thoi_gian_ket_thuc || Date.now());
+                        if (end.getTime() <= start.getTime()) {
+                          nextData.thoi_gian_ket_thuc = formatDateForInput(new Date(start.getTime() + 3600000));
+                        }
+                      }
+                      setFormData(nextData);
+                    }}
                   >
                     <option value="hoc-tap">📚 Học tập</option>
                     <option value="tap-luyen">🏋️ Tập luyện</option>
@@ -824,8 +1204,8 @@ export const CalendarView = () => {
               </div>
 
               {editingEvent && (editingEvent.quy_tac_lap !== "once" || editingEvent.nhom_lap_id) && (
-                <div style={{ background: "rgba(37, 99, 235, 0.08)", padding: "14px", borderRadius: "16px", marginBottom: "16px" }}>
-                  <label style={{ fontSize: "0.85rem", fontWeight: "700", color: "var(--primary)", display: "block", marginBottom: "8px" }}>
+                <div className="modal-notice-box info">
+                  <label className="notice-label">
                     🔄 Sự kiện này thuộc một chuỗi lặp lại. Chọn phạm vi áp dụng sửa:
                   </label>
                   <div style={{ display: "flex", gap: "16px", fontSize: "0.85rem" }}>
@@ -853,27 +1233,52 @@ export const CalendarView = () => {
                 </div>
               )}
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                <div className="form-group">
-                  <label>Thời gian bắt đầu *</label>
+              {/* NẾU LÀ DEADLINE: CHỈ HIỂN THỊ HẠN DEADLINE (ẨN THỜI GIAN KẾT THÚC) */}
+              {formData.loai_su_kien === "deadline" ? (
+                <div className="form-group" style={{ marginBottom: "16px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, color: "var(--text-main)" }}>
+                    <span>⏰</span> Hạn chót Deadline *
+                  </label>
                   <input
                     type="datetime-local"
                     required
                     value={formData.thoi_gian_bat_dau}
-                    onChange={(e) => setFormData({ ...formData, thoi_gian_bat_dau: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        thoi_gian_bat_dau: e.target.value,
+                        thoi_gian_ket_thuc: e.target.value
+                      })
+                    }
                   />
+                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                    💡 Đối với Deadline, chỉ cần chọn hạn chót. Hệ thống sẽ theo dõi và nhắc bạn đúng hạn.
+                  </div>
                 </div>
+              ) : (
+                /* NẾU LÀ LOẠI SỰ KIỆN KHÁC: HIỂN THỊ CẢ THỜI GIAN BẮT ĐẦU VÀ KẾT THÚC */
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div className="form-group">
+                    <label>Thời gian bắt đầu *</label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={formData.thoi_gian_bat_dau}
+                      onChange={(e) => setFormData({ ...formData, thoi_gian_bat_dau: e.target.value })}
+                    />
+                  </div>
 
-                <div className="form-group">
-                  <label>Thời gian kết thúc *</label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={formData.thoi_gian_ket_thuc}
-                    onChange={(e) => setFormData({ ...formData, thoi_gian_ket_thuc: e.target.value })}
-                  />
+                  <div className="form-group">
+                    <label>Thời gian kết thúc *</label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={formData.thoi_gian_ket_thuc}
+                      onChange={(e) => setFormData({ ...formData, thoi_gian_ket_thuc: e.target.value })}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "14px" }}>
                 <div className="form-group">
@@ -907,6 +1312,86 @@ export const CalendarView = () => {
                 />
               </div>
 
+              {/* CỤM CÀI ĐẶT THÔNG BÁO CHO SỰ KIỆN */}
+              <div
+                style={{
+                  background: formData.bat_thong_bao ? "rgba(59, 130, 246, 0.08)" : "rgba(100, 116, 139, 0.08)",
+                  border: `1px solid ${formData.bat_thong_bao ? "rgba(59, 130, 246, 0.25)" : "rgba(100, 116, 139, 0.2)"}`,
+                  borderRadius: "14px",
+                  padding: "14px 16px",
+                  marginBottom: "18px"
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <label style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", marginBottom: "2px" }}>
+                      <span>{formData.bat_thong_bao ? "🔔" : "🔕"}</span>
+                      <span>Bật thông báo sự kiện</span>
+                    </label>
+                    <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                      Hệ thống sẽ nhắc nhở và phát chuông khi sự kiện sắp diễn ra
+                    </div>
+                  </div>
+
+                  {/* Toggle switch */}
+                  <label style={{ cursor: "pointer", position: "relative", display: "inline-block", width: "46px", height: "24px", margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.bat_thong_bao}
+                      onChange={(e) => setFormData({ ...formData, bat_thong_bao: e.target.checked })}
+                      style={{ opacity: 0, width: 0, height: 0 }}
+                    />
+                    <span
+                      style={{
+                        position: "absolute",
+                        cursor: "pointer",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: formData.bat_thong_bao ? "var(--primary)" : "#cbd5e1",
+                        transition: "0.3s",
+                        borderRadius: "24px"
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: "absolute",
+                          content: '""',
+                          height: "18px",
+                          width: "18px",
+                          left: formData.bat_thong_bao ? "24px" : "3px",
+                          bottom: "3px",
+                          backgroundColor: "white",
+                          transition: "0.3s",
+                          borderRadius: "50%",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                        }}
+                      />
+                    </span>
+                  </label>
+                </div>
+
+                {formData.bat_thong_bao && (
+                  <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px dashed rgba(59, 130, 246, 0.2)" }}>
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: "6px", display: "block" }}>
+                      ⏰ Thời gian thông báo trước:
+                    </label>
+                    <select
+                      value={formData.thoi_gian_nhac_truoc}
+                      onChange={(e) => setFormData({ ...formData, thoi_gian_nhac_truoc: Number(e.target.value) })}
+                      style={{ width: "100%" }}
+                    >
+                      {LEAD_TIME_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "24px" }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} disabled={submitting}>
                   Hủy
@@ -926,7 +1411,7 @@ export const CalendarView = () => {
       {deleteModal.show && deleteModal.event && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: "440px" }}>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: "800", marginBottom: "12px", color: "#ef4444" }}>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: "800", marginBottom: "12px", color: "var(--accent-danger)" }}>
               🗑️ Xác Nhận Xóa Sự Kiện
             </h3>
             <p style={{ fontSize: "0.9rem", color: "var(--text-main)", marginBottom: "16px" }}>
@@ -934,8 +1419,8 @@ export const CalendarView = () => {
             </p>
 
             {(deleteModal.event.quy_tac_lap !== "once" || deleteModal.event.nhom_lap_id) && (
-              <div style={{ background: "rgba(239, 68, 68, 0.08)", padding: "14px", borderRadius: "14px", marginBottom: "20px" }}>
-                <label style={{ fontSize: "0.85rem", fontWeight: "700", color: "#ef4444", display: "block", marginBottom: "8px" }}>
+              <div className="modal-notice-box danger">
+                <label className="notice-label danger">
                   🔄 Sự kiện này thuộc một chuỗi lặp lại. Chọn phạm vi xóa:
                 </label>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.85rem" }}>

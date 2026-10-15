@@ -1,18 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AuthModal } from "./components/AuthModal";
 import { FloatingMenu } from "./components/FloatingMenu";
+import { ProfileModal } from "./components/ProfileModal";
+import { NotificationWatcher } from "./components/NotificationWatcher";
 
 import { CalendarView } from "./views/CalendarView";
 import { StudyGpaView } from "./views/StudyGpaView";
 import { TutorView } from "./views/TutorView";
 import { WorkoutView } from "./views/WorkoutView";
 import { ProjectsView } from "./views/ProjectsView";
-import { ProfileView } from "./views/ProfileView";
 
 function MainApp() {
   const { user, loading, theme, toggleTheme } = useAuth();
-  const [activeTab, setActiveTab] = useState("workout"); // Default to workout for focus or user choice
+  const [activeTab, setActiveTab] = useState("calendar"); // Trang đầu tiên sau khi đăng nhập là trang lịch
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setActiveTab("calendar");
+    }
+  }, [user?._id]);
 
   if (loading) {
     return (
@@ -38,49 +46,19 @@ function MainApp() {
         return <WorkoutView onNavigateToCalendar={() => setActiveTab("calendar")} />;
       case "projects":
         return <ProjectsView />;
-      case "profile":
-        return <ProfileView />;
       default:
-        return <WorkoutView />;
+        return <CalendarView />;
     }
   };
 
   return (
-    <div className="app-container no-sidebar">
+    <div className={`app-container no-sidebar ${activeTab === "calendar" ? "calendar-view-active" : ""}`}>
       {/* Top Header Bar */}
       <header className="neu-top-header">
         <div className="brand-logo-inline" onClick={() => setActiveTab("calendar")}>
           <div className="logo-icon-circle">LP</div>
           <span className="logo-title">LIFE PLANNER</span>
         </div>
-
-        {/* Header Nav Pills */}
-        <nav className="header-nav-pills" aria-label="Main Navigation">
-          <button
-            className={`header-nav-btn ${activeTab === "calendar" ? "active" : ""}`}
-            onClick={() => setActiveTab("calendar")}
-          >
-            <span>📅</span> Lịch & Sự Kiện
-          </button>
-          <button
-            className={`header-nav-btn ${activeTab === "study" ? "active" : ""}`}
-            onClick={() => setActiveTab("study")}
-          >
-            <span>🎓</span> Học Tập & GPA
-          </button>
-          <button
-            className={`header-nav-btn ${activeTab === "workout" ? "active" : ""}`}
-            onClick={() => setActiveTab("workout")}
-          >
-            <span>🏋️</span> Thể Chất & Gym
-          </button>
-          <button
-            className={`header-nav-btn ${activeTab === "profile" ? "active" : ""}`}
-            onClick={() => setActiveTab("profile")}
-          >
-            <span>👤</span> Hồ Sơ
-          </button>
-        </nav>
 
         {/* Header Right Actions */}
         <div className="header-actions">
@@ -95,7 +73,9 @@ function MainApp() {
           </button>
           <div
             className="d-none d-md-flex align-items-center gap-2"
-            style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-main)" }}
+            style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-main)", cursor: "pointer" }}
+            onClick={() => setShowProfileModal(true)}
+            title="Xem và chỉnh sửa cài đặt cá nhân & tài khoản"
           >
             <div
               style={{
@@ -121,12 +101,25 @@ function MainApp() {
       </header>
 
       {/* Main Content Area */}
-      <main className="main-wrapper full-width">
+      <main className={`main-wrapper full-width ${activeTab === "calendar" ? "calendar-main-wrapper" : ""}`}>
         {renderContent()}
       </main>
 
       {/* Bottom Right Floating Bubble Menu */}
-      <FloatingMenu activeTab={activeTab} setActiveTab={setActiveTab} />
+      <FloatingMenu
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenProfile={() => setShowProfileModal(true)}
+      />
+
+      {/* Giám sát thông báo sự kiện thời gian thực (Âm thanh & Popup) */}
+      <NotificationWatcher />
+
+      {/* Modal Cài Đặt Cá Nhân & Tài Khoản (Không chuyển trang) */}
+      <ProfileModal
+        show={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
     </div>
   );
 }

@@ -3,7 +3,7 @@
    Inspired by CodeByGaurav Neumorphism Design
    ============================================================ */
 
-:root {
+.neu-auth-wrapper {
   --neu-bg: #e7ebf0;
   --neu-text-main: #2d3748;
   --neu-text-muted: #718096;

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const SuKien = require("../../Model/SuKien");
 
-const ALLOWED_EVENT_TYPES = ["hoc-tap", "tap-luyen", "deadline", "ca-nhan"];
+const ALLOWED_EVENT_TYPES = ["hoc-tap", "tap-luyen", "deadline", "ca-nhan", "cong-viec"];
 const ALLOWED_REPEAT_RULES = ["once", "daily", "weekly", "monthly"];
 
 // Lấy danh sách sự kiện trong khoảng thời gian
@@ -55,7 +55,7 @@ const createSuKien = async (req, res) => {
     try {
         const {
             loai_su_kien, tieu_de, mo_ta, thoi_gian_bat_dau, thoi_gian_ket_thuc,
-            dia_diem, mau_sac, quy_tac_lap, bat_thong_bao, so_ngay_nhac, cong_viec_id
+            dia_diem, mau_sac, quy_tac_lap, bat_thong_bao, so_ngay_nhac, thoi_gian_nhac_truoc, cong_viec_id
         } = req.body;
 
         if (!tieu_de || typeof tieu_de !== "string" || !tieu_de.trim()) {
@@ -72,28 +72,50 @@ const createSuKien = async (req, res) => {
             });
         }
 
-        if (!thoi_gian_bat_dau || !thoi_gian_ket_thuc) {
-            return res.status(400).json({
-                success: false,
-                message: "Vui lòng chọn đầy đủ Thời gian bắt đầu và Thời gian kết thúc"
-            });
-        }
+        let startDate, endDate;
+        if (loai_su_kien === "deadline") {
+            const deadlineInput = thoi_gian_bat_dau || thoi_gian_ket_thuc;
+            if (!deadlineInput) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Vui lòng chọn thời hạn cho deadline"
+                });
+            }
+            startDate = new Date(deadlineInput);
+            if (isNaN(startDate.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Định dạng thời hạn deadline không hợp lệ"
+                });
+            }
+            endDate = thoi_gian_ket_thuc ? new Date(thoi_gian_ket_thuc) : new Date(startDate);
+            if (isNaN(endDate.getTime()) || endDate.getTime() < startDate.getTime()) {
+                endDate = new Date(startDate);
+            }
+        } else {
+            if (!thoi_gian_bat_dau || !thoi_gian_ket_thuc) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Vui lòng chọn đầy đủ Thời gian bắt đầu và Thời gian kết thúc"
+                });
+            }
 
-        const startDate = new Date(thoi_gian_bat_dau);
-        const endDate = new Date(thoi_gian_ket_thuc);
+            startDate = new Date(thoi_gian_bat_dau);
+            endDate = new Date(thoi_gian_ket_thuc);
 
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-            return res.status(400).json({
-                success: false,
-                message: "Định dạng thời gian không hợp lệ"
-            });
-        }
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Định dạng thời gian không hợp lệ"
+                });
+            }
 
-        if (endDate.getTime() <= startDate.getTime()) {
-            return res.status(400).json({
-                success: false,
-                message: "Thời gian kết thúc phải lớn hơn thời gian bắt đầu"
-            });
+            if (endDate.getTime() <= startDate.getTime()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Thời gian kết thúc phải lớn hơn thời gian bắt đầu"
+                });
+            }
         }
 
         const rule = ALLOWED_REPEAT_RULES.includes(quy_tac_lap) ? quy_tac_lap : "once";
@@ -132,6 +154,7 @@ const createSuKien = async (req, res) => {
                 quy_tac_lap: rule,
                 nhom_lap_id: nhomLapId,
                 bat_thong_bao: typeof bat_thong_bao === "boolean" ? bat_thong_bao : true,
+                thoi_gian_nhac_truoc: thoi_gian_nhac_truoc !== undefined ? Number(thoi_gian_nhac_truoc) : 15,
                 so_ngay_nhac: Number(so_ngay_nhac) || 0
             });
         }
@@ -207,25 +230,49 @@ const updateSuKien = async (req, res) => {
         }
 
         // Validation thời gian
+        const eventType = updateData.loai_su_kien !== undefined ? updateData.loai_su_kien : event.loai_su_kien;
         const newStart = updateData.thoi_gian_bat_dau ? new Date(updateData.thoi_gian_bat_dau) : new Date(event.thoi_gian_bat_dau);
-        const newEnd = updateData.thoi_gian_ket_thuc ? new Date(updateData.thoi_gian_ket_thuc) : new Date(event.thoi_gian_ket_thuc);
+        let newEnd;
 
-        if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime())) {
+        if (isNaN(newStart.getTime())) {
             return res.status(400).json({
                 success: false,
                 message: "Định dạng thời gian không hợp lệ"
             });
         }
 
-        if (newEnd.getTime() <= newStart.getTime()) {
-            return res.status(400).json({
-                success: false,
-                message: "Thời gian kết thúc phải lớn hơn thời gian bắt đầu"
-            });
+        if (eventType === "deadline") {
+            // Đối với deadline, chỉ cần mốc deadline
+            newEnd = updateData.thoi_gian_ket_thuc ? new Date(updateData.thoi_gian_ket_thuc) : new Date(newStart);
+            if (isNaN(newEnd.getTime()) || newEnd.getTime() < newStart.getTime()) {
+                newEnd = new Date(newStart);
+            }
+        } else {
+            newEnd = updateData.thoi_gian_ket_thuc ? new Date(updateData.thoi_gian_ket_thuc) : new Date(event.thoi_gian_ket_thuc || newStart);
+            if (isNaN(newEnd.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Định dạng thời gian kết thúc không hợp lệ"
+                });
+            }
+
+            if (newEnd.getTime() <= newStart.getTime()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Thời gian kết thúc phải lớn hơn thời gian bắt đầu"
+                });
+            }
         }
 
         updateData.thoi_gian_bat_dau = newStart;
         updateData.thoi_gian_ket_thuc = newEnd;
+
+        if (updateData.bat_thong_bao !== undefined) {
+            updateData.bat_thong_bao = Boolean(updateData.bat_thong_bao);
+        }
+        if (updateData.thoi_gian_nhac_truoc !== undefined) {
+            updateData.thoi_gian_nhac_truoc = Number(updateData.thoi_gian_nhac_truoc);
+        }
 
         if (update_mode === "all" && event.nhom_lap_id) {
             // Khi sửa toàn bộ chuỗi lặp:
@@ -236,7 +283,8 @@ const updateSuKien = async (req, res) => {
                 mo_ta: updateData.mo_ta !== undefined ? updateData.mo_ta : event.mo_ta,
                 dia_diem: updateData.dia_diem !== undefined ? updateData.dia_diem : event.dia_diem,
                 mau_sac: updateData.mau_sac !== undefined ? updateData.mau_sac : event.mau_sac,
-                bat_thong_bao: updateData.bat_thong_bao !== undefined ? updateData.bat_thong_bao : event.bat_thong_bao,
+                bat_thong_bao: updateData.bat_thong_bao !== undefined ? Boolean(updateData.bat_thong_bao) : event.bat_thong_bao,
+                thoi_gian_nhac_truoc: updateData.thoi_gian_nhac_truoc !== undefined ? Number(updateData.thoi_gian_nhac_truoc) : event.thoi_gian_nhac_truoc,
                 so_ngay_nhac: updateData.so_ngay_nhac !== undefined ? updateData.so_ngay_nhac : event.so_ngay_nhac
             };
 

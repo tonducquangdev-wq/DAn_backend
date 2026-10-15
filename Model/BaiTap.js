@@ -17,7 +17,8 @@ const baiTapSchema = new mongoose.Schema(
             enum: ["chua_hoan_thanh", "dang_thuc_hien", "da_hoan_thanh"],
             default: "chua_hoan_thanh"
         },
-        file_dinh_kem: { type: String, default: null }
+        file_dinh_kem: { type: String, default: null },
+        su_kien_id: { type: mongoose.Schema.Types.ObjectId, ref: "SuKien", default: null }
     },
     { timestamps: true }
 );

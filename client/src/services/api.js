@@ -80,6 +80,7 @@ export const api = {
   createWorkoutPlan: (data) => request("/tap-luyen/plans", { method: "POST", body: JSON.stringify(data) }),
   updateWorkoutPlan: (id, data) => request(`/tap-luyen/plans/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   activateWorkoutPlan: (id) => request(`/tap-luyen/plans/${id}/activate`, { method: "PATCH" }),
+  syncWorkoutPlanToCalendar: (id) => request(`/tap-luyen/plans/${id}/dong-bo-lich`, { method: "POST" }),
   deleteWorkoutPlan: (id) => request(`/tap-luyen/plans/${id}`, { method: "DELETE" }),
   updateBuoiTap: (id, data) => request(`/tap-luyen/buoi-tap/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   addExerciseToBuoi: (buoiId, data) => request(`/tap-luyen/buoi-tap/${buoiId}/exercises`, { method: "POST", body: JSON.stringify(data) }),
@@ -90,9 +91,17 @@ export const api = {
   // Dự án & Task
   getDuAn: () => request("/du-an"),
   createDuAn: (data) => request("/du-an", { method: "POST", body: JSON.stringify(data) }),
+  updateDuAn: (id, data) => request(`/du-an/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteDuAn: (id) => request(`/du-an/${id}`, { method: "DELETE" }),
   getCongViec: (query = "") => request(`/cong-viec${query}`),
   createCongViec: (data) => request("/cong-viec", { method: "POST", body: JSON.stringify(data) }),
   updateCongViec: (id, data) => request(`/cong-viec/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  deleteCongViec: (id) => request(`/cong-viec/${id}`, { method: "DELETE" })
+  deleteCongViec: (id) => request(`/cong-viec/${id}`, { method: "DELETE" }),
+
+  // Ca làm việc & Lịch làm Part-time
+  getCaLamViec: (query = "") => request(`/ca-lam-viec${query}`),
+  createCaLamViec: (data) => request("/ca-lam-viec", { method: "POST", body: JSON.stringify(data) }),
+  bulkCreateCaLamViec: (data) => request("/ca-lam-viec/bulk", { method: "POST", body: JSON.stringify(data) }),
+  updateCaLamViec: (id, data) => request(`/ca-lam-viec/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  deleteCaLamViec: (id) => request(`/ca-lam-viec/${id}`, { method: "DELETE" })
 };

@@ -34,9 +34,7 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
   const [toastMsg, setToastMsg] = useState(null);
 
   const initialMonForm = {
-    ma_mon: "",
     ten_mon: "",
-    so_tin_chi: 3,
     giang_vien: "",
     phong_hoc: "",
     ngay_bat_dau: new Date().toISOString().slice(0, 10),
@@ -47,12 +45,17 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
     mau_sac: "#3b82f6"
   };
 
-  const [monForm, setMonForm] = useState(initialMonForm);
-  const [btForm, setBtForm] = useState({
+  const initialBtForm = {
     ten_bai_tap: "",
+    mon_hoc_id: "",
     han_nop: new Date().toISOString().slice(0, 10),
-    do_uu_tien: "trung_binh"
-  });
+    gio_nop: "23:59",
+    do_uu_tien: "trung_binh",
+    meo_ghi_nho: ""
+  };
+
+  const [monForm, setMonForm] = useState(initialMonForm);
+  const [btForm, setBtForm] = useState(initialBtForm);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -110,9 +113,34 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
     const res = await api.createBaiTap(btForm);
     if (res.success) {
       setShowBtModal(false);
-      setBtForm({ ten_bai_tap: "", han_nop: new Date().toISOString().slice(0, 10), do_uu_tien: "trung_binh" });
+      setBtForm(initialBtForm);
       loadData();
-      showToast("Tạo bài tập mới thành công!");
+      showToast(res.message || "Tạo bài tập và tự động lưu deadline vào trang Lịch thành công! 🚀");
+    } else {
+      alert(res.message || "Lỗi tạo bài tập");
+    }
+  };
+
+  const handleDeleteBt = async (id, tenBt) => {
+    if (window.confirm(`Bạn có chắc muốn xóa bài tập "${tenBt}"? Sự kiện deadline tương ứng trên trang Lịch cũng sẽ được tự động xóa.`)) {
+      const res = await api.deleteBaiTap(id);
+      if (res.success) {
+        loadData();
+        showToast("Đã xóa bài tập và dọn dẹp deadline trên trang Lịch.");
+      } else {
+        alert(res.message || "Lỗi xóa bài tập");
+      }
+    }
+  };
+
+  const handleToggleBtStatus = async (bt) => {
+    const nextStatus = bt.trang_thai === "da_hoan_thanh" ? "chua_hoan_thanh" : "da_hoan_thanh";
+    const res = await api.updateBaiTap(bt._id, { trang_thai: nextStatus });
+    if (res.success) {
+      loadData();
+      showToast(nextStatus === "da_hoan_thanh" ? "Đã đánh dấu hoàn thành bài tập! 🎉" : "Đã chuyển bài tập về chưa hoàn thành.");
+    } else {
+      alert(res.message || "Lỗi cập nhật trạng thái");
     }
   };
 
@@ -194,9 +222,7 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
             <table>
               <thead>
                 <tr>
-                  <th>MÃ MÔN</th>
                   <th>TÊN MÔN HỌC</th>
-                  <th>TÍN CHỈ</th>
                   <th>GIẢNG VIÊN</th>
                   <th>PHÒNG HỌC</th>
                   <th>GIỜ & NGÀY HỌC</th>
@@ -208,9 +234,7 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
               <tbody>
                 {monHocs.map(m => (
                   <tr key={m._id}>
-                    <td style={{ fontWeight: "700" }}>{m.ma_mon}</td>
-                    <td style={{ fontWeight: "600" }}>{m.ten_mon}</td>
-                    <td>{m.so_tin_chi}</td>
+                    <td style={{ fontWeight: "700" }}>{m.ten_mon}</td>
                     <td>{m.giang_vien || "-"}</td>
                     <td>
                       {m.phong_hoc ? (
@@ -267,11 +291,16 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
 
       {/* Danh sách Bài tập & Deadline môn học */}
       <div className="glass-card" style={{ marginBottom: "28px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
-          <h3 style={{ fontSize: "1.15rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "10px" }}>
-            📝 Bài Tập & Deadline Môn Học
-          </h3>
-          <button className="btn-secondary" style={{ padding: "8px 16px", fontSize: "0.85rem" }} onClick={() => setShowBtModal(true)}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px", flexWrap: "wrap", gap: "10px" }}>
+          <div>
+            <h3 style={{ fontSize: "1.15rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "10px", margin: 0 }}>
+              📝 Bài Tập & Deadline Môn Học
+            </h3>
+            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              ⚡ Tự động đồng bộ và lưu vào trang Lịch dưới mục Deadline
+            </span>
+          </div>
+          <button className="btn-secondary" style={{ padding: "8px 16px", fontSize: "0.85rem", fontWeight: "700" }} onClick={() => setShowBtModal(true)}>
             ➕ Thêm Bài Tập
           </button>
         </div>
@@ -279,19 +308,107 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
           <p style={{ color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Chưa có bài tập nào cần làm.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {baiTaps.map(bt => (
-              <div key={bt._id} className="deadline-item">
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <div className="deadline-item-title">{bt.ten_bai_tap}</div>
-                  <span className={`badge ${bt.do_uu_tien === 'cao' ? 'badge-danger' : 'badge-warning'}`}>
-                    {bt.do_uu_tien}
-                  </span>
+            {baiTaps.map(bt => {
+              const isCompleted = bt.trang_thai === "da_hoan_thanh";
+              const dueDateObj = new Date(bt.han_nop);
+              const formattedDate = !isNaN(dueDateObj.getTime())
+                ? dueDateObj.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
+                : bt.han_nop;
+              const formattedTime = !isNaN(dueDateObj.getTime())
+                ? dueDateObj.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+                : "23:59";
+
+              const priorityColor =
+                bt.do_uu_tien === "cao" ? "#ef4444" : bt.do_uu_tien === "trung_binh" ? "#f59e0b" : "#3b82f6";
+              const priorityLabel =
+                bt.do_uu_tien === "cao" ? "Ưu tiên: Cao" : bt.do_uu_tien === "trung_binh" ? "Ưu tiên: Trung bình" : "Ưu tiên: Thấp";
+
+              return (
+                <div
+                  key={bt._id}
+                  className="deadline-item"
+                  style={{
+                    borderLeft: `4px solid ${isCompleted ? "#10b981" : priorityColor}`,
+                    opacity: isCompleted ? 0.75 : 1,
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <input
+                        type="checkbox"
+                        checked={isCompleted}
+                        onChange={() => handleToggleBtStatus(bt)}
+                        title="Đánh dấu hoàn thành"
+                        style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "#10b981" }}
+                      />
+                      <span
+                        className="deadline-item-title"
+                        style={{
+                          textDecoration: isCompleted ? "line-through" : "none",
+                          color: isCompleted ? "var(--text-muted)" : "var(--text-main)",
+                          fontSize: "0.95rem"
+                        }}
+                      >
+                        {bt.ten_bai_tap}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                      <span
+                        style={{
+                          fontSize: "0.72rem",
+                          fontWeight: "700",
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          background: isCompleted ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
+                          color: isCompleted ? "#10b981" : "#f59e0b",
+                          border: `1px solid ${isCompleted ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`
+                        }}
+                      >
+                        📅 Lịch: Deadline
+                      </span>
+
+                      <span
+                        className="badge"
+                        style={{
+                          background: `${priorityColor}20`,
+                          color: priorityColor,
+                          border: `1px solid ${priorityColor}40`,
+                          fontSize: "0.72rem",
+                          padding: "3px 8px"
+                        }}
+                      >
+                        {priorityLabel}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteBt(bt._id, bt.ten_bai_tap)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#ef4444",
+                          cursor: "pointer",
+                          fontSize: "0.85rem",
+                          padding: "2px 6px",
+                          borderRadius: "6px"
+                        }}
+                        title="Xóa bài tập và dọn dẹp deadline trên lịch"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "0.82rem", color: "var(--text-muted)", flexWrap: "wrap" }}>
+                    <span>🎓 Môn: <strong>{bt.mon_hoc_id?.ten_mon || "Bài tập chung"}</strong></span>
+                    <span>⏰ Hạn nộp: <strong>{formattedTime} ngày {formattedDate}</strong></span>
+                    {bt.meo_ghi_nho && <span>💡 {bt.meo_ghi_nho}</span>}
+                  </div>
                 </div>
-                <div style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
-                  Môn: {bt.mon_hoc_id?.ten_mon || "Bài tập chung"} | 📅 Hạn nộp: {new Date(bt.han_nop).toLocaleDateString()}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -305,29 +422,35 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
               Nhập thông tin môn học. Hệ thống sẽ tự động đồng bộ tất cả các buổi học vào <strong>trang Lịch cá nhân</strong>.
             </p>
             <form onSubmit={handleCreateMon}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "14px" }}>
-                <div className="form-group">
-                  <label>Mã môn *</label>
-                  <input type="text" required value={monForm.ma_mon} onChange={e => setMonForm({ ...monForm, ma_mon: e.target.value })} placeholder="VD: CS101" />
-                </div>
-                <div className="form-group">
-                  <label>Tên môn học *</label>
-                  <input type="text" required value={monForm.ten_mon} onChange={e => setMonForm({ ...monForm, ten_mon: e.target.value })} placeholder="VD: Cấu trúc dữ liệu & Giải thuật" />
-                </div>
+              <div className="form-group">
+                <label>Tên môn học *</label>
+                <input
+                  type="text"
+                  required
+                  value={monForm.ten_mon}
+                  onChange={e => setMonForm({ ...monForm, ten_mon: e.target.value })}
+                  placeholder="VD: Cấu trúc dữ liệu & Giải thuật"
+                />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
-                <div className="form-group">
-                  <label>Số tín chỉ *</label>
-                  <input type="number" required min="1" max="20" value={monForm.so_tin_chi} onChange={e => setMonForm({ ...monForm, so_tin_chi: e.target.value })} />
-                </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <div className="form-group">
                   <label>Phòng học</label>
-                  <input type="text" value={monForm.phong_hoc} onChange={e => setMonForm({ ...monForm, phong_hoc: e.target.value })} placeholder="P.302 - Nhà A" />
+                  <input
+                    type="text"
+                    value={monForm.phong_hoc}
+                    onChange={e => setMonForm({ ...monForm, phong_hoc: e.target.value })}
+                    placeholder="P.302 - Nhà A"
+                  />
                 </div>
                 <div className="form-group">
                   <label>Giảng viên phụ trách</label>
-                  <input type="text" value={monForm.giang_vien} onChange={e => setMonForm({ ...monForm, giang_vien: e.target.value })} placeholder="TS. Nguyễn Văn A" />
+                  <input
+                    type="text"
+                    value={monForm.giang_vien}
+                    onChange={e => setMonForm({ ...monForm, giang_vien: e.target.value })}
+                    placeholder="TS. Nguyễn Văn A"
+                  />
                 </div>
               </div>
 
@@ -416,31 +539,104 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
       {/* Modal Bài tập */}
       {showBtModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", marginBottom: "8px" }}>➕ Thêm Bài Tập Mới</h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "20px" }}>Tạo deadline để quản lý tiến độ bài tập</p>
+          <div className="modal-content" style={{ maxWidth: "560px" }}>
+            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", marginBottom: "6px" }}>➕ Thêm Bài Tập & Tự Động Lưu Deadline</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "18px" }}>
+              Tạo bài tập mới. Hệ thống sẽ <strong>tự động đồng bộ và lưu deadline vào trang Lịch</strong> để nhắc nhở bạn đúng hạn.
+            </p>
             <form onSubmit={handleCreateBt}>
               <div className="form-group">
-                <label>Tên bài tập</label>
-                <input type="text" required value={btForm.ten_bai_tap} onChange={e => setBtForm({ ...btForm, ten_bai_tap: e.target.value })} placeholder="Bài tập lớn Đồ họa máy tính" />
+                <label>Tên bài tập *</label>
+                <input
+                  type="text"
+                  required
+                  value={btForm.ten_bai_tap}
+                  onChange={e => setBtForm({ ...btForm, ten_bai_tap: e.target.value })}
+                  placeholder="VD: Bài tập lớn Đồ họa máy tính, Báo cáo tiểu luận..."
+                />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                <div className="form-group">
-                  <label>Hạn nộp</label>
-                  <input type="date" required value={btForm.han_nop} onChange={e => setBtForm({ ...btForm, han_nop: e.target.value })} />
+
+              <div className="form-group">
+                <label>Môn học liên quan</label>
+                <select
+                  value={btForm.mon_hoc_id}
+                  onChange={e => setBtForm({ ...btForm, mon_hoc_id: e.target.value })}
+                >
+                  <option value="">-- Bài tập chung / Môn khác --</option>
+                  {monHocs.map(m => (
+                    <option key={m._id} value={m._id}>
+                      {m.ten_mon}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "14px", marginBottom: "14px" }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label>Ngày nộp (Hạn chót) *</label>
+                  <input
+                    type="date"
+                    required
+                    value={btForm.han_nop}
+                    onChange={e => setBtForm({ ...btForm, han_nop: e.target.value })}
+                  />
                 </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label>Giờ nộp *</label>
+                  <input
+                    type="time"
+                    required
+                    value={btForm.gio_nop}
+                    onChange={e => setBtForm({ ...btForm, gio_nop: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <div className="form-group">
                   <label>Mức độ ưu tiên</label>
                   <select value={btForm.do_uu_tien} onChange={e => setBtForm({ ...btForm, do_uu_tien: e.target.value })}>
                     <option value="thap">Thấp</option>
                     <option value="trung_binh">Trung bình</option>
-                    <option value="cao">Cao</option>
+                    <option value="cao">Cao (Khẩn cấp)</option>
                   </select>
                 </div>
+                <div className="form-group">
+                  <label>Ghi chú / Mẹo ghi nhớ</label>
+                  <input
+                    type="text"
+                    value={btForm.meo_ghi_nho}
+                    onChange={e => setBtForm({ ...btForm, meo_ghi_nho: e.target.value })}
+                    placeholder="VD: Nộp qua Google Classroom, file nén .zip"
+                  />
+                </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "20px" }}>
+
+              {/* Banner thông báo đồng bộ lịch */}
+              <div
+                style={{
+                  background: "rgba(245, 158, 11, 0.08)",
+                  border: "1px solid rgba(245, 158, 11, 0.25)",
+                  borderRadius: "12px",
+                  padding: "12px 14px",
+                  marginTop: "8px",
+                  marginBottom: "18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  fontSize: "0.82rem",
+                  color: "var(--text-main)"
+                }}
+              >
+                <span style={{ fontSize: "1.2rem" }}>📅</span>
+                <div>
+                  <strong>Tự động lên Lịch:</strong> Bài tập này sẽ được hiển thị trên <strong>trang Lịch</strong> dưới dạng sự kiện <em>Deadline</em> màu cam và xuất hiện trong danh sách <em>Deadline sắp tới</em>.
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
                 <button type="button" className="btn-secondary" onClick={() => setShowBtModal(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Lưu Bài Tập</button>
+                <button type="submit" className="btn-primary">Lưu Bài Tập & Thêm Vào Lịch</button>
               </div>
             </form>
           </div>

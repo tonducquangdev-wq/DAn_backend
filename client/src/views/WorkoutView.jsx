@@ -13,6 +13,502 @@ const DAYS_OF_WEEK = [
   { day: 8, label: "CN", fullName: "Chủ Nhật" }
 ];
 
+// Danh sách các giáo án mẫu khoa học được hệ thống tính toán sẵn
+const WORKOUT_TEMPLATES = [
+  // 2 buổi/tuần
+  {
+    id: "full_body_2",
+    frequency: 2,
+    title: "Giáo Án Full Body Compound (2 Buổi / Tuần)",
+    desc: "Tối ưu hóa thời gian tối đa cho người bận rộn. Kích thích toàn thân với các bài tập phức hợp compound lớn.",
+    tag: "Tối Giản & Duy Trì",
+    suitable: "Người cực kỳ bận rộn, người mới bắt đầu",
+    days: [
+      {
+        day: 2,
+        name: "Buổi 1: Full Body Heavy (Ngực - Lưng - Đùi)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Back Squat", nhom_co: "Đùi trước & Mông", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 15 },
+          { ten_bai_tap: "Barbell Bench Press", nhom_co: "Ngực", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Barbell Bent Over Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Plank Cổ Điển", nhom_co: "Cơ bụng & Core", loai_bai_tap: "core", sets: 3, reps: 45, mins: 8 }
+        ]
+      },
+      { day: 3, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      { day: 4, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      {
+        day: 5,
+        name: "Buổi 2: Full Body Hypertrophy (Đùi sau - Vai - Xô)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Romanian Deadlift", nhom_co: "Đùi sau & Lưng dưới", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 15 },
+          { ten_bai_tap: "Overhead Dumbbell Press", nhom_co: "Vai", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Lat Pulldown", nhom_co: "Lưng xô", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Bicep Barbell Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      { day: 6, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      { day: 7, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      { day: 8, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] }
+    ]
+  },
+  // 3 buổi/tuần
+  {
+    id: "full_body_3",
+    frequency: 3,
+    title: "Giáo Án Full Body Toàn Thân (3 Buổi Tiêu Chuẩn)",
+    desc: "Kích thích toàn bộ các nhóm cơ chính 3 lần mỗi tuần. Tối ưu thời gian và phục hồi hoàn hảo.",
+    tag: "Khởi Đầu & Toàn Diện",
+    suitable: "Người bận rộn, người mới hoặc duy trì thể lực",
+    days: [
+      {
+        day: 2,
+        name: "Buổi 1: Full Body A (Ngực - Lưng - Đùi trước)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Back Squat", nhom_co: "Đùi trước & Mông", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 15 },
+          { ten_bai_tap: "Barbell Bench Press", nhom_co: "Ngực", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Barbell Bent Over Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Plank Cổ Điển", nhom_co: "Cơ bụng & Core", loai_bai_tap: "core", sets: 3, reps: 45, mins: 8 }
+        ]
+      },
+      { day: 3, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      {
+        day: 4,
+        name: "Buổi 2: Full Body B (Đùi sau - Ngực trên - Xô)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Romanian Deadlift", nhom_co: "Đùi sau & Lưng dưới", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 15 },
+          { ten_bai_tap: "Incline Dumbbell Press", nhom_co: "Ngực trên", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Lat Pulldown", nhom_co: "Lưng xô", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Bicep Barbell Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      { day: 5, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      {
+        day: 6,
+        name: "Buổi 3: Full Body C (Đùi - Vai - Lưng giữa)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Leg Press", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Overhead Dumbbell Press", nhom_co: "Vai", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Seated Cable Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Tricep Rope Pushdown", nhom_co: "Tay sau", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      { day: 7, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      { day: 8, name: "Nghỉ ngơi nạp năng lượng (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] }
+    ]
+  },
+  // 4 buổi/tuần
+  {
+    id: "upper_lower_4",
+    frequency: 4,
+    title: "Giáo Án Upper / Lower Split (4 Buổi Tiêu Chuẩn)",
+    desc: "Tiêu chuẩn vàng của thể hình hiện đại. 2 buổi Thân Trên & 2 buổi Thân Dưới xen kẽ ngày nghỉ để phục hồi tối ưu.",
+    tag: "Phổ Biến & Hiệu Quả Nhất",
+    suitable: "Cân bằng hoàn hảo cơ bắp & nghỉ ngơi",
+    days: [
+      {
+        day: 2,
+        name: "Buổi 1: Upper Power (Thân Trên Sức Mạnh)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Bench Press", nhom_co: "Ngực", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Barbell Bent Over Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Overhead Dumbbell Press", nhom_co: "Vai", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Tricep Rope Pushdown", nhom_co: "Tay sau", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 3,
+        name: "Buổi 2: Lower Power (Thân Dưới Sức Mạnh)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Back Squat", nhom_co: "Đùi trước & Mông", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Romanian Deadlift", nhom_co: "Đùi sau & Lưng dưới", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Leg Press", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Standing Calf Raise", nhom_co: "Bắp chân", loai_bai_tap: "strength", sets: 3, reps: 15, mins: 8 }
+        ]
+      },
+      { day: 4, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      {
+        day: 5,
+        name: "Buổi 3: Upper Hypertrophy (Thân Trên Tăng Cơ)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Incline Dumbbell Press", nhom_co: "Ngực trên", loai_bai_tap: "strength", sets: 4, reps: 10, mins: 12 },
+          { ten_bai_tap: "Lat Pulldown", nhom_co: "Lưng xô", loai_bai_tap: "strength", sets: 4, reps: 10, mins: 12 },
+          { ten_bai_tap: "Dumbbell Lateral Raise", nhom_co: "Vai giữa", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 },
+          { ten_bai_tap: "Bicep Barbell Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 6,
+        name: "Buổi 4: Lower Hypertrophy (Thân Dưới Tăng Cơ & Bụng)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Dumbbell Walking Lunge", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Leg Extension", nhom_co: "Đùi trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 },
+          { ten_bai_tap: "Hamstring Curl Machine", nhom_co: "Đùi sau", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 },
+          { ten_bai_tap: "Plank Cổ Điển", nhom_co: "Cơ bụng & Core", loai_bai_tap: "core", sets: 3, reps: 60, mins: 8 }
+        ]
+      },
+      { day: 7, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      { day: 8, name: "Nghỉ ngơi thư giãn cuối tuần (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] }
+    ]
+  },
+  // 5 buổi/tuần
+  {
+    id: "ppl_ul_5",
+    frequency: 5,
+    title: "Giáo Án Push - Pull - Legs + Upper - Lower (5 Buổi)",
+    desc: "Kết hợp PPL và Upper/Lower, kích thích cơ bắp 2 lần/tuần với khối lượng tập luyện cao.",
+    tag: "Khối Lượng Cao & Nâng Cao",
+    suitable: "Gymer đã tập 6 tháng trở lên",
+    days: [
+      {
+        day: 2,
+        name: "Buổi 1: Push Day (Ngực - Vai - Tay sau)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Bench Press", nhom_co: "Ngực", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Overhead Dumbbell Press", nhom_co: "Vai", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Incline Dumbbell Press", nhom_co: "Ngực trên", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Tricep Rope Pushdown", nhom_co: "Tay sau", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 3,
+        name: "Buổi 2: Pull Day (Lưng - Xô - Tay trước)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Bent Over Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Lat Pulldown", nhom_co: "Lưng xô", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Face Pull (Dây Kéo Mặt)", nhom_co: "Vai sau", loai_bai_tap: "strength", sets: 3, reps: 15, mins: 10 },
+          { ten_bai_tap: "Bicep Barbell Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 4,
+        name: "Buổi 3: Legs Day (Đùi - Mông - Bắp chân)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Back Squat", nhom_co: "Đùi trước & Mông", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Romanian Deadlift", nhom_co: "Đùi sau & Lưng dưới", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Leg Press", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Plank Cổ Điển", nhom_co: "Cơ bụng & Core", loai_bai_tap: "core", sets: 3, reps: 60, mins: 8 }
+        ]
+      },
+      { day: 5, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] },
+      {
+        day: 6,
+        name: "Buổi 4: Upper Body (Thân Trên Tổng Hợp)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Dumbbell Bench Press", nhom_co: "Ngực", loai_bai_tap: "strength", sets: 4, reps: 10, mins: 12 },
+          { ten_bai_tap: "Seated Cable Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Dumbbell Lateral Raise", nhom_co: "Vai giữa", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 },
+          { ten_bai_tap: "Hammer Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 7,
+        name: "Buổi 5: Lower Body & Core (Thân Dưới & Bụng)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Leg Press", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", sets: 4, reps: 12, mins: 12 },
+          { ten_bai_tap: "Hamstring Curl Machine", nhom_co: "Đùi sau", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 },
+          { ten_bai_tap: "Standing Calf Raise", nhom_co: "Bắp chân", loai_bai_tap: "strength", sets: 3, reps: 15, mins: 8 },
+          { ten_bai_tap: "Russian Twist", nhom_co: "Cơ liên sườn", loai_bai_tap: "core", sets: 3, reps: 20, mins: 8 }
+        ]
+      },
+      { day: 8, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] }
+    ]
+  },
+  // 6 buổi/tuần
+  {
+    id: "ppl_2x_6",
+    frequency: 6,
+    title: "Giáo Án PPL 2 Vòng (6 Buổi Chuyên Sâu)",
+    desc: "Push - Pull - Legs lặp lại 2 vòng mỗi tuần. Khối lượng và áp lực cao nhất cho người tập chuyên nghiệp.",
+    tag: "Chuyên Sâu Thể Hình",
+    suitable: "Vận động viên hoặc gymer thâm niên",
+    days: [
+      {
+        day: 2,
+        name: "Buổi 1: Push A (Ngực nặng - Vai - Tay sau)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Bench Press", nhom_co: "Ngực", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Overhead Dumbbell Press", nhom_co: "Vai", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Incline Dumbbell Press", nhom_co: "Ngực trên", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Tricep Rope Pushdown", nhom_co: "Tay sau", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 3,
+        name: "Buổi 2: Pull A (Lưng nặng - Xô - Tay trước)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Bent Over Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Lat Pulldown", nhom_co: "Lưng xô", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Seated Cable Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 },
+          { ten_bai_tap: "Bicep Barbell Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 4,
+        name: "Buổi 3: Legs A (Squat nặng - Đùi - Bắp chân)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Back Squat", nhom_co: "Đùi trước & Mông", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Romanian Deadlift", nhom_co: "Đùi sau & Lưng dưới", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Leg Press", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Standing Calf Raise", nhom_co: "Bắp chân", loai_bai_tap: "strength", sets: 3, reps: 15, mins: 8 }
+        ]
+      },
+      {
+        day: 5,
+        name: "Buổi 4: Push B (Vai nặng - Ngực trên - Tay sau)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Overhead Dumbbell Press", nhom_co: "Vai", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Incline Dumbbell Press", nhom_co: "Ngực trên", loai_bai_tap: "strength", sets: 4, reps: 10, mins: 12 },
+          { ten_bai_tap: "Dumbbell Lateral Raise", nhom_co: "Vai giữa", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 },
+          { ten_bai_tap: "Push-up (Hít Đất)", nhom_co: "Ngực & Tay sau", loai_bai_tap: "strength", sets: 3, reps: 15, mins: 10 }
+        ]
+      },
+      {
+        day: 6,
+        name: "Buổi 5: Pull B (Xô nặng - Lưng - Tay trước)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Lat Pulldown", nhom_co: "Lưng xô", loai_bai_tap: "strength", sets: 4, reps: 10, mins: 15 },
+          { ten_bai_tap: "Seated Cable Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Face Pull (Dây Kéo Mặt)", nhom_co: "Vai sau", loai_bai_tap: "strength", sets: 3, reps: 15, mins: 10 },
+          { ten_bai_tap: "Hammer Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 7,
+        name: "Buổi 6: Legs B (Đùi sau - Mông - Bụng)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Romanian Deadlift", nhom_co: "Đùi sau & Lưng dưới", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Leg Press", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Plank Cổ Điển", nhom_co: "Cơ bụng & Core", loai_bai_tap: "core", sets: 3, reps: 60, mins: 8 },
+          { ten_bai_tap: "Russian Twist", nhom_co: "Cơ liên sườn", loai_bai_tap: "core", sets: 3, reps: 20, mins: 8 }
+        ]
+      },
+      { day: 8, name: "Nghỉ ngơi phục hồi (Rest Day)", isRest: true, gio_bat_dau: "06:00", gio_ket_thuc: "07:00", exercises: [] }
+    ]
+  },
+  // 7 buổi/tuần
+  {
+    id: "pro_split_7",
+    frequency: 7,
+    title: "Giáo Án Chuyên Nghiệp 7 Ngày (6 Kháng Lực + 1 Phục Hồi Tích Cực)",
+    desc: "Lịch tập dành cho vận động viên và gymer duy trì nhịp tập đều đặn mỗi ngày kèm 1 buổi giãn cơ Cardio nhẹ.",
+    tag: "Chuyên Nghiệp & Kỷ Luật",
+    suitable: "Vận động viên hoặc gymer thâm niên",
+    days: [
+      {
+        day: 2,
+        name: "Buổi 1: Push A (Ngực - Vai - Tay sau)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Bench Press", nhom_co: "Ngực", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Overhead Dumbbell Press", nhom_co: "Vai", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Incline Dumbbell Press", nhom_co: "Ngực trên", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Tricep Rope Pushdown", nhom_co: "Tay sau", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 3,
+        name: "Buổi 2: Pull A (Lưng - Xô - Tay trước)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Bent Over Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Lat Pulldown", nhom_co: "Lưng xô", loai_bai_tap: "strength", sets: 3, reps: 10, mins: 12 },
+          { ten_bai_tap: "Face Pull (Dây Kéo Mặt)", nhom_co: "Vai sau", loai_bai_tap: "strength", sets: 3, reps: 15, mins: 10 },
+          { ten_bai_tap: "Bicep Barbell Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 4,
+        name: "Buổi 3: Legs A (Đùi trước - Mông - Bắp chân)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Barbell Back Squat", nhom_co: "Đùi trước & Mông", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Leg Press", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Standing Calf Raise", nhom_co: "Bắp chân", loai_bai_tap: "strength", sets: 4, reps: 15, mins: 10 },
+          { ten_bai_tap: "Plank Cổ Điển", nhom_co: "Cơ bụng & Core", loai_bai_tap: "core", sets: 3, reps: 45, mins: 8 }
+        ]
+      },
+      {
+        day: 5,
+        name: "Buổi 4: Push B (Ngực trên - Vai giữa - Tay sau)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Incline Dumbbell Press", nhom_co: "Ngực trên", loai_bai_tap: "strength", sets: 4, reps: 10, mins: 12 },
+          { ten_bai_tap: "Dumbbell Lateral Raise", nhom_co: "Vai giữa", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 },
+          { ten_bai_tap: "Push-up (Hít Đất)", nhom_co: "Ngực & Tay sau", loai_bai_tap: "strength", sets: 3, reps: 15, mins: 10 }
+        ]
+      },
+      {
+        day: 6,
+        name: "Buổi 5: Pull B (Xô nặng - Lưng - Tay trước)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Lat Pulldown", nhom_co: "Lưng xô", loai_bai_tap: "strength", sets: 4, reps: 10, mins: 15 },
+          { ten_bai_tap: "Seated Cable Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 12 },
+          { ten_bai_tap: "Hammer Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", sets: 3, reps: 12, mins: 10 }
+        ]
+      },
+      {
+        day: 7,
+        name: "Buổi 6: Legs B (Đùi sau - Mông - Bụng)",
+        isRest: false,
+        gio_bat_dau: "17:30",
+        gio_ket_thuc: "18:45",
+        exercises: [
+          { ten_bai_tap: "Romanian Deadlift", nhom_co: "Đùi sau & Lưng dưới", loai_bai_tap: "strength", sets: 4, reps: 8, mins: 15 },
+          { ten_bai_tap: "Russian Twist", nhom_co: "Cơ liên sườn", loai_bai_tap: "core", sets: 3, reps: 20, mins: 8 }
+        ]
+      },
+      {
+        day: 8,
+        name: "Buổi 7: Active Recovery (Cardio nhẹ & Giãn cơ toàn thân)",
+        isRest: false,
+        gio_bat_dau: "06:30",
+        gio_ket_thuc: "07:30",
+        exercises: [
+          { ten_bai_tap: "Đi bộ dốc nhẹ (Incline Walk)", nhom_co: "Tim mạch & Bắp chân", loai_bai_tap: "cardio", sets: 1, reps: 30, mins: 30 },
+          { ten_bai_tap: "Giãn cơ toàn thân (Full Body Stretch)", nhom_co: "Toàn thân", loai_bai_tap: "core", sets: 3, reps: 10, mins: 20 }
+        ]
+      }
+    ]
+  }
+];
+
+// Danh sách tổ hợp ngày tập mẫu phổ biến
+const WORKOUT_DAY_PRESETS = [
+  { label: "T2 - T4 - T6", days: [2, 4, 6], count: 3, desc: "3 buổi cách ngày" },
+  { label: "T3 - T5 - T7", days: [3, 5, 7], count: 3, desc: "3 buổi cách ngày" },
+  { label: "T2 - T3 - T5 - T6", days: [2, 3, 5, 6], count: 4, desc: "4 buổi tiêu chuẩn" },
+  { label: "T2 - T4 - T6 - CN", days: [2, 4, 6, 8], count: 4, desc: "4 buổi cách ngày" },
+  { label: "T2 đến T6", days: [2, 3, 4, 5, 6], count: 5, desc: "5 buổi ngày thường" },
+  { label: "T2 đến T7", days: [2, 3, 4, 5, 6, 7], count: 6, desc: "6 buổi chuyên sâu" }
+];
+
+// Helper ánh xạ danh sách bài tập của template sang các ngày tập do người dùng tùy chọn
+const mapTemplateToSelectedDays = (template, selectedDays = []) => {
+  if (!template) {
+    return DAYS_OF_WEEK.map((d) => {
+      const isSelected = selectedDays.includes(d.day);
+      const dayOrder = selectedDays.indexOf(d.day) + 1;
+      return {
+        day: d.day,
+        name: isSelected ? `Buổi tập ${dayOrder}` : "Nghỉ ngơi phục hồi (Rest Day)",
+        isRest: !isSelected,
+        gio_bat_dau: isSelected ? "17:30" : "06:00",
+        gio_ket_thuc: isSelected ? "18:45" : "07:00",
+        exercises: []
+      };
+    });
+  }
+
+  // Lọc các buổi tập thực tế (không phải ngày nghỉ) trong template
+  const activeWorkouts = template.days.filter((d) => !d.isRest);
+
+  return DAYS_OF_WEEK.map((d) => {
+    const isSelected = selectedDays.includes(d.day);
+    if (!isSelected) {
+      return {
+        day: d.day,
+        name: "Nghỉ ngơi phục hồi (Rest Day)",
+        isRest: true,
+        gio_bat_dau: "06:00",
+        gio_ket_thuc: "07:00",
+        exercises: []
+      };
+    }
+
+    const dayIndexInSelected = selectedDays.indexOf(d.day);
+    const workoutSession = activeWorkouts[dayIndexInSelected % activeWorkouts.length];
+
+    if (workoutSession) {
+      return {
+        ...workoutSession,
+        day: d.day,
+        isRest: false,
+        name: workoutSession.name
+      };
+    }
+
+    return {
+      day: d.day,
+      name: `Buổi tập ${dayIndexInSelected + 1}`,
+      isRest: false,
+      gio_bat_dau: "17:30",
+      gio_ket_thuc: "18:45",
+      exercises: []
+    };
+  });
+};
+
 export const WorkoutView = ({ onNavigateToCalendar }) => {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState("today"); // "today" | "plans" | "history"
@@ -47,6 +543,33 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [planForm, setPlanForm] = useState({ ten_ke_hoach: "", mo_ta: "", is_active: false });
+
+  // State phục vụ Wizard thiết kế giáo án từng bước
+  const [wizardStep, setWizardStep] = useState(1); // 1: Tần suất & Cường độ | 2: Giáo án gợi ý & Bài tập | 3: Giờ tập & Đồng bộ
+  const [slideDirection, setSlideDirection] = useState("next"); // "next" (trượt từ phải sang) | "prev" (trượt từ trái sang)
+  const [wizardFrequency, setWizardFrequency] = useState(4); // 2, 3, 4, 5, 6, 7 buổi/tuần
+  const [wizardSelectedDays, setWizardSelectedDays] = useState([2, 3, 5, 6]); // Mặc định 4 buổi: Thứ 2, Thứ 3, Thứ 5, Thứ 6
+  const [wizardIntensity, setWizardIntensity] = useState("intermediate"); // beginner | intermediate | advanced
+  const [selectedTemplateId, setSelectedTemplateId] = useState("upper_lower_4");
+  const [previewDayIndex, setPreviewDayIndex] = useState(0);
+  const [wizardSessions, setWizardSessions] = useState([]);
+  const [wizardSyncCalendar, setWizardSyncCalendar] = useState(true);
+  const [wizardIsActive, setWizardIsActive] = useState(true);
+  const [wizardPlanName, setWizardPlanName] = useState("Giáo Án Upper / Lower Split (4 Buổi Tiêu Chuẩn)");
+  const [wizardPlanDesc, setWizardPlanDesc] = useState("Tiêu chuẩn vàng của thể hình hiện đại. 2 buổi Thân Trên & 2 buổi Thân Dưới xen kẽ ngày nghỉ để phục hồi tối ưu.");
+  const [isSavingPlan, setIsSavingPlan] = useState(false);
+  const [wizardCustomExercises, setWizardCustomExercises] = useState({}); // { [dayNum]: [exerciseObj, ...] }
+  const [showWizardAddExModal, setShowWizardAddExModal] = useState(false);
+  const [wizardTargetDay, setWizardTargetDay] = useState(2);
+  const [wizardExForm, setWizardExForm] = useState({
+    bai_tap_the_chat_id: "",
+    ten_bai_tap: "",
+    nhom_co: "Ngực",
+    loai_bai_tap: "strength",
+    sets: 4,
+    reps: 10,
+    mins: 12
+  });
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [planToDelete, setPlanToDelete] = useState(null);
@@ -203,15 +726,335 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
         mo_ta: plan.mo_ta || "",
         is_active: plan.is_active || false
       });
+      setShowPlanModal(true);
     } else {
       setEditingPlan(null);
-      setPlanForm({
-        ten_ke_hoach: "",
-        mo_ta: "",
-        is_active: plansList.length === 0
-      });
+      setWizardStep(1);
+      setSlideDirection("next");
+      setWizardFrequency(4);
+      setWizardSelectedDays([2, 3, 5, 6]);
+      setWizardIntensity("intermediate");
+      setSelectedTemplateId("upper_lower_4");
+      setPreviewDayIndex(0);
+      setWizardCustomExercises({});
+      setWizardSyncCalendar(true);
+      setWizardIsActive(plansList.length === 0);
+      setWizardPlanName("Giáo Án Upper / Lower Split (4 Buổi Tiêu Chuẩn)");
+      setWizardPlanDesc("Tiêu chuẩn vàng của thể hình hiện đại. 2 buổi Thân Trên & 2 buổi Thân Dưới xen kẽ ngày nghỉ để phục hồi tối ưu.");
+      setActiveTab("create_plan");
     }
-    setShowPlanModal(true);
+  };
+
+  // Điều hướng giữa các bước Wizard kèm hướng trượt hoạt ảnh (slide from right / slide from left)
+  const goToWizardStep = (targetStep) => {
+    if (targetStep === wizardStep) return;
+    const direction = targetStep > wizardStep ? "next" : "prev";
+    setSlideDirection(direction);
+    if (targetStep === 3) {
+      handleProceedToStep3(direction);
+    } else {
+      setWizardStep(targetStep);
+    }
+  };
+
+  // Lấy danh sách bài tập của một ngày trong Bước 2 (Gợi ý giáo án)
+  const getPreviewExercises = (dayNum, templateExercises = []) => {
+    if (wizardCustomExercises[dayNum] !== undefined) {
+      return wizardCustomExercises[dayNum];
+    }
+    return templateExercises || [];
+  };
+
+  // Mở modal thêm bài tập cho 1 ngày cụ thể trong Wizard Bước 2
+  const handleOpenWizardAddExModal = (dayNum) => {
+    setWizardTargetDay(dayNum);
+    const defSets = wizardIntensity === "beginner" ? 3 : 4;
+    const defReps = wizardIntensity === "beginner" ? 12 : wizardIntensity === "intermediate" ? 10 : 8;
+
+    setWizardExForm({
+      bai_tap_the_chat_id: exerciseCatalog[0]?._id || "",
+      ten_bai_tap: "",
+      nhom_co: "Ngực",
+      loai_bai_tap: "strength",
+      sets: defSets,
+      reps: defReps,
+      mins: 12
+    });
+    setShowWizardAddExModal(true);
+  };
+
+  // Lưu bài tập mới vào ngày tập trong Wizard Bước 2
+  const handleSaveWizardExercise = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    let exToAdd;
+    if (wizardExForm.bai_tap_the_chat_id) {
+      const found = exerciseCatalog.find(
+        (c) => c._id === wizardExForm.bai_tap_the_chat_id
+      );
+      exToAdd = {
+        bai_tap_the_chat_id: found?._id,
+        ten_bai_tap: found?.ten_bai_tap || "Bài tập mới",
+        nhom_co: found?.nhom_co || "Toàn thân",
+        loai_bai_tap: found?.loai_bai_tap || "strength",
+        sets: Number(wizardExForm.sets) || 4,
+        reps: Number(wizardExForm.reps) || 10,
+        mins: Number(wizardExForm.mins) || 12
+      };
+    } else {
+      if (!wizardExForm.ten_bai_tap.trim()) {
+        alert("Vui lòng nhập tên bài tập!");
+        return;
+      }
+      exToAdd = {
+        ten_bai_tap: wizardExForm.ten_bai_tap.trim(),
+        nhom_co: wizardExForm.nhom_co || "Toàn thân",
+        loai_bai_tap: wizardExForm.loai_bai_tap || "strength",
+        sets: Number(wizardExForm.sets) || 4,
+        reps: Number(wizardExForm.reps) || 10,
+        mins: Number(wizardExForm.mins) || 12
+      };
+    }
+
+    const currentTmpl = WORKOUT_TEMPLATES.find((t) => t.id === selectedTemplateId);
+    const currentDays = mapTemplateToSelectedDays(currentTmpl, wizardSelectedDays);
+    const daySession = currentDays.find((d) => d.day === wizardTargetDay);
+    const currentExs = getPreviewExercises(wizardTargetDay, daySession?.exercises);
+
+    setWizardCustomExercises((prev) => ({
+      ...prev,
+      [wizardTargetDay]: [...currentExs, exToAdd]
+    }));
+    setShowWizardAddExModal(false);
+  };
+
+  // Xóa 1 bài tập khỏi ngày tập trong Wizard Bước 2
+  const handleDeleteWizardExercise = (dayNum, exIndex, fallbackExercises = []) => {
+    const currentExs = getPreviewExercises(dayNum, fallbackExercises);
+    const updated = currentExs.filter((_, i) => i !== exIndex);
+    setWizardCustomExercises((prev) => ({
+      ...prev,
+      [dayNum]: updated
+    }));
+  };
+
+  // Bật/tắt một ngày tập trong tuần tại Wizard Step 1 & Step 2
+  const handleToggleWizardDay = (dayNum) => {
+    let nextDays;
+    if (wizardSelectedDays.includes(dayNum)) {
+      if (wizardSelectedDays.length <= 1) {
+        alert("Bạn cần giữ lại ít nhất 1 ngày tập trong tuần!");
+        return;
+      }
+      nextDays = wizardSelectedDays.filter((d) => d !== dayNum);
+    } else {
+      nextDays = [...wizardSelectedDays, dayNum].sort((a, b) => a - b);
+    }
+
+    setWizardSelectedDays(nextDays);
+    setWizardFrequency(nextDays.length);
+
+    // Tự động tìm template phù hợp với số ngày vừa chọn
+    const matched = WORKOUT_TEMPLATES.find((t) => t.frequency === nextDays.length);
+    if (matched) {
+      setSelectedTemplateId(matched.id);
+    } else {
+      setSelectedTemplateId("custom");
+    }
+    setPreviewDayIndex(0);
+  };
+
+  // Áp dụng bộ ngày tập gợi ý nhanh (Preset)
+  const handleApplyDayPreset = (days) => {
+    const sorted = [...days].sort((a, b) => a - b);
+    setWizardSelectedDays(sorted);
+    setWizardFrequency(sorted.length);
+
+    const matched = WORKOUT_TEMPLATES.find((t) => t.frequency === sorted.length);
+    if (matched) {
+      setSelectedTemplateId(matched.id);
+    } else {
+      setSelectedTemplateId("custom");
+    }
+    setPreviewDayIndex(0);
+  };
+
+  // Chọn tần suất buổi tập trong Wizard Step 1
+  const handleSelectWizardFrequency = (freq) => {
+    setWizardFrequency(freq);
+    let defaultDays;
+    if (freq === 2) defaultDays = [2, 5];
+    else if (freq === 3) defaultDays = [2, 4, 6];
+    else if (freq === 4) defaultDays = [2, 3, 5, 6];
+    else if (freq === 5) defaultDays = [2, 3, 4, 5, 6];
+    else if (freq === 6) defaultDays = [2, 3, 4, 5, 6, 7];
+    else if (freq === 7) defaultDays = [2, 3, 4, 5, 6, 7, 8];
+    else defaultDays = [2, 4, 6];
+
+    setWizardSelectedDays(defaultDays);
+
+    const matched = WORKOUT_TEMPLATES.find((t) => t.frequency === freq);
+    if (matched) {
+      setSelectedTemplateId(matched.id);
+      setPreviewDayIndex(0);
+    } else {
+      setSelectedTemplateId("custom");
+    }
+  };
+
+  // Chuyển sang Bước 3: Chuẩn bị danh sách 7 ngày kèm giờ tập và bài tập theo cường độ và ngày đã chọn
+  const handleProceedToStep3 = (direction = "next") => {
+    const template = WORKOUT_TEMPLATES.find((t) => t.id === selectedTemplateId);
+
+    // Tính toán sets và reps theo cường độ đã chọn
+    const getSetsReps = (exSets, exReps) => {
+      if (wizardIntensity === "beginner") {
+        return { sets: 3, reps: Math.max(10, exReps || 12) };
+      }
+      if (wizardIntensity === "advanced") {
+        return { sets: Math.min(5, (exSets || 4) + 1), reps: Math.max(6, (exReps || 8) - 2) };
+      }
+      return { sets: exSets || 4, reps: exReps || 10 };
+    };
+
+    // Ánh xạ template lên các ngày tập mà người dùng đã chọn (wizardSelectedDays)
+    const mappedDays = mapTemplateToSelectedDays(template, wizardSelectedDays);
+
+    const preparedDays = mappedDays.map((d) => {
+      const dayExercises = getPreviewExercises(d.day, d.exercises);
+      return {
+        day: d.day,
+        name: d.name,
+        isRest: d.isRest,
+        gio_bat_dau: d.gio_bat_dau || (d.isRest ? "06:00" : "17:30"),
+        gio_ket_thuc: d.gio_ket_thuc || (d.isRest ? "07:00" : "18:45"),
+        exercises: (dayExercises || []).map((ex) => {
+          const adj = getSetsReps(ex.sets || ex.so_sets, ex.reps || ex.so_reps);
+          return {
+            ...ex,
+            sets: adj.sets,
+            reps: adj.reps
+          };
+        })
+      };
+    });
+
+    if (template) {
+      setWizardPlanName(template.title);
+      setWizardPlanDesc(template.desc);
+    } else {
+      setWizardPlanName(`Giáo Án Tự Thiết Kế (${wizardSelectedDays.length} Buổi/Tuần)`);
+      setWizardPlanDesc("Lịch tập luyện do bạn tự tùy chỉnh phân bổ thời gian và bài tập.");
+    }
+
+    setWizardSessions(preparedDays);
+    setSlideDirection(direction);
+    setWizardStep(3);
+  };
+
+  // Áp dụng khung giờ tập nhanh (Preset) cho tất cả các ngày tập trong Wizard
+  const handleApplyTimePreset = (startTime, endTime) => {
+    setWizardSessions((prev) =>
+      prev.map((s) => (s.isRest ? s : { ...s, gio_bat_dau: startTime, gio_ket_thuc: endTime }))
+    );
+  };
+
+  // Chuyển đổi trạng thái ngày tập / ngày nghỉ trong Wizard Step 3
+  const handleToggleWizardRestDay = (dayIndex) => {
+    setWizardSessions((prev) => {
+      const updated = prev.map((s, idx) => {
+        if (idx !== dayIndex) return s;
+        const newIsRest = !s.isRest;
+        return {
+          ...s,
+          isRest: newIsRest,
+          name: newIsRest ? "Nghỉ ngơi phục hồi (Rest Day)" : "Buổi tập chính"
+        };
+      });
+
+      // Đồng bộ lại wizardSelectedDays theo các ngày không nghỉ
+      const activeDays = updated.filter((s) => !s.isRest).map((s) => s.day);
+      setWizardSelectedDays(activeDays);
+      setWizardFrequency(activeDays.length);
+      return updated;
+    });
+  };
+
+  // Cập nhật giờ tập trong Wizard
+  const handleUpdateWizardSessionTime = (dayIndex, field, val) => {
+    setWizardSessions((prev) =>
+      prev.map((s, idx) => (idx === dayIndex ? { ...s, [field]: val } : s))
+    );
+  };
+
+  // Cập nhật tên buổi tập trong Wizard Step 3
+  const handleUpdateWizardSessionName = (dayIndex, newName) => {
+    setWizardSessions((prev) =>
+      prev.map((s, idx) => (idx === dayIndex ? { ...s, name: newName } : s))
+    );
+  };
+
+  // Lưu kế hoạch tập luyện từ Wizard
+  const handleSaveWizardPlan = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!wizardPlanName.trim()) {
+      alert("Vui lòng nhập tên giáo án!");
+      return;
+    }
+
+    try {
+      setIsSavingPlan(true);
+      const payload = {
+        ten_ke_hoach: wizardPlanName.trim(),
+        mo_ta: wizardPlanDesc.trim(),
+        so_buoi_tuan: wizardFrequency,
+        cuong_do: wizardIntensity,
+        is_active: wizardIsActive,
+        dong_bo_lich: wizardSyncCalendar,
+        sessions: wizardSessions.map((s) => ({
+          ngay_trong_tuan: s.day,
+          ten_buoi_tap: s.name,
+          is_rest_day: s.isRest,
+          gio_bat_dau: s.gio_bat_dau || "06:00",
+          gio_ket_thuc: s.gio_ket_thuc || "07:15",
+          exercises: (s.exercises || []).map((ex) => ({
+            ten_bai_tap: ex.ten_bai_tap,
+            nhom_co: ex.nhom_co,
+            loai_bai_tap: ex.loai_bai_tap,
+            so_sets: ex.sets,
+            so_reps: ex.reps,
+            thoi_luong_phut: ex.mins || 10
+          }))
+        }))
+      };
+
+      const res = await api.createWorkoutPlan(payload);
+      if (res.success) {
+        alert(`🎉 ${res.message || "Tạo giáo án và đồng bộ lên Lịch thành công!"}`);
+        setShowPlanModal(false);
+        setActiveTab("plans");
+        loadAllData();
+      } else {
+        alert("⚠️ " + res.message);
+      }
+    } catch (err) {
+      alert("⚠️ Lỗi lưu giáo án: " + err.message);
+    } finally {
+      setIsSavingPlan(false);
+    }
+  };
+
+  // Đồng bộ thủ công giáo án sang trang Lịch
+  const handleSyncPlanToCalendar = async (planId) => {
+    try {
+      const res = await api.syncWorkoutPlanToCalendar(planId);
+      if (res.success) {
+        alert(`🎉 ${res.message || "Đã đồng bộ lịch tập vào trang Lịch!"}`);
+      } else {
+        alert("⚠️ " + res.message);
+      }
+    } catch (err) {
+      alert("⚠️ Lỗi đồng bộ lịch: " + err.message);
+    }
   };
 
   // Lưu kế hoạch
@@ -380,6 +1223,833 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
     }
   };
 
+  // Component hiển thị bộ thiết kế giáo án từng bước kèm hiệu ứng trượt mượt mà (slide from right)
+  const renderWizardDesigner = (isFullPage = false) => {
+    return (
+      <div className="wizard-designer-container">
+        {/* Stepper Node Bar */}
+        <div className="wizard-stepper-wrap mb-4">
+          <div
+            className={`wizard-step-node ${wizardStep === 1 ? "active" : wizardStep > 1 ? "completed" : ""}`}
+            onClick={() => goToWizardStep(1)}
+            style={{ cursor: "pointer" }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="wizard-step-circle">{wizardStep > 1 ? "✓" : "1"}</div>
+            <div>
+              <div className="wizard-step-text-title">Bước 1: Tần Suất & Cường Độ</div>
+              <span className="wizard-step-text-sub">Số buổi & mức độ thể lực</span>
+            </div>
+          </div>
+
+          <div className="wizard-step-divider" />
+
+          <div
+            className={`wizard-step-node ${wizardStep === 2 ? "active" : wizardStep > 2 ? "completed" : ""}`}
+            onClick={() => goToWizardStep(2)}
+            style={{ cursor: "pointer" }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="wizard-step-circle">{wizardStep > 2 ? "✓" : "2"}</div>
+            <div>
+              <div className="wizard-step-text-title">Bước 2: Gợi Ý Giáo Án</div>
+              <span className="wizard-step-text-sub">Chọn giáo án & xem bài tập</span>
+            </div>
+          </div>
+
+          <div className="wizard-step-divider" />
+
+          <div
+            className={`wizard-step-node ${wizardStep === 3 ? "active" : ""}`}
+            onClick={() => goToWizardStep(3)}
+            style={{ cursor: "pointer" }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="wizard-step-circle">3</div>
+            <div>
+              <div className="wizard-step-text-title">Bước 3: Giờ Tập & Hoàn Tất</div>
+              <span className="wizard-step-text-sub">Setup khung giờ & đồng bộ</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Khung trượt bước (Step Slider) */}
+        <div className="wizard-steps-slider-wrap">
+          <div
+            key={`wizard-step-${wizardStep}`}
+            className={slideDirection === "next" ? "wizard-slide-next" : "wizard-slide-prev"}
+          >
+            {/* BƯỚC 1: CHỌN SỐ BUỔI & CƯỜNG ĐỘ */}
+            {wizardStep === 1 && (
+              <div>
+                {/* Section 1: Số buổi */}
+                <div className="mb-4">
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: "0.92rem", marginBottom: "10px" }}>
+                    1. Bạn muốn tập bao nhiêu buổi mỗi tuần?
+                  </label>
+                  <div className="row g-3">
+                    {[
+                      { freq: 3, icon: "⚡", title: "3 Buổi / Tuần", desc: "Tiết kiệm thời gian, kích thích toàn thân, lý tưởng cho người mới và bận rộn." },
+                      { freq: 4, icon: "⚖️", title: "4 Buổi / Tuần", desc: "Cân bằng hoàn hảo giữa kích thích cơ bắp và phục hồi (Upper/Lower Split)." },
+                      { freq: 5, icon: "🔥", title: "5 Buổi / Tuần", desc: "Tăng cơ nhanh, khối lượng tập luyện cao dành cho người có kinh nghiệm." },
+                      { freq: 6, icon: "🚀", title: "6 Buổi / Tuần", desc: "Chuyên sâu thể hình (PPL 2 vòng), tần suất cao nhất dành cho gymer lâu năm." }
+                    ].map((item) => (
+                      <div key={item.freq} className="col-sm-6">
+                        <div
+                          className={`wizard-selection-card ${wizardFrequency === item.freq ? "selected" : ""}`}
+                          onClick={() => handleSelectWizardFrequency(item.freq)}
+                        >
+                          <div>
+                            <div className="d-flex align-items-center justify-content-between mb-1">
+                              <span style={{ fontSize: "1.4rem" }}>{item.icon}</span>
+                              {wizardFrequency === item.freq && (
+                                <span className="badge-metric-tag" style={{ fontSize: "0.7rem" }}>
+                                  ✓ ĐANG CHỌN
+                                </span>
+                              )}
+                            </div>
+                            <h5 style={{ fontSize: "0.95rem", fontWeight: 700, margin: "6px 0 4px 0" }}>
+                              {item.title}
+                            </h5>
+                            <p style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)", margin: 0, lineHeight: 1.4 }}>
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section 2: Chọn các ngày tập trong tuần */}
+                <div className="mb-4">
+                  <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: "0.92rem", margin: 0 }}>
+                      2. Chọn các ngày trong tuần bạn sẽ tập luyện:
+                    </label>
+                    <span style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)" }}>
+                      (Bấm trực tiếp vào từng thứ để Bật / Tắt ngày tập)
+                    </span>
+                  </div>
+
+                  {/* 7 Day interactive toggle cards */}
+                  <div className="row g-2 mb-3">
+                    {DAYS_OF_WEEK.map((d) => {
+                      const isSelected = wizardSelectedDays.includes(d.day);
+                      return (
+                        <div key={d.day} className="col">
+                          <div
+                            className={`wizard-day-toggle-card ${isSelected ? "is-active" : "is-rest"}`}
+                            onClick={() => handleToggleWizardDay(d.day)}
+                            title={`Bấm để ${isSelected ? "chuyển sang ngày nghỉ" : "chọn làm ngày tập"}`}
+                            role="button"
+                            tabIndex={0}
+                          >
+                            <div className="day-chip-label" style={{ fontSize: "0.92rem", marginBottom: "3px" }}>
+                              {d.label}
+                            </div>
+                            <div style={{ fontSize: "0.72rem", color: "var(--lp-text-muted)", marginBottom: "4px" }}>
+                              {d.fullName}
+                            </div>
+                            <span
+                              className="badge-metric-tag"
+                              style={{
+                                fontSize: "0.68rem",
+                                padding: "2px 6px",
+                                background: isSelected ? "var(--lp-primary)" : "rgba(100, 116, 139, 0.15)",
+                                color: isSelected ? "#fff" : "var(--lp-text-muted)"
+                              }}
+                            >
+                              {isSelected ? "💪 Tập" : "🛌 Nghỉ"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quick Day Presets */}
+                  <div
+                    className="p-3 rounded"
+                    style={{
+                      background: "var(--lp-bg-surface)",
+                      border: "1px solid var(--lp-card-border)"
+                    }}
+                  >
+                    <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                      <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>
+                        ⚡ Gợi ý tổ hợp ngày phổ biến:
+                      </span>
+                      <span style={{ fontSize: "0.74rem", color: "var(--lp-primary)", fontWeight: 600 }}>
+                        Đã chọn: {wizardSelectedDays.length} ngày tập ({wizardSelectedDays.map(num => DAYS_OF_WEEK.find(d => d.day === num)?.label).join(", ")})
+                      </span>
+                    </div>
+                    <div className="d-flex gap-2 flex-wrap">
+                      {WORKOUT_DAY_PRESETS.map((pst, idx) => {
+                        const isPresetActive =
+                          pst.days.length === wizardSelectedDays.length &&
+                          pst.days.every((d) => wizardSelectedDays.includes(d));
+
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={`wizard-day-preset-pill ${isPresetActive ? "active" : ""}`}
+                            onClick={() => handleApplyDayPreset(pst.days)}
+                          >
+                            {isPresetActive ? "✓ " : ""}{pst.label} <span style={{ opacity: 0.8, fontSize: "0.72rem" }}>({pst.desc})</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Cường độ */}
+                <div className="mb-4">
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: "0.92rem", marginBottom: "10px" }}>
+                    3. Chọn Cường độ luyện tập & Thể trạng của bạn:
+                  </label>
+                  <div className="row g-3">
+                    {[
+                      {
+                        id: "beginner",
+                        badge: "🟢 Mới Bắt Đầu",
+                        title: "Nhẹ Nhàng / Khởi Đầu",
+                        setsReps: "3 Sets × 10-12 Reps",
+                        desc: "Tập trung học động tác chuẩn xác, khối lượng vừa sức, nghỉ ngơi thoải mái tránh chấn thương."
+                      },
+                      {
+                        id: "intermediate",
+                        badge: "🟡 Tiêu Chuẩn Hypertrophy",
+                        title: "Trung Bình / Tăng Cơ",
+                        setsReps: "4 Sets × 8-10 Reps",
+                        desc: "Khối lượng tiêu chuẩn giúp phát triển cơ bắp và sức bền tối ưu, nghỉ giữa hiệp 60-90 giây."
+                      },
+                      {
+                        id: "advanced",
+                        badge: "🔴 Cường Độ Cao",
+                        title: "Nâng Cao / Siết Cơ",
+                        setsReps: "4-5 Sets × 6-8 Reps",
+                        desc: "Tạ nặng, áp lực cao, tăng sức mạnh bộc phát và siết nét tối đa cho người có nền tảng vững."
+                      }
+                    ].map((lvl) => (
+                      <div key={lvl.id} className="col-md-4">
+                        <div
+                          className={`wizard-selection-card ${wizardIntensity === lvl.id ? "selected" : ""}`}
+                          onClick={() => setWizardIntensity(lvl.id)}
+                        >
+                          <div>
+                            <span className="badge-group-tag mb-2 d-inline-block" style={{ fontSize: "0.72rem" }}>
+                              {lvl.badge}
+                            </span>
+                            <h5 style={{ fontSize: "0.92rem", fontWeight: 700, margin: "2px 0 4px 0" }}>
+                              {lvl.title}
+                            </h5>
+                            <div
+                              className="font-numeric mb-2"
+                              style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--lp-primary)" }}
+                            >
+                              📌 {lvl.setsReps}
+                            </div>
+                            <p style={{ fontSize: "0.76rem", color: "var(--lp-text-muted)", margin: 0, lineHeight: 1.4 }}>
+                              {lvl.desc}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Thanh chuyển bước dưới cùng Step 1 */}
+                <div className="d-flex align-items-center justify-content-between mt-4 pt-3 border-top flex-wrap gap-2">
+                  <div className="d-flex align-items-center gap-2 flex-wrap" style={{ fontSize: "0.85rem", color: "var(--lp-text-muted)" }}>
+                    <span>
+                      Đã chọn: <strong style={{ color: "var(--lp-primary)" }}>{wizardFrequency} Buổi / Tuần</strong>{" "}
+                      ({wizardSelectedDays.map((num) => DAYS_OF_WEEK.find((d) => d.day === num)?.label).join(", ")})
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Cường độ: <strong style={{ color: "var(--lp-primary)" }}>{wizardIntensity === "beginner" ? "Khởi đầu" : wizardIntensity === "intermediate" ? "Tăng cơ" : "Nâng cao"}</strong>
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn-action-pill btn-pill-primary"
+                    style={{ background: "var(--lp-primary)", color: "#fff", padding: "10px 22px", fontSize: "0.9rem" }}
+                    onClick={() => goToWizardStep(2)}
+                  >
+                    Tiếp Tục Sang Bước 2: Chọn Giáo Án Gợi Ý ➔
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* BƯỚC 2: GỢI Ý GIÁO ÁN & BÀI TẬP */}
+            {wizardStep === 2 && (
+              <div>
+                <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                  <div>
+                    <h5 style={{ fontSize: "0.95rem", fontWeight: 700, margin: 0 }}>
+                      💡 Giáo Án Được Hệ Thống Gợi Ý ({wizardFrequency} Buổi / Tuần)
+                    </h5>
+                    <span style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)" }}>
+                      Chọn một giáo án dưới đây để xem trước chi tiết lịch tuần và danh sách bài tập
+                    </span>
+                  </div>
+                </div>
+
+                {/* Danh sách giáo án mẫu phù hợp */}
+                <div className="row g-3 mb-4">
+                  {WORKOUT_TEMPLATES.filter((t) => t.frequency === wizardFrequency).map((tmpl) => {
+                    const isSelected = selectedTemplateId === tmpl.id;
+                    return (
+                      <div key={tmpl.id} className="col-md-6">
+                        <div
+                          className={`wizard-selection-card ${isSelected ? "selected" : ""}`}
+                          onClick={() => {
+                            setSelectedTemplateId(tmpl.id);
+                            setPreviewDayIndex(0);
+                          }}
+                        >
+                          <div>
+                            <div className="d-flex align-items-center justify-content-between mb-2">
+                              <span className="badge-metric-tag" style={{ fontSize: "0.72rem" }}>
+                                {tmpl.tag}
+                              </span>
+                              {isSelected && (
+                                <span className="badge-metric-tag" style={{ fontSize: "0.7rem", background: "var(--lp-primary)", color: "#fff" }}>
+                                  ✓ ĐANG CHỌN
+                                </span>
+                              )}
+                            </div>
+                            <h5 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "6px" }}>
+                              {tmpl.title}
+                            </h5>
+                            <p style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)", margin: "0 0 8px 0", lineHeight: 1.4 }}>
+                              {tmpl.desc}
+                            </p>
+                            <div style={{ fontSize: "0.74rem", color: "var(--lp-primary)", fontWeight: 600 }}>
+                              🎯 Phù hợp: {tmpl.suitable}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Tùy chọn Tự tùy biến (Custom) */}
+                  <div className="col-md-6">
+                    <div
+                      className={`wizard-selection-card ${selectedTemplateId === "custom" ? "selected" : ""}`}
+                      onClick={() => {
+                        setSelectedTemplateId("custom");
+                        setPreviewDayIndex(0);
+                      }}
+                    >
+                      <div>
+                        <span className="badge-group-tag mb-2 d-inline-block" style={{ fontSize: "0.72rem" }}>
+                          🎨 Tùy Biến Hoàn Toàn
+                        </span>
+                        <h5 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "6px" }}>
+                          Tự Thiết Kế Lịch & Tự Chọn Bài
+                        </h5>
+                        <p style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)", margin: 0, lineHeight: 1.4 }}>
+                          Tự chia ngày tập, chọn nhóm cơ và thêm các bài tập theo sở thích riêng của bạn.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interactive Preview Box: Xem trước 7 ngày và danh sách bài tập */}
+                {(() => {
+                  const currentTmpl = WORKOUT_TEMPLATES.find((t) => t.id === selectedTemplateId);
+                  const currentDays = mapTemplateToSelectedDays(currentTmpl, wizardSelectedDays);
+                  const activePreviewSession = currentDays[previewDayIndex] || currentDays[0];
+
+                  return (
+                    <div
+                      className="p-3 rounded"
+                      style={{
+                        background: "var(--lp-bg-surface)",
+                        border: "1px solid var(--lp-card-border)",
+                        boxShadow: "var(--lp-shadow-inset)"
+                      }}
+                    >
+                      {/* Day Selection Bar in Step 2 */}
+                      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2 pb-2 border-bottom">
+                        <div className="d-flex align-items-center gap-2">
+                          <span style={{ fontSize: "0.82rem", fontWeight: 700 }}>
+                            🗓️ Lịch tập đã chọn ({wizardSelectedDays.length} ngày):
+                          </span>
+                          <span className="badge-metric-tag" style={{ fontSize: "0.72rem" }}>
+                            {wizardSelectedDays.map((num) => DAYS_OF_WEEK.find((d) => d.day === num)?.label).join(" • ")}
+                          </span>
+                        </div>
+                        <div className="d-flex align-items-center gap-1 flex-wrap">
+                          <span style={{ fontSize: "0.74rem", color: "var(--lp-text-muted)" }}>Bấm nhanh để đổi ngày:</span>
+                          {DAYS_OF_WEEK.map((d) => {
+                            const isDayActive = wizardSelectedDays.includes(d.day);
+                            return (
+                              <button
+                                key={d.day}
+                                type="button"
+                                onClick={() => handleToggleWizardDay(d.day)}
+                                style={{
+                                  padding: "2px 8px",
+                                  fontSize: "0.72rem",
+                                  fontWeight: 700,
+                                  borderRadius: "6px",
+                                  border: isDayActive ? "1px solid var(--lp-primary)" : "1px dashed var(--lp-card-border)",
+                                  background: isDayActive ? "var(--lp-primary)" : "var(--lp-bg-surface)",
+                                  color: isDayActive ? "#ffffff" : "var(--lp-text-muted)",
+                                  cursor: "pointer",
+                                  transition: "all 0.15s ease"
+                                }}
+                                title={`${d.fullName}: Bấm để ${isDayActive ? "chuyển sang nghỉ" : "chọn làm ngày tập"}`}
+                              >
+                                {isDayActive ? "💪 " : ""}{d.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                        <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>
+                          🔍 Xem Trước Cấu Trúc Lịch Tuần & Bài Tập:
+                        </span>
+                        <span style={{ fontSize: "0.74rem", color: "var(--lp-text-muted)" }}>
+                          Bấm vào từng thứ để xem bài tập chi tiết
+                        </span>
+                      </div>
+
+                      {/* 7 Day selector chips */}
+                      <div className="d-flex gap-2 mb-3 overflow-auto pb-1">
+                        {currentDays.map((d, idx) => {
+                          const dayInfo = DAYS_OF_WEEK.find((item) => item.day === d.day);
+                          const isSelected = previewDayIndex === idx;
+                          const dayExs = getPreviewExercises(d.day, d.exercises);
+                          return (
+                            <div
+                              key={d.day}
+                              className={`wizard-day-preview-chip ${isSelected ? "active" : ""}`}
+                              onClick={() => setPreviewDayIndex(idx)}
+                            >
+                              <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>
+                                {dayInfo?.label || `T${d.day}`}
+                              </div>
+                              <div
+                                className="sub-badge"
+                                style={{
+                                  fontSize: "0.68rem",
+                                  color: d.isRest ? "var(--lp-text-muted)" : "var(--lp-success)",
+                                  fontWeight: 600
+                                }}
+                              >
+                                {d.isRest ? "🛌 Nghỉ" : `💪 Tập (${dayExs.length})`}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Chi tiết ngày đang preview */}
+                      <div
+                        className="p-3 rounded"
+                        style={{
+                          background: "var(--lp-bg-card)",
+                          border: "1px solid var(--lp-card-border)"
+                        }}
+                      >
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                          <div className="d-flex align-items-center gap-2">
+                            <span className="badge-metric-tag">
+                              {DAYS_OF_WEEK.find((d) => d.day === activePreviewSession.day)?.fullName}
+                            </span>
+                            <h6 style={{ margin: 0, fontWeight: 700, fontSize: "0.9rem" }}>
+                              {activePreviewSession.name}
+                            </h6>
+                          </div>
+                          <span
+                            className={`badge-group-tag ${activePreviewSession.isRest ? "" : "text-success"}`}
+                          >
+                            {activePreviewSession.isRest ? "🌿 Ngày nghỉ phục hồi" : "⚡ Ngày tập luyện"}
+                          </span>
+                        </div>
+
+                        {activePreviewSession.isRest ? (
+                          <div className="text-center py-3" style={{ color: "var(--lp-text-muted)", fontSize: "0.82rem" }}>
+                            🛌 Ngày nghỉ phục hồi cơ bắp. Không có bài tập cần thực hiện.
+                          </div>
+                        ) : (
+                          <div>
+                            {(() => {
+                              const activeDayExercises = getPreviewExercises(
+                                activePreviewSession.day,
+                                activePreviewSession.exercises
+                              );
+
+                              return (
+                                <>
+                                  <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                                    <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--lp-text-muted)" }}>
+                                      Danh sách bài tập ({activeDayExercises.length} bài tập):
+                                    </div>
+                                    <button
+                                      type="button"
+                                      className="btn-action-pill btn-pill-primary"
+                                      style={{
+                                        padding: "4px 14px",
+                                        fontSize: "0.78rem",
+                                        background: "var(--lp-primary)",
+                                        color: "#fff",
+                                        border: "none",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)"
+                                      }}
+                                      onClick={() => handleOpenWizardAddExModal(activePreviewSession.day)}
+                                    >
+                                      <span>➕</span> Thêm Bài Tập
+                                    </button>
+                                  </div>
+
+                                  {activeDayExercises.length > 0 ? (
+                                    <div className="d-flex flex-column gap-2">
+                                      {activeDayExercises.map((ex, i) => (
+                                        <div
+                                          key={i}
+                                          className="d-flex align-items-center justify-content-between p-2 rounded"
+                                          style={{
+                                            background: "var(--lp-bg-surface)",
+                                            border: "1px solid var(--lp-card-border)",
+                                            fontSize: "0.82rem"
+                                          }}
+                                        >
+                                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                                            <span style={{ fontWeight: 600 }}>{ex.ten_bai_tap}</span>
+                                            <span className="badge-group-tag" style={{ fontSize: "0.7rem" }}>
+                                              {ex.nhom_co}
+                                            </span>
+                                            {ex.loai_bai_tap && (
+                                              <span className="badge-metric-tag" style={{ fontSize: "0.68rem" }}>
+                                                {ex.loai_bai_tap}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="d-flex align-items-center gap-3">
+                                            <div className="font-numeric" style={{ fontWeight: 700, color: "var(--lp-primary)" }}>
+                                              {ex.sets || (wizardIntensity === "beginner" ? 3 : 4)} Sets ×{" "}
+                                              {ex.reps || (wizardIntensity === "beginner" ? 12 : wizardIntensity === "intermediate" ? 10 : 8)} Reps
+                                            </div>
+                                            <button
+                                              type="button"
+                                              className="btn btn-sm text-danger p-0 border-0"
+                                              title="Xóa bài tập này khỏi buổi"
+                                              onClick={() => handleDeleteWizardExercise(activePreviewSession.day, i, activePreviewSession.exercises)}
+                                              style={{ lineHeight: 1, fontSize: "0.9rem", opacity: 0.8, cursor: "pointer" }}
+                                            >
+                                              🗑️
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className="text-center py-4 px-3 rounded mt-2"
+                                      style={{
+                                        background: "rgba(37, 99, 235, 0.04)",
+                                        border: "1px dashed var(--lp-card-border)"
+                                      }}
+                                    >
+                                      <div style={{ fontSize: "1.4rem", marginBottom: "6px" }}>🏋️‍♂️</div>
+                                      <h6 style={{ fontSize: "0.88rem", fontWeight: 700, marginBottom: "4px" }}>
+                                        Chưa có bài tập nào cho buổi này
+                                      </h6>
+                                      <p style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)", marginBottom: "12px" }}>
+                                        Tùy biến buổi tập theo sở thích riêng của bạn bằng cách chọn từ kho bài tập hoặc tự nhập bài tập mới!
+                                      </p>
+                                      <button
+                                        type="button"
+                                        className="btn-action-pill btn-pill-primary"
+                                        style={{ padding: "6px 18px", fontSize: "0.82rem", background: "var(--lp-primary)", color: "#fff" }}
+                                        onClick={() => handleOpenWizardAddExModal(activePreviewSession.day)}
+                                      >
+                                        ➕ Thêm Bài Tập Ngay
+                                      </button>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Thanh chuyển bước dưới cùng Step 2 */}
+                <div className="d-flex align-items-center justify-content-between mt-4 pt-3 border-top flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="btn-action-pill btn-pill-primary"
+                    onClick={() => goToWizardStep(1)}
+                  >
+                    ⬅ Quay Lại Bước 1
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-action-pill btn-pill-primary"
+                    style={{ background: "var(--lp-primary)", color: "#fff", padding: "10px 22px", fontSize: "0.9rem" }}
+                    onClick={() => goToWizardStep(3)}
+                  >
+                    Tiếp Tục Sang Bước 3: Cài Giờ Tập & Đồng Bộ ➔
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* BƯỚC 3: THIẾT LẬP THỜI GIAN TẬP & ĐỒNG BỘ LỊCH */}
+            {wizardStep === 3 && (
+              <div>
+                <div className="row g-2 mb-3">
+                  <div className="col-md-7">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                      Tên Giáo Án / Kế Hoạch *
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={wizardPlanName}
+                      onChange={(e) => setWizardPlanName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="col-md-5">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                      Mô Tả Ngắn
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={wizardPlanDesc}
+                      onChange={(e) => setWizardPlanDesc(e.target.value)}
+                      placeholder="Mục tiêu tập luyện..."
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Presets Toolbar */}
+                <div
+                  className="p-3 mb-3 rounded"
+                  style={{
+                    background: "var(--lp-bg-surface)",
+                    border: "1px solid var(--lp-card-border)"
+                  }}
+                >
+                  <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                    <span style={{ fontSize: "0.82rem", fontWeight: 700 }}>
+                      ⚡ Cài nhanh khung giờ cho TẤT CẢ các buổi tập:
+                    </span>
+                    <span style={{ fontSize: "0.74rem", color: "var(--lp-text-muted)" }}>
+                      (Bấm một nút để điền giờ cho cả tuần)
+                    </span>
+                  </div>
+                  <div className="d-flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      className="wizard-time-preset-pill"
+                      onClick={() => handleApplyTimePreset("06:00", "07:15")}
+                    >
+                      🌅 Sáng Sớm (06:00 - 07:15)
+                    </button>
+                    <button
+                      type="button"
+                      className="wizard-time-preset-pill"
+                      onClick={() => handleApplyTimePreset("17:30", "18:45")}
+                    >
+                      🌇 Chiều Tan Làm (17:30 - 18:45)
+                    </button>
+                    <button
+                      type="button"
+                      className="wizard-time-preset-pill"
+                      onClick={() => handleApplyTimePreset("19:30", "20:45")}
+                    >
+                      🌙 Buổi Tối (19:30 - 20:45)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Danh sách 7 ngày trong tuần */}
+                <div className="mb-3">
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: "0.88rem", marginBottom: "8px" }}>
+                    Phân Bổ Lịch Tuần & Thời Gian Từng Buổi:
+                  </label>
+
+                  <div className="d-flex flex-column gap-2">
+                    {wizardSessions.map((s, idx) => {
+                      const dayInfo = DAYS_OF_WEEK.find((d) => d.day === s.day);
+
+                      return (
+                        <div
+                          key={s.day}
+                          className={`wizard-session-row ${s.isRest ? "is-rest" : ""}`}
+                        >
+                          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div className="d-flex align-items-center gap-2 flex-grow-1">
+                              <span className="badge-metric-tag" style={{ minWidth: "75px", textAlign: "center" }}>
+                                {dayInfo?.fullName}
+                              </span>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                style={{ maxWidth: "340px", fontWeight: 600, fontSize: "0.85rem" }}
+                                value={s.name}
+                                disabled={s.isRest}
+                                onChange={(e) => handleUpdateWizardSessionName(idx, e.target.value)}
+                              />
+                            </div>
+
+                            <div className="d-flex align-items-center gap-2">
+                              <button
+                                type="button"
+                                className={`btn-action-pill ${s.isRest ? "btn-pill-warning" : "btn-pill-primary"}`}
+                                style={{ height: "30px", fontSize: "0.74rem" }}
+                                onClick={() => handleToggleWizardRestDay(idx)}
+                              >
+                                {s.isRest ? "🛌 Đang Nghỉ" : "💪 Đang Tập"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {!s.isRest && (
+                            <div className="d-flex align-items-center justify-content-between mt-2 pt-2 border-top flex-wrap gap-2">
+                              <div className="d-flex align-items-center gap-2">
+                                <span style={{ fontSize: "0.8rem", color: "var(--lp-text-muted)", fontWeight: 600 }}>
+                                  ⏰ Giờ tập:
+                                </span>
+                                <input
+                                  type="time"
+                                  className="form-control form-control-sm"
+                                  style={{ width: "95px", height: "28px", fontSize: "0.78rem", padding: "2px 6px" }}
+                                  value={s.gio_bat_dau || "17:30"}
+                                  onChange={(e) => handleUpdateWizardSessionTime(idx, "gio_bat_dau", e.target.value)}
+                                />
+                                <span style={{ fontSize: "0.8rem", color: "var(--lp-text-muted)" }}>đến</span>
+                                <input
+                                  type="time"
+                                  className="form-control form-control-sm"
+                                  style={{ width: "95px", height: "28px", fontSize: "0.78rem", padding: "2px 6px" }}
+                                  value={s.gio_ket_thuc || "18:45"}
+                                  onChange={(e) => handleUpdateWizardSessionTime(idx, "gio_ket_thuc", e.target.value)}
+                                />
+                              </div>
+
+                              <div style={{ fontSize: "0.74rem", color: "var(--lp-text-muted)" }}>
+                                🏋️ {s.exercises?.length || 0} bài tập được gán sẵn
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Checkbox Đồng bộ lịch & Kích hoạt */}
+                <div
+                  className="p-3 mb-3 rounded"
+                  style={{
+                    background: "rgba(16, 185, 129, 0.08)",
+                    border: "1px solid rgba(16, 185, 129, 0.25)"
+                  }}
+                >
+                  <div className="form-check mb-2">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id={`syncCalendarCheck-${isFullPage ? "page" : "modal"}`}
+                      checked={wizardSyncCalendar}
+                      onChange={(e) => setWizardSyncCalendar(e.target.checked)}
+                    />
+                    <label
+                      className="form-check-label"
+                      htmlFor={`syncCalendarCheck-${isFullPage ? "page" : "modal"}`}
+                      style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--lp-text-main)" }}
+                    >
+                      📅 Tự động đưa lịch tập này lên trang Lịch (SuKien)
+                    </label>
+                  </div>
+                  <p style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)", margin: "0 0 0 24px", lineHeight: 1.4 }}>
+                    Hệ thống sẽ tự động tạo các sự kiện tập luyện định kỳ hàng tuần vào trang Lịch theo khung giờ bạn đã cài, kèm đầy đủ danh sách bài tập của từng ngày.
+                  </p>
+
+                  <div className="form-check mt-3">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id={`setActiveCheck-${isFullPage ? "page" : "modal"}`}
+                      checked={wizardIsActive}
+                      onChange={(e) => setWizardIsActive(e.target.checked)}
+                    />
+                    <label
+                      className="form-check-label"
+                      htmlFor={`setActiveCheck-${isFullPage ? "page" : "modal"}`}
+                      style={{ fontSize: "0.85rem", color: "var(--lp-text-main)" }}
+                    >
+                      ⚡ Kích hoạt làm giáo án sử dụng chính ngay sau khi tạo
+                    </label>
+                  </div>
+                </div>
+
+                {/* Thanh chuyển bước dưới cùng Step 3 */}
+                <div className="d-flex align-items-center justify-content-between mt-4 pt-3 border-top flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="btn-action-pill btn-pill-primary"
+                    onClick={() => goToWizardStep(2)}
+                  >
+                    ⬅ Quay Lại Bước 2
+                  </button>
+                  <div className="d-flex gap-2">
+                    {!isFullPage && (
+                      <button
+                        type="button"
+                        className="btn-action-pill btn-pill-primary"
+                        onClick={() => setShowPlanModal(false)}
+                      >
+                        Hủy Bỏ
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-action-pill btn-pill-primary"
+                      style={{ background: "var(--lp-primary)", color: "#fff", padding: "10px 24px", fontSize: "0.92rem", fontWeight: 700 }}
+                      disabled={isSavingPlan}
+                      onClick={handleSaveWizardPlan}
+                    >
+                      {isSavingPlan ? "⏳ Đang Lưu & Đồng Bộ..." : "🚀 Hoàn Tất & Lưu Giáo Án"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const todayDayNum = getTodayDayNumber();
 
   return (
@@ -421,6 +2091,20 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
             onClick={() => setActiveTab("plans")}
           >
             <span>📋</span> Quản Lý Giáo Án ({plansList.length})
+          </button>
+          <button
+            id="workout-tab-create-plan"
+            className={`workout-nav-tab-btn ${activeTab === "create_plan" ? "active" : ""}`}
+            onClick={() => {
+              setEditingPlan(null);
+              setWizardStep(1);
+              setSlideDirection("next");
+              setWizardSelectedDays([2, 3, 5, 6]);
+              setWizardFrequency(4);
+              setActiveTab("create_plan");
+            }}
+          >
+            <span>✨</span> Thiết Kế Giáo Án Mới
           </button>
           <button
             id="workout-tab-history"
@@ -1127,6 +2811,35 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
       )}
 
       {/* =========================================================================
+          TAB 2.5: THIẾT KẾ GIÁO ÁN MỚI (TỪNG BƯỚC SLIDE TỪ PHẢI SANG)
+          ========================================================================= */}
+      {activeTab === "create_plan" && (
+        <div className="glass-card mb-4" style={{ padding: "26px", borderRadius: "20px" }}>
+          <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3 border-bottom pb-3">
+            <div>
+              <div className="d-flex align-items-center gap-2">
+                <span style={{ fontSize: "1.5rem" }}>✨</span>
+                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0 }}>Thiết Kế Giáo Án Mới</h3>
+                <span className="badge-metric-tag" style={{ fontSize: "0.75rem" }}>Quy Trình Từng Bước</span>
+              </div>
+              <p style={{ fontSize: "0.85rem", color: "var(--lp-text-muted)", margin: "4px 0 0 0" }}>
+                Chọn tần suất & cường độ, hệ thống sẽ gợi ý lịch mẫu và tạo các bài tập tương ứng với hiệu ứng trượt mượt mà.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-action-pill btn-pill-primary"
+              onClick={() => setActiveTab("plans")}
+            >
+              ← Quay Lại Quản Lý Giáo Án
+            </button>
+          </div>
+
+          {renderWizardDesigner(true)}
+        </div>
+      )}
+
+      {/* =========================================================================
           TAB 3: BÁO CÁO & NHẬT KÝ TẬP LUYỆN
           ========================================================================= */}
       {activeTab === "history" && (
@@ -1530,6 +3243,185 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                   </button>
                   <button type="submit" className="btn-action-pill btn-pill-primary" style={{ background: "var(--lp-primary)", color: "#fff" }}>
                     Lưu Thay Đổi
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 5: Thêm Bài Tập trong Wizard Bước 2 */}
+      {showWizardAddExModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1070 }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
+                  ➕ Thêm Bài Tập Vào: {DAYS_OF_WEEK.find((d) => d.day === wizardTargetDay)?.fullName}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowWizardAddExModal(false)}
+                />
+              </div>
+              <form onSubmit={handleSaveWizardExercise}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                      Chọn Từ Kho Bài Tập Mẫu
+                    </label>
+                    <select
+                      className="form-select"
+                      value={wizardExForm.bai_tap_the_chat_id}
+                      onChange={(e) =>
+                        setWizardExForm({
+                          ...wizardExForm,
+                          bai_tap_the_chat_id: e.target.value
+                        })
+                      }
+                    >
+                      <option value="">-- Hoặc tự nhập bài tập tùy chỉnh bên dưới --</option>
+                      {exerciseCatalog.map((ex) => (
+                        <option key={ex._id} value={ex._id}>
+                          [{ex.nhom_co}] {ex.ten_bai_tap}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {!wizardExForm.bai_tap_the_chat_id && (
+                    <div className="p-3 mb-3 rounded" style={{ background: "var(--lp-bg-surface)", border: "1px solid var(--lp-card-border)" }}>
+                      <div className="mb-2">
+                        <label className="form-label" style={{ fontSize: "0.82rem", fontWeight: 600 }}>
+                          Tên Bài Tập Tùy Chỉnh *
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="VD: Hít đất, Kéo xà, Gập bụng..."
+                          value={wizardExForm.ten_bai_tap}
+                          onChange={(e) =>
+                            setWizardExForm({ ...wizardExForm, ten_bai_tap: e.target.value })
+                          }
+                          required={!wizardExForm.bai_tap_the_chat_id}
+                        />
+                      </div>
+                      <div className="row g-2">
+                        <div className="col-6">
+                          <label className="form-label" style={{ fontSize: "0.82rem" }}>
+                            Nhóm Cơ
+                          </label>
+                          <select
+                            className="form-select form-select-sm"
+                            value={wizardExForm.nhom_co}
+                            onChange={(e) =>
+                              setWizardExForm({ ...wizardExForm, nhom_co: e.target.value })
+                            }
+                          >
+                            <option value="Ngực">Ngực (Chest)</option>
+                            <option value="Lưng">Lưng (Back)</option>
+                            <option value="Lưng xô">Lưng xô (Lats)</option>
+                            <option value="Vai">Vai (Shoulders)</option>
+                            <option value="Tay trước">Tay trước (Biceps)</option>
+                            <option value="Tay sau">Tay sau (Triceps)</option>
+                            <option value="Đùi trước & Mông">Đùi trước & Mông (Quads/Glutes)</option>
+                            <option value="Đùi sau & Lưng dưới">Đùi sau & Lưng dưới (Hamstrings)</option>
+                            <option value="Bắp chân">Bắp chân (Calves)</option>
+                            <option value="Cơ bụng & Core">Cơ bụng & Core (Abs)</option>
+                            <option value="Cardio">Cardio / Tim mạch</option>
+                            <option value="Toàn thân">Toàn thân (Full Body)</option>
+                          </select>
+                        </div>
+                        <div className="col-6">
+                          <label className="form-label" style={{ fontSize: "0.82rem" }}>
+                            Loại Bài Tập
+                          </label>
+                          <select
+                            className="form-select form-select-sm"
+                            value={wizardExForm.loai_bai_tap}
+                            onChange={(e) =>
+                              setWizardExForm({ ...wizardExForm, loai_bai_tap: e.target.value })
+                            }
+                          >
+                            <option value="strength">Sức mạnh (Strength)</option>
+                            <option value="cardio">Cardio</option>
+                            <option value="core">Core / Bụng</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="row g-2">
+                    <div className="col-4">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                        Số Sets
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        className="form-control font-numeric"
+                        value={wizardExForm.sets}
+                        onChange={(e) =>
+                          setWizardExForm({ ...wizardExForm, sets: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="col-4">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                        Số Reps
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        className="form-control font-numeric"
+                        value={wizardExForm.reps}
+                        onChange={(e) =>
+                          setWizardExForm({ ...wizardExForm, reps: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="col-4">
+                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                        Phút (Tùy chọn)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="180"
+                        className="form-control font-numeric"
+                        value={wizardExForm.mins}
+                        onChange={(e) =>
+                          setWizardExForm({ ...wizardExForm, mins: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn-action-pill btn-pill-primary"
+                    onClick={() => setShowWizardAddExModal(false)}
+                  >
+                    Hủy Bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-action-pill btn-pill-primary"
+                    style={{ background: "var(--lp-primary)", color: "#fff" }}
+                  >
+                    ➕ Thêm Vào Buổi Tập
                   </button>
                 </div>
               </form>

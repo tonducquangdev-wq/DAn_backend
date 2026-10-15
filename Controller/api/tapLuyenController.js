@@ -3,26 +3,51 @@ const BuoiTap = require("../../Model/BuoiTap");
 const ChiTietBuoiTap = require("../../Model/ChiTietBuoiTap");
 const LichSuTapLuyen = require("../../Model/LichSuTapLuyen");
 const BaiTapTheChat = require("../../Model/BaiTapTheChat");
+const SuKien = require("../../Model/SuKien");
 const User = require("../../Model/User");
 
-// Seed các bài tập mẫu nếu cơ sở dữ liệu trống
+// Seed các bài tập mẫu nếu cơ sở dữ liệu trống hoặc bổ sung các bài tập chuẩn
 const ensureStandardExercises = async () => {
-    const count = await BaiTapTheChat.countDocuments();
-    if (count > 0) return;
-
     const defaultExercises = [
         { ten_bai_tap: "Barbell Bench Press", nhom_co: "Ngực", loai_bai_tap: "strength", meo_tap: "Giữ cổ tay thẳng, hạ thanh đòn có kiểm soát" },
         { ten_bai_tap: "Incline Dumbbell Press", nhom_co: "Ngực trên", loai_bai_tap: "strength", meo_tap: "Ghế nghiêng 30 độ" },
+        { ten_bai_tap: "Dumbbell Chest Fly", nhom_co: "Ngực", loai_bai_tap: "strength", meo_tap: "Mở rộng lồng ngực, cùi chỏ hơi cong" },
+        { ten_bai_tap: "Push-up (Hít Đất)", nhom_co: "Ngực & Tay sau", loai_bai_tap: "strength", meo_tap: "Gồng chắc core, hạ ngực sát sàn" },
         { ten_bai_tap: "Lat Pulldown", nhom_co: "Lưng xô", loai_bai_tap: "strength", meo_tap: "Kéo cùi chỏ về phía hông, không giật người" },
         { ten_bai_tap: "Barbell Bent Over Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", meo_tap: "Lưng thẳng, gập người 45 độ" },
+        { ten_bai_tap: "Seated Cable Row", nhom_co: "Lưng giữa", loai_bai_tap: "strength", meo_tap: "Kéo về rốn, siết chặt hai bả vai" },
+        { ten_bai_tap: "Pull-up (Hít Xà Đơn)", nhom_co: "Lưng xô", loai_bai_tap: "strength", meo_tap: "Kéo cằm vượt xà, hạ người có kiểm soát" },
         { ten_bai_tap: "Barbell Back Squat", nhom_co: "Đùi trước & Mông", loai_bai_tap: "strength", meo_tap: "Đầu gối hướng theo mũi chân" },
         { ten_bai_tap: "Romanian Deadlift", nhom_co: "Đùi sau & Lưng dưới", loai_bai_tap: "strength", meo_tap: "Đẩy mông ra sau, lưng giữ thẳng" },
-        { ten_bai_tap: "Tricep Rope Pushdown", nhom_co: "Tay sau", loai_bai_tap: "strength", meo_tap: "Cố định cùi chỏ sát mạn sườn" },
+        { ten_bai_tap: "Leg Press", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", meo_tap: "Đạp tạ không khóa khớp gối ở đỉnh" },
+        { ten_bai_tap: "Dumbbell Walking Lunges", nhom_co: "Đùi & Mông", loai_bai_tap: "strength", meo_tap: "Bước sải vừa phải, gối hạ vuông góc" },
+        { ten_bai_tap: "Calf Raises (Nhón Bắp Chuối)", nhom_co: "Bắp chân", loai_bai_tap: "strength", meo_tap: "Nhón cao hết biên độ, giữ 1 giây ở đỉnh" },
+        { ten_bai_tap: "Overhead Dumbbell Press", nhom_co: "Vai", loai_bai_tap: "strength", meo_tap: "Đẩy thẳng tạ lên trên, siết chặt cơ bụng" },
+        { ten_bai_tap: "Dumbbell Lateral Raise", nhom_co: "Vai giữa", loai_bai_tap: "strength", meo_tap: "Nâng tay ngang vai, cùi chỏ hơi cong nhẹ" },
+        { ten_bai_tap: "Face Pull", nhom_co: "Vai sau & Lưng trên", loai_bai_tap: "strength", meo_tap: "Kéo dây thừng về ngang mắt, mở rộng chỏ" },
         { ten_bai_tap: "Bicep Barbell Curl", nhom_co: "Tay trước", loai_bai_tap: "strength", meo_tap: "Không đung đưa người lấy đà" },
-        { ten_bai_tap: "Plank Cổ Điển", nhom_co: "Cơ bụng & Core", loai_bai_tap: "core", meo_tap: "Gồng chắc cơ bụng, giữ thẳng người" }
+        { ten_bai_tap: "Hammer Curl", nhom_co: "Tay trước & Cẳng tay", loai_bai_tap: "strength", meo_tap: "Lòng bàn tay hướng vào nhau khi cuốn" },
+        { ten_bai_tap: "Tricep Rope Pushdown", nhom_co: "Tay sau", loai_bai_tap: "strength", meo_tap: "Cố định cùi chỏ sát mạn sườn" },
+        { ten_bai_tap: "Dips (Xà Kép)", nhom_co: "Ngực dưới & Tay sau", loai_bai_tap: "strength", meo_tap: "Hạ người vuông góc cùi chỏ, đẩy lên dứt khoát" },
+        { ten_bai_tap: "Plank Cổ Điển", nhom_co: "Cơ bụng & Core", loai_bai_tap: "core", meo_tap: "Gồng chắc cơ bụng, giữ thẳng người" },
+        { ten_bai_tap: "Hanging Leg Raise", nhom_co: "Bụng dưới", loai_bai_tap: "core", meo_tap: "Gồng bụng nhấc chân hoặc gối lên ngực" },
+        { ten_bai_tap: "Russian Twist", nhom_co: "Cơ liên sườn", loai_bai_tap: "core", meo_tap: "Xoay thân mình nhịp nhàng hai bên" },
+        { ten_bai_tap: "Máy Chạy Bộ (Treadmill)", nhom_co: "Tim mạch & Toàn thân", loai_bai_tap: "cardio", meo_tap: "Duy trì nhịp tim và thở đều đặn" },
+        { ten_bai_tap: "Xe Đạp Thể Dục (Stationary Bike)", nhom_co: "Chân & Tim mạch", loai_bai_tap: "cardio", meo_tap: "Đạp tốc độ vừa phải hoặc ngắt quãng HIIT" }
     ];
 
-    await BaiTapTheChat.insertMany(defaultExercises);
+    const count = await BaiTapTheChat.countDocuments();
+    if (count === 0) {
+        await BaiTapTheChat.insertMany(defaultExercises);
+    } else {
+        // Bổ sung những bài tập chưa có
+        for (const ex of defaultExercises) {
+            const exists = await BaiTapTheChat.findOne({ ten_bai_tap: ex.ten_bai_tap });
+            if (!exists) {
+                await BaiTapTheChat.create(ex);
+            }
+        }
+    }
 };
 
 // Khởi tạo Lịch tập Gym mẫu mặc định đúng một lần cho mỗi tài khoản
@@ -259,10 +284,104 @@ const getAllWorkoutPlans = async (req, res) => {
     }
 };
 
-// 3. Tạo Kế hoạch tập luyện cá nhân mới
+// Helper đồng bộ giáo án tập luyện sang trang Lịch (SuKien)
+const syncWorkoutPlanToCalendar = async (userId, planId, weeksAhead = 8) => {
+    try {
+        const plan = await KeHoachTapLuyen.findById(planId);
+        if (!plan) return false;
+
+        // Xóa các sự kiện lịch cũ liên quan đến giáo án này
+        await SuKien.deleteMany({
+            user_id: userId,
+            ke_hoach_tap_luyen_id: planId
+        });
+
+        // Lấy danh sách các buổi tập không phải ngày nghỉ
+        const buoiTaps = await BuoiTap.find({
+            ke_hoach_tap_luyen_id: planId,
+            is_rest_day: false
+        }).sort({ ngay_trong_tuan: 1 });
+
+        if (buoiTaps.length === 0) return true;
+
+        const eventsToInsert = [];
+        const nhomLapId = "workout_plan_" + planId + "_" + Date.now();
+
+        const now = new Date();
+        const currentJsDay = now.getDay(); // 0 is Sunday, 1 is Monday...
+        const mondayCurrentWeek = new Date(now);
+        mondayCurrentWeek.setDate(now.getDate() + (currentJsDay === 0 ? -6 : 1 - currentJsDay));
+        mondayCurrentWeek.setHours(0, 0, 0, 0);
+
+        for (const buoi of buoiTaps) {
+            const details = await ChiTietBuoiTap.find({ buoi_tap_id: buoi._id })
+                .populate("bai_tap_the_chat_id")
+                .sort({ thu_tu: 1 });
+
+            let moTaChiTiet = `📋 Giáo án: ${plan.ten_ke_hoach}\n🎯 Buổi tập: ${buoi.ten_buoi_tap}\n`;
+            if (details.length > 0) {
+                moTaChiTiet += "\n🏋️ Danh sách bài tập:\n";
+                details.forEach((d, idx) => {
+                    const tenEx = d.bai_tap_the_chat_id?.ten_bai_tap || "Bài tập";
+                    const nhomCo = d.bai_tap_the_chat_id?.nhom_co ? `[${d.bai_tap_the_chat_id.nhom_co}] ` : "";
+                    moTaChiTiet += `${idx + 1}. ${nhomCo}${tenEx}: ${d.so_sets} sets x ${d.so_reps} reps\n`;
+                });
+            }
+
+            const startTimeStr = buoi.gio_bat_dau || "06:00";
+            const endTimeStr = buoi.gio_ket_thuc || "07:15";
+            const [startH, startM] = startTimeStr.split(":").map(Number);
+            const [endH, endM] = endTimeStr.split(":").map(Number);
+
+            // buoi.ngay_trong_tuan: 2=T2, ..., 8=CN -> offset from monday: 0 to 6
+            const dayOffset = (buoi.ngay_trong_tuan || 2) - 2;
+
+            const baseDate = new Date(mondayCurrentWeek);
+            baseDate.setDate(mondayCurrentWeek.getDate() + dayOffset);
+
+            for (let w = 0; w < weeksAhead; w++) {
+                const eventStartDate = new Date(baseDate);
+                eventStartDate.setDate(baseDate.getDate() + w * 7);
+                eventStartDate.setHours(startH || 6, startM || 0, 0, 0);
+
+                const eventEndDate = new Date(baseDate);
+                eventEndDate.setDate(baseDate.getDate() + w * 7);
+                eventEndDate.setHours(endH || 7, endM || 15, 0, 0);
+
+                eventsToInsert.push({
+                    user_id: userId,
+                    ke_hoach_tap_luyen_id: plan._id,
+                    buoi_tap_id: buoi._id,
+                    loai_su_kien: "tap-luyen",
+                    tieu_de: `🏋️ ${buoi.ten_buoi_tap}`,
+                    mo_ta: moTaChiTiet,
+                    thoi_gian_bat_dau: eventStartDate,
+                    thoi_gian_ket_thuc: eventEndDate,
+                    dia_diem: "Phòng Gym / Tại nhà",
+                    mau_sac: "#10B981",
+                    quy_tac_lap: "weekly",
+                    nhom_lap_id: nhomLapId,
+                    bat_thong_bao: true,
+                    so_ngay_nhac: 0
+                });
+            }
+        }
+
+        if (eventsToInsert.length > 0) {
+            await SuKien.insertMany(eventsToInsert);
+        }
+
+        return true;
+    } catch (err) {
+        console.error("Lỗi đồng bộ lịch tập sang SuKien:", err);
+        return false;
+    }
+};
+
+// 3. Tạo Kế hoạch tập luyện cá nhân mới (Hỗ trợ Wizard gợi ý, bài tập & setup giờ tập)
 const createWorkoutPlan = async (req, res) => {
     try {
-        const { ten_ke_hoach, mo_ta, is_active } = req.body;
+        const { ten_ke_hoach, mo_ta, so_buoi_tuan, cuong_do, is_active, dong_bo_lich, sessions } = req.body;
 
         if (!ten_ke_hoach || !ten_ke_hoach.trim()) {
             return res.status(400).json({ success: false, message: "Tên kế hoạch không được để trống" });
@@ -282,38 +401,103 @@ const createWorkoutPlan = async (req, res) => {
             );
         }
 
+        const shouldSync = dong_bo_lich !== undefined ? Boolean(dong_bo_lich) : true;
+
         const newPlan = await KeHoachTapLuyen.create({
             user_id: req.user._id,
             ten_ke_hoach: ten_ke_hoach.trim(),
             mo_ta: mo_ta ? mo_ta.trim() : "",
+            so_buoi_tuan: Number(so_buoi_tuan) || (Array.isArray(sessions) ? sessions.filter(s => !s.is_rest_day).length : 4),
+            cuong_do: cuong_do || "intermediate",
+            dong_bo_lich: shouldSync,
             is_active: shouldBeActive,
             is_default: false
         });
 
-        // Tự động khởi tạo khung 7 ngày (Thứ 2 đến Chủ nhật) cho kế hoạch mới
-        const dayNames = [
-            { day: 2, name: "Thứ Hai: Buổi tập chính", isRest: false },
-            { day: 3, name: "Thứ Ba: Nghỉ ngơi phục hồi", isRest: true },
-            { day: 4, name: "Thứ Tư: Buổi tập chính", isRest: false },
-            { day: 5, name: "Thứ Năm: Nghỉ ngơi phục hồi", isRest: true },
-            { day: 6, name: "Thứ Sáu: Buổi tập chính", isRest: false },
-            { day: 7, name: "Thứ Bảy: Cardio & Giãn cơ", isRest: false },
-            { day: 8, name: "Chủ Nhật: Nghỉ ngơi phục hồi", isRest: true }
-        ];
+        await ensureStandardExercises();
+        const allExercises = await BaiTapTheChat.find();
 
-        for (const d of dayNames) {
-            await BuoiTap.create({
-                ke_hoach_tap_luyen_id: newPlan._id,
-                ten_buoi_tap: d.name,
-                ngay_trong_tuan: d.day,
-                thu_tu: d.day - 1,
-                is_rest_day: d.isRest
-            });
+        if (Array.isArray(sessions) && sessions.length > 0) {
+            for (const s of sessions) {
+                const dayNum = Number(s.ngay_trong_tuan) || 2;
+                const buoi = await BuoiTap.create({
+                    ke_hoach_tap_luyen_id: newPlan._id,
+                    ten_buoi_tap: s.ten_buoi_tap || (s.is_rest_day ? "Nghỉ ngơi phục hồi" : "Buổi tập chính"),
+                    ngay_trong_tuan: dayNum,
+                    thu_tu: dayNum - 1,
+                    is_rest_day: Boolean(s.is_rest_day),
+                    gio_bat_dau: s.gio_bat_dau || "06:00",
+                    gio_ket_thuc: s.gio_ket_thuc || "07:15",
+                    ghi_chu: s.ghi_chu || null
+                });
+
+                if (!s.is_rest_day && Array.isArray(s.exercises) && s.exercises.length > 0) {
+                    for (let i = 0; i < s.exercises.length; i++) {
+                        const ex = s.exercises[i];
+                        let exId = ex.bai_tap_the_chat_id;
+                        if (!exId && ex.ten_bai_tap) {
+                            let found = allExercises.find(
+                                e => e.ten_bai_tap.toLowerCase().trim() === ex.ten_bai_tap.toLowerCase().trim()
+                            );
+                            if (!found) {
+                                found = await BaiTapTheChat.create({
+                                    ten_bai_tap: ex.ten_bai_tap.trim(),
+                                    nhom_co: ex.nhom_co || "Toàn thân",
+                                    loai_bai_tap: ex.loai_bai_tap || "strength"
+                                });
+                                allExercises.push(found);
+                            }
+                            exId = found._id;
+                        }
+
+                        if (exId) {
+                            await ChiTietBuoiTap.create({
+                                buoi_tap_id: buoi._id,
+                                bai_tap_the_chat_id: exId,
+                                so_sets: Number(ex.so_sets) || 3,
+                                so_reps: Number(ex.so_reps) || 10,
+                                thoi_luong_phut: Number(ex.thoi_luong_phut) || 10,
+                                thu_tu: i + 1
+                            });
+                        }
+                    }
+                }
+            }
+        } else {
+            // Tự động khởi tạo khung 7 ngày mặc định nếu không truyền sessions
+            const dayNames = [
+                { day: 2, name: "Thứ Hai: Buổi tập chính", isRest: false },
+                { day: 3, name: "Thứ Ba: Nghỉ ngơi phục hồi", isRest: true },
+                { day: 4, name: "Thứ Tư: Buổi tập chính", isRest: false },
+                { day: 5, name: "Thứ Năm: Nghỉ ngơi phục hồi", isRest: true },
+                { day: 6, name: "Thứ Sáu: Buổi tập chính", isRest: false },
+                { day: 7, name: "Thứ Bảy: Cardio & Giãn cơ", isRest: false },
+                { day: 8, name: "Chủ Nhật: Nghỉ ngơi phục hồi", isRest: true }
+            ];
+
+            for (const d of dayNames) {
+                await BuoiTap.create({
+                    ke_hoach_tap_luyen_id: newPlan._id,
+                    ten_buoi_tap: d.name,
+                    ngay_trong_tuan: d.day,
+                    thu_tu: d.day - 1,
+                    is_rest_day: d.isRest,
+                    gio_bat_dau: "06:00",
+                    gio_ket_thuc: "07:15"
+                });
+            }
+        }
+
+        // Tự động đồng bộ lên trang Lịch nếu được bật
+        if (shouldSync) {
+            await syncWorkoutPlanToCalendar(req.user._id, newPlan._id);
         }
 
         res.status(201).json({
             success: true,
-            message: "Tạo kế hoạch tập luyện thành công!",
+            message: shouldSync 
+                ? "Tạo kế hoạch tập luyện và tự động đồng bộ lên Lịch thành công!" 
+                : "Tạo kế hoạch tập luyện thành công!",
             data: newPlan
         });
     } catch (error) {
@@ -378,6 +562,11 @@ const activateWorkoutPlan = async (req, res) => {
         targetPlan.is_active = true;
         await targetPlan.save();
 
+        // Tự động đồng bộ lịch nếu giáo án này có bật cờ đồng bộ
+        if (targetPlan.dong_bo_lich) {
+            await syncWorkoutPlanToCalendar(req.user._id, targetPlan._id);
+        }
+
         res.status(200).json({
             success: true,
             message: `Đã kích hoạt kế hoạch "${targetPlan.ten_ke_hoach}" làm lịch tập chính!`,
@@ -403,6 +592,12 @@ const deleteWorkoutPlan = async (req, res) => {
         }
 
         const wasActive = plan.is_active;
+
+        // Dọn dẹp sự kiện lịch liên quan đến giáo án này
+        await SuKien.deleteMany({
+            user_id: req.user._id,
+            ke_hoach_tap_luyen_id: plan._id
+        });
 
         // Tìm tất cả buổi tập thuộc kế hoạch này
         const buoiTaps = await BuoiTap.find({
@@ -434,6 +629,9 @@ const deleteWorkoutPlan = async (req, res) => {
                 remaining.is_active = true;
                 await remaining.save();
                 newActivePlan = remaining;
+                if (remaining.dong_bo_lich) {
+                    await syncWorkoutPlanToCalendar(req.user._id, remaining._id);
+                }
             }
         }
 
@@ -450,11 +648,11 @@ const deleteWorkoutPlan = async (req, res) => {
     }
 };
 
-// 7. Cập nhật Buổi tập (Tên buổi, Ngày trong tuần, Đánh dấu ngày nghỉ)
+// 7. Cập nhật Buổi tập (Tên buổi, Ngày trong tuần, Giờ tập, Đánh dấu ngày nghỉ)
 const updateBuoiTap = async (req, res) => {
     try {
         const { id } = req.params;
-        const { ten_buoi_tap, is_rest_day, ghi_chu, ngay_trong_tuan } = req.body;
+        const { ten_buoi_tap, is_rest_day, ghi_chu, ngay_trong_tuan, gio_bat_dau, gio_ket_thuc } = req.body;
 
         const buoi = await BuoiTap.findById(id);
         if (!buoi) {
@@ -475,6 +673,8 @@ const updateBuoiTap = async (req, res) => {
         if (ten_buoi_tap !== undefined) buoi.ten_buoi_tap = ten_buoi_tap.trim();
         if (is_rest_day !== undefined) buoi.is_rest_day = Boolean(is_rest_day);
         if (ghi_chu !== undefined) buoi.ghi_chu = ghi_chu;
+        if (gio_bat_dau !== undefined) buoi.gio_bat_dau = gio_bat_dau;
+        if (gio_ket_thuc !== undefined) buoi.gio_ket_thuc = gio_ket_thuc;
         if (ngay_trong_tuan !== undefined) {
             const dayNum = Number(ngay_trong_tuan);
             if (dayNum >= 2 && dayNum <= 8) {
@@ -484,6 +684,11 @@ const updateBuoiTap = async (req, res) => {
 
         await buoi.save();
 
+        // Nếu giáo án này đang active và bật đồng bộ lịch, re-sync lịch tự động
+        if (plan.is_active && plan.dong_bo_lich) {
+            await syncWorkoutPlanToCalendar(req.user._id, plan._id);
+        }
+
         res.status(200).json({
             success: true,
             message: "Cập nhật buổi tập thành công!",
@@ -491,6 +696,36 @@ const updateBuoiTap = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ success: false, message: "Lỗi cập nhật buổi tập: " + error.message });
+    }
+};
+
+// 7.1. Đồng bộ thủ công giáo án sang trang Lịch
+const syncWorkoutPlanEndpoint = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const plan = await KeHoachTapLuyen.findOne({
+            _id: id,
+            $or: [{ user_id: req.user._id }, { userId: req.user._id }]
+        });
+
+        if (!plan) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy kế hoạch tập luyện" });
+        }
+
+        const success = await syncWorkoutPlanToCalendar(req.user._id, plan._id);
+        if (!success) {
+            return res.status(500).json({ success: false, message: "Không thể đồng bộ sang trang Lịch" });
+        }
+
+        plan.dong_bo_lich = true;
+        await plan.save();
+
+        res.status(200).json({
+            success: true,
+            message: `Đã đồng bộ thành công các buổi tập của giáo án "${plan.ten_ke_hoach}" vào Lịch!`
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi đồng bộ lịch: " + error.message });
     }
 };
 
@@ -810,5 +1045,6 @@ module.exports = {
     deleteExerciseDetail,
     getExerciseCatalog,
     completeWorkoutSession,
-    getWorkoutReport
+    getWorkoutReport,
+    syncWorkoutPlanEndpoint
 };

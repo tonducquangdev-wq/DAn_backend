@@ -8,7 +8,12 @@ const {
     getCongViec,
     createCongViec,
     updateCongViec,
-    deleteCongViec
+    deleteCongViec,
+    getCaLamViec,
+    createCaLamViec,
+    bulkCreateCaLamViec,
+    updateCaLamViec,
+    deleteCaLamViec
 } = require("../Controller/api/duAnController");
 const authMiddleware = require("../Middleware/authMiddleware");
 
@@ -24,5 +29,11 @@ router.post("/cong-viec", authMiddleware, createCongViec);
 router.put("/cong-viec/:id", authMiddleware, updateCongViec);
 router.delete("/cong-viec/:id", authMiddleware, deleteCongViec);
 
-module.exports = router;
+// Routes Ca làm việc & Lịch làm Part-time
+router.get("/ca-lam-viec", authMiddleware, getCaLamViec);
+router.post("/ca-lam-viec", authMiddleware, createCaLamViec);
+router.post("/ca-lam-viec/bulk", authMiddleware, bulkCreateCaLamViec);
+router.put("/ca-lam-viec/:id", authMiddleware, updateCaLamViec);
+router.delete("/ca-lam-viec/:id", authMiddleware, deleteCaLamViec);
 
+module.exports = router;

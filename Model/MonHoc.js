@@ -3,11 +3,11 @@ const mongoose = require("mongoose");
 const monHocSchema = new mongoose.Schema(
     {
         user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-        ma_mon: { type: String, required: true, trim: true },
+        ma_mon: { type: String, default: null, trim: true },
         ten_mon: { type: String, required: true, trim: true },
         giang_vien: { type: String, default: null, trim: true },
         phong_hoc: { type: String, default: null, trim: true },
-        so_tin_chi: { type: Number, required: true, min: 1, max: 20 },
+        so_tin_chi: { type: Number, default: 3, min: 1, max: 20 },
         diem_so: { type: Number, min: 0, max: 10, default: null },
         tien_do: { type: Number, min: 0, max: 100, default: 0 },
         ngay_bat_dau: { type: Date, default: null },
