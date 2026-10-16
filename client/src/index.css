@@ -511,6 +511,19 @@ body {
   border-color: var(--primary) !important;
 }
 
+/* Compact & Modal Action Buttons (Ngăn ngừa nút bị phình to trong các cửa sổ Modal) */
+.modal-content .btn-primary,
+.modal-content .btn-secondary,
+.btn-modal-action,
+.btn-compact {
+  padding: 8px 18px !important;
+  font-size: 0.85rem !important;
+  border-radius: 10px !important;
+  min-height: 38px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
 /* Neumorphic Circular Icon Button (like plus btn in image) */
 .neu-circle-btn {
   width: 44px;

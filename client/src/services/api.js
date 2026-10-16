@@ -26,10 +26,22 @@ const request = async (endpoint, options = {}) => {
     }
 
     if (data && typeof data === "object") {
+      const isSuccess = data.success !== undefined ? data.success : true;
+      if (isSuccess && options.method && ["POST", "PUT", "PATCH", "DELETE"].includes(options.method.toUpperCase())) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("calendar-refresh"));
+        }
+      }
       return {
-        success: data.success !== undefined ? data.success : true,
+        success: isSuccess,
         ...data
       };
+    }
+
+    if (options.method && ["POST", "PUT", "PATCH", "DELETE"].includes(options.method.toUpperCase())) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("calendar-refresh"));
+      }
     }
 
     return { success: true, data };

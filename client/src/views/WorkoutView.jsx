@@ -2317,60 +2317,8 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
         </div>
       </div>
 
-      {/* 2. KPI Quick Stats Strip (4 Uniform Balanced Cards) */}
-      <div className="workout-kpi-strip">
-        <div className="workout-kpi-card">
-          <div className="workout-kpi-icon" style={{ background: "rgba(239, 68, 68, 0.14)", color: "#ef4444" }}>
-            🔥
-          </div>
-          <div className="workout-kpi-text-area">
-            <div className="workout-kpi-label">Workout Streak</div>
-            <div className="workout-kpi-val font-numeric">
-              {reportData?.streak !== undefined ? reportData.streak : 0} Ngày
-            </div>
-          </div>
-        </div>
+      {/* 2. KPI Quick Stats Strip đã được ẩn theo yêu cầu */}
 
-        <div className="workout-kpi-card">
-          <div className="workout-kpi-icon" style={{ background: "rgba(16, 185, 129, 0.14)", color: "#10b981" }}>
-            ⏱️
-          </div>
-          <div className="workout-kpi-text-area">
-            <div className="workout-kpi-label">Tổng Thời Gian</div>
-            <div className="workout-kpi-val font-numeric">
-              {reportData?.tong_thoi_gian_phut || 0} Phút
-            </div>
-          </div>
-        </div>
-
-        <div className="workout-kpi-card">
-          <div className="workout-kpi-icon" style={{ background: "rgba(59, 130, 246, 0.15)", color: "#3b82f6" }}>
-            🎯
-          </div>
-          <div className="workout-kpi-text-area">
-            <div className="workout-kpi-label">Số Buổi Đã Tập</div>
-            <div className="workout-kpi-val font-numeric">
-              {reportData?.tong_buoi_tap || 0} Buổi
-            </div>
-          </div>
-        </div>
-
-        <div className="workout-kpi-card">
-          <div className="workout-kpi-icon" style={{ background: "rgba(245, 158, 11, 0.14)", color: "#f59e0b" }}>
-            ⚡
-          </div>
-          <div className="workout-kpi-text-area">
-            <div className="workout-kpi-label">Giáo Án Đang Dùng</div>
-            <div
-              className="workout-kpi-val font-numeric"
-              style={{ fontSize: "0.98rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-              title={scheduleData?.ke_hoach?.ten_ke_hoach || "Chưa chọn giáo án"}
-            >
-              {scheduleData?.ke_hoach?.ten_ke_hoach || "Chưa có giáo án"}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* =========================================================================
           TAB 1: HÔM NAY & LỊCH TUẦN (WEEKLY STRIP + HERO PROGRESS + CHECKLIST + TIMER)

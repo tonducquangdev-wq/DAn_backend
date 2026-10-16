@@ -53,6 +53,9 @@ export const CalendarView = () => {
   const [viewMode, setViewMode] = useState("month"); // 'month' | 'week' | 'day' | 'list'
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // State Thời gian thực tế hiện tại (tự động cập nhật mỗi 10 giây để đảm bảo realtime)
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+
   // State Toast Notification
   const [toast, setToast] = useState(null);
 
@@ -87,26 +90,66 @@ export const CalendarView = () => {
     submitting: false
   });
 
-  // Nạp danh sách sự kiện từ API
-  const loadEvents = async () => {
-    setLoading(true);
+  // Nạp danh sách sự kiện từ API (có hỗ trợ silent mode khi đồng bộ ngầm)
+  const loadEvents = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await api.getSuKien();
       if (res.success) {
         setEvents(res.data || []);
       } else {
-        setError(res.message || "Không thể tải danh sách sự kiện từ máy chủ.");
+        if (!silent) setError(res.message || "Không thể tải danh sách sự kiện từ máy chủ.");
       }
     } catch (err) {
-      setError("Lỗi kết nối máy chủ API: " + err.message);
+      if (!silent) setError("Lỗi kết nối máy chủ API: " + err.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadEvents();
+
+    // 1. Tự động tick đồng hồ thời gian thực mỗi 10 giây
+    const clockInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 10000);
+
+    // 2. Tự động nạp lại sự kiện trong nền mỗi 30 giây
+    const pollInterval = setInterval(() => {
+      loadEvents(true);
+    }, 30000);
+
+    // 3. Tự động cập nhật ngay khi tab trình duyệt được active / focus lại
+    const handleFocus = () => {
+      setCurrentTime(new Date());
+      loadEvents(true);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        handleFocus();
+      }
+    };
+
+    // 4. Lắng nghe tín hiệu đồng bộ sự kiện từ các màn hình khác (Bài tập, Dự án...)
+    const handleCalendarRefresh = () => {
+      setCurrentTime(new Date());
+      loadEvents(true);
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("calendar-refresh", handleCalendarRefresh);
+
+    return () => {
+      clearInterval(clockInterval);
+      clearInterval(pollInterval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("calendar-refresh", handleCalendarRefresh);
+    };
   }, []);
 
   // Thông báo Toast
@@ -129,11 +172,10 @@ export const CalendarView = () => {
     });
   }, [events, searchTerm, filterType]);
 
-  // Danh sách sự kiện HÔM NAY
+  // Danh sách sự kiện HÔM NAY (Cập nhật thời gian thực theo currentTime)
   const todayEvents = useMemo(() => {
-    const today = new Date();
-    return filteredEvents.filter((ev) => isSameDay(ev.thoi_gian_bat_dau, today));
-  }, [filteredEvents]);
+    return filteredEvents.filter((ev) => isSameDay(ev.thoi_gian_bat_dau, currentTime));
+  }, [filteredEvents, currentTime]);
 
   // Danh sách sự kiện thuộc Ô Ngày được chọn
   const selectedDayEvents = useMemo(() => {
@@ -146,23 +188,49 @@ export const CalendarView = () => {
     setSelectedDayDate(new Date(date));
   };
 
-  // Danh sách DEADLINE SẮP TỚI
+  // Danh sách DEADLINE SẮP TỚI (Tự động cập nhật theo thời gian thực)
   const upcomingDeadlines = useMemo(() => {
-    const now = new Date();
+    const now = currentTime;
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     return events
-      .filter((ev) => ev.loai_su_kien === "deadline" || ev.loai_su_kien === "hoc-tap")
+      .filter((ev) => {
+        // Chỉ lấy các sự kiện loại deadline hoặc liên kết với bài tập
+        const isDeadline = ev.loai_su_kien === "deadline" || Boolean(ev.bai_tap_id) || (ev.tieu_de && /deadline/i.test(ev.tieu_de));
+        if (!isDeadline) return false;
+
+        // Bỏ qua các sự kiện đã hoàn thành
+        if (ev.tieu_de && (ev.tieu_de.includes("(Đã xong)") || ev.tieu_de.includes("(Đã hoàn thành)"))) {
+          return false;
+        }
+
+        const endDate = new Date(ev.thoi_gian_ket_thuc || ev.thoi_gian_bat_dau);
+        if (isNaN(endDate.getTime())) return false;
+
+        // Chỉ lấy các deadline còn hạn (thời gian kết thúc >= thời điểm hiện tại thực tế)
+        return endDate.getTime() >= now.getTime();
+      })
       .map((ev) => {
         const endDate = new Date(ev.thoi_gian_ket_thuc || ev.thoi_gian_bat_dau);
-        const diffMs = endDate.getTime() - startOfToday.getTime();
-        const diffDays = Math.ceil(diffMs / (1000 * 3600 * 24));
-        return { ...ev, endDate, diffDays };
+        const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+        // Số ngày còn lại tính từ ngày hiện tại
+        const diffDays = Math.round((endDay.getTime() - startOfToday.getTime()) / (1000 * 3600 * 24));
+
+        const diffMs = endDate.getTime() - now.getTime();
+        const diffHours = Math.floor(diffMs / (1000 * 3600));
+        const diffMinutes = Math.floor((diffMs % (1000 * 3600)) / (1000 * 60));
+
+        return {
+          ...ev,
+          endDate,
+          diffDays,
+          diffHours,
+          diffMinutes
+        };
       })
-      .filter((ev) => ev.diffDays >= 0)
-      .sort((a, b) => a.endDate - b.endDate)
+      .sort((a, b) => a.endDate.getTime() - b.endDate.getTime())
       .slice(0, 4);
-  }, [events]);
+  }, [events, currentTime]);
 
   // Điều hướng ngày
   const handleToday = () => setCurrentDate(new Date());
@@ -581,7 +649,7 @@ export const CalendarView = () => {
               >
                 {monthDaysGrid.map((item, index) => {
                   const dayEvents = filteredEvents.filter((ev) => isSameDay(ev.thoi_gian_bat_dau, item.date));
-                  const isToday = isSameDay(item.date, new Date());
+                  const isToday = isSameDay(item.date, currentTime);
 
                   return (
                     <div
@@ -644,7 +712,7 @@ export const CalendarView = () => {
             <div className="cal-week-card h-100 d-flex flex-column min-vh-0 overflow-y-auto">
               <div className="week-days-container">
                 {weekDaysGrid.map((dayDate, idx) => {
-                  const isToday = isSameDay(dayDate, new Date());
+                  const isToday = isSameDay(dayDate, currentTime);
                   const dayEvents = filteredEvents.filter((ev) => isSameDay(ev.thoi_gian_bat_dau, dayDate));
                   const dayName = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][dayDate.getDay()];
 
@@ -757,11 +825,20 @@ export const CalendarView = () => {
               ) : (
                 <div className="deadlines-list">
                   {upcomingDeadlines.map((dl) => {
-                    const isTodayDl = dl.diffDays <= 0;
-                    const badgeText = isTodayDl ? "Hôm nay" : `Còn ${dl.diffDays} ngày`;
+                    const isTodayDl = dl.diffDays === 0;
+                    let badgeText = isTodayDl ? "Hôm nay" : `Còn ${dl.diffDays} ngày`;
+                    if (isTodayDl) {
+                      if (dl.diffHours > 0) {
+                        badgeText = `Hôm nay (còn ${dl.diffHours}h)`;
+                      } else if (dl.diffMinutes > 0) {
+                        badgeText = `Hôm nay (còn ${dl.diffMinutes}p)`;
+                      } else {
+                        badgeText = "Hôm nay";
+                      }
+                    }
                     const badgeClass = isTodayDl ? "dl-badge-today" : "dl-badge-warning";
-                    const timeStr = new Date(dl.thoi_gian_ket_thuc).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-                    const dateStr = new Date(dl.thoi_gian_ket_thuc).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+                    const timeStr = dl.endDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+                    const dateStr = dl.endDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 
                     return (
                       <div
@@ -1014,7 +1091,7 @@ export const CalendarView = () => {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.88rem", color: "var(--text-main)", marginBottom: "20px" }}>
               {detailEvent.loai_su_kien === "deadline" ? (
-                <div>⏰ <strong>Hạn Deadline:</strong> {new Date(detailEvent.thoi_gian_bat_dau).toLocaleString("vi-VN", { dateStyle: "full", timeStyle: "short" })}</div>
+                <div>⏰ <strong>Hạn Deadline:</strong> {new Date(detailEvent.thoi_gian_ket_thuc || detailEvent.thoi_gian_bat_dau).toLocaleString("vi-VN", { dateStyle: "full", timeStyle: "short" })}</div>
               ) : (
                 <>
                   <div>⏰ <strong>Thời gian bắt đầu:</strong> {new Date(detailEvent.thoi_gian_bat_dau).toLocaleString("vi-VN", { dateStyle: "full", timeStyle: "short" })}</div>

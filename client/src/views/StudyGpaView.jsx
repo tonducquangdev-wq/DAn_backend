@@ -522,13 +522,36 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px" }}>
-                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                  ⚡ Tự động tạo sự kiện lịch cho tất cả các buổi học
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                  marginTop: "24px",
+                  paddingTop: "16px",
+                  borderTop: "1px solid var(--border-color)"
+                }}
+              >
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>⚡</span>
+                  <span>Tự động đồng bộ lịch học vào trang Lịch</span>
                 </span>
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <button type="button" className="btn-secondary" onClick={() => setShowMonModal(false)}>Hủy</button>
-                  <button type="submit" className="btn-primary">Lưu Môn Học & Lên Lịch</button>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-modal-action"
+                    onClick={() => setShowMonModal(false)}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary btn-modal-action"
+                  >
+                    Lưu Môn Học
+                  </button>
                 </div>
               </div>
             </form>
@@ -634,9 +657,30 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowBtModal(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Lưu Bài Tập & Thêm Vào Lịch</button>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginTop: "20px",
+                  paddingTop: "16px",
+                  borderTop: "1px solid var(--border-color)"
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn-secondary btn-modal-action"
+                  onClick={() => setShowBtModal(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary btn-modal-action"
+                >
+                  Lưu Bài Tập
+                </button>
               </div>
             </form>
           </div>
