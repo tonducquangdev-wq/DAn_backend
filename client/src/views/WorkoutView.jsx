@@ -1527,7 +1527,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                   </div>
 
                   {/* 7 Day interactive toggle cards */}
-                  <div className="row g-2 mb-3">
+                  <div className="row g-2 mb-3 wizard-day-toggles-row">
                     {DAYS_OF_WEEK.map((d) => {
                       const isSelected = wizardSelectedDays.includes(d.day);
                       return (
@@ -1657,7 +1657,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                 </div>
 
                 {/* Thanh chuyển bước dưới cùng Step 1 */}
-                <div className="d-flex align-items-center justify-content-between mt-4 pt-3 border-top flex-wrap gap-2">
+                <div className="d-flex align-items-center justify-content-between mt-4 pt-3 border-top flex-column flex-sm-row gap-2">
                   <div className="d-flex align-items-center gap-2 flex-wrap" style={{ fontSize: "0.85rem", color: "var(--lp-text-muted)" }}>
                     <span>
                       Đã chọn: <strong style={{ color: "var(--lp-primary)" }}>{wizardFrequency} Buổi / Tuần</strong>{" "}
@@ -1671,7 +1671,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
 
                   <button
                     type="button"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     style={{ background: "var(--lp-primary)", color: "#fff", padding: "10px 22px", fontSize: "0.9rem" }}
                     onClick={() => goToWizardStep(2)}
                   >
@@ -1990,17 +1990,17 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                 })()}
 
                 {/* Thanh chuyển bước dưới cùng Step 2 */}
-                <div className="d-flex align-items-center justify-content-between mt-4 pt-3 border-top flex-wrap gap-2">
+                <div className="d-flex align-items-center justify-content-between mt-4 pt-3 border-top flex-column flex-sm-row gap-2">
                   <button
                     type="button"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     onClick={() => goToWizardStep(1)}
                   >
                     ⬅ Quay Lại Bước 1
                   </button>
                   <button
                     type="button"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     style={{ background: "var(--lp-primary)", color: "#fff", padding: "10px 22px", fontSize: "0.9rem" }}
                     onClick={() => goToWizardStep(3)}
                   >
@@ -2204,19 +2204,19 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                 </div>
 
                 {/* Thanh chuyển bước dưới cùng Step 3 */}
-                <div className="d-flex align-items-center justify-content-between mt-4 pt-3 border-top flex-wrap gap-2">
+                <div className="d-flex align-items-center justify-content-between mt-4 pt-3 border-top flex-column flex-sm-row gap-2">
                   <button
                     type="button"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     onClick={() => goToWizardStep(2)}
                   >
                     ⬅ Quay Lại Bước 2
                   </button>
-                  <div className="d-flex gap-2">
+                  <div className="d-flex gap-2 w-100 w-sm-auto flex-column flex-sm-row">
                     {!isFullPage && (
                       <button
                         type="button"
-                        className="btn-action-pill btn-pill-primary"
+                        className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                         onClick={() => setShowPlanModal(false)}
                       >
                         Hủy Bỏ
@@ -2224,7 +2224,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                     )}
                     <button
                       type="button"
-                      className="btn-action-pill btn-pill-primary"
+                      className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                       style={{ background: "var(--lp-primary)", color: "#fff", padding: "10px 24px", fontSize: "0.92rem", fontWeight: 700 }}
                       disabled={isSavingPlan}
                       onClick={handleSaveWizardPlan}
@@ -2244,26 +2244,28 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
   const todayDayNum = getTodayDayNumber();
 
   return (
-    <div className="workout-container">
+    <div className="workout-container container-fluid px-2 px-md-3">
       {/* 1. Header Block & Visual Hierarchy */}
       <div className="workout-header-block">
-        <div className="workout-title-row" style={{ alignItems: "center" }}>
+        <div className="workout-title-row d-none d-md-flex">
           {onNavigateToCalendar && (
             <button
               type="button"
               className="btn-action-pill btn-pill-primary"
               onClick={onNavigateToCalendar}
-              style={{ marginRight: "12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
               ← Quay lại Lịch
             </button>
           )}
-          <div className="workout-title-icon-badge">🏋️</div>
-          <div className="workout-title-content">
-            <h1 className="workout-page-title">Thể Chất & Gym Routine</h1>
-            <p className="workout-page-subtitle">
-              Quản lý giáo án rèn luyện thể chất, theo dõi chuỗi ngày tập liên tiếp (Streak) & Heatmap 30 ngày
-            </p>
+          <div className="d-flex align-items-center gap-2 gap-sm-3 flex-wrap">
+            <div className="workout-title-icon-badge">🏋️</div>
+            <div className="workout-title-content">
+              <h1 className="workout-page-title">Thể Chất & Gym Routine</h1>
+              <p className="workout-page-subtitle">
+                Quản lý giáo án rèn luyện thể chất, theo dõi chuỗi ngày tập liên tiếp (Streak) & Heatmap 30 ngày
+              </p>
+            </div>
           </div>
         </div>
 
@@ -2436,7 +2438,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
               {/* Main Workout Cards: Left = Checklist (7 cols), Right = Timer & Player (5 cols) */}
               <div className="row g-3">
                 {/* Cột trái: Checklist bài tập */}
-                <div className="col-lg-7">
+                <div className="col-lg-7 order-2 order-lg-1">
                   <div className="workout-main-card">
                     <div className="checklist-header-box">
                       <div className="checklist-header-title-wrap">
@@ -2504,21 +2506,46 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                               </div>
 
                               <div className="checklist-item-content">
-                                <div className="checklist-item-title-col">
-                                  <h5 className="exercise-title">
-                                    {exInfo?.ten_bai_tap || "Bài tập"}
-                                  </h5>
-                                  {exInfo?.meo_tap && (
-                                    <div
-                                      style={{
-                                        fontSize: "0.72rem",
-                                        color: "var(--lp-text-muted)",
-                                        marginTop: "2px"
+                                <div className="checklist-item-title-row">
+                                  <div className="checklist-item-title-col">
+                                    <h5 className="exercise-title">
+                                      {exInfo?.ten_bai_tap || "Bài tập"}
+                                    </h5>
+                                    {exInfo?.meo_tap && (
+                                      <div
+                                        style={{
+                                          fontSize: "0.72rem",
+                                          color: "var(--lp-text-muted)",
+                                          marginTop: "2px"
+                                        }}
+                                      >
+                                        💡 {exInfo.meo_tap}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="checklist-item-action-area">
+                                    <button
+                                      className="btn-icon-circle"
+                                      title="Sửa bài tập"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenEditDetailModal(item);
                                       }}
                                     >
-                                      💡 {exInfo.meo_tap}
-                                    </div>
-                                  )}
+                                      ✏️
+                                    </button>
+                                    <button
+                                      className="btn-icon-circle text-danger"
+                                      title="Xóa bài tập"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteExercise(item._id);
+                                      }}
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
                                 </div>
 
                                 <div className="checklist-item-meta-col">
@@ -2528,29 +2555,6 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                                   <span className="badge-metric-tag font-numeric">
                                     {item.so_sets} Sets × {item.so_reps} Reps
                                   </span>
-                                </div>
-
-                                <div className="checklist-item-action-area">
-                                  <button
-                                    className="btn-icon-circle"
-                                    title="Sửa bài tập"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenEditDetailModal(item);
-                                    }}
-                                  >
-                                    ✏️
-                                  </button>
-                                  <button
-                                    className="btn-icon-circle text-danger"
-                                    title="Xóa bài tập"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteExercise(item._id);
-                                    }}
-                                  >
-                                    🗑️
-                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -2577,7 +2581,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                 </div>
 
                 {/* Cột phải: Timer, Rest Timer & Active Exercise Player */}
-                <div className="col-lg-5">
+                <div className="col-lg-5 order-1 order-lg-2">
                   <div className="workout-main-card workout-timer-sticky">
                     <div className="workout-timer-box">
                       <div className="d-flex align-items-center justify-content-between mb-1">
@@ -2881,8 +2885,8 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                       }}
                     >
                       <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                        <div className="d-flex align-items-center gap-2">
-                          <span className="badge-metric-tag">{d.fullName}</span>
+                        <div className="d-flex align-items-center gap-2 flex-grow-1">
+                          <span className="badge-metric-tag flex-shrink-0">{d.fullName}</span>
                           <input
                             type="text"
                             defaultValue={s.ten_buoi_tap}
@@ -2894,12 +2898,14 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                               fontSize: "0.92rem",
                               color: "var(--lp-text-main)",
                               borderBottom: "1px dashed var(--lp-card-border)",
-                              outline: "none"
+                              outline: "none",
+                              width: "100%",
+                              maxWidth: "280px"
                             }}
                           />
                         </div>
 
-                        <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
                           <button
                             className={`btn-action-pill ${s.is_rest_day ? "btn-pill-warning" : "btn-pill-primary"}`}
                             style={{ height: "30px", fontSize: "0.74rem" }}
@@ -3250,7 +3256,8 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
             Toàn bộ các buổi tập đã hoàn thành được ghi nhận bền vững và bảo toàn trong hệ thống.
           </p>
 
-          <div className="table-responsive">
+          {/* Desktop Table View (>= 768px) */}
+          <div className="table-responsive d-none d-md-block">
             <table className="table align-middle">
               <thead>
                 <tr>
@@ -3293,6 +3300,47 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card View (< 768px) */}
+          <div className="d-flex flex-column gap-2 d-md-none">
+            {reportData?.recent_logs && reportData.recent_logs.length > 0 ? (
+              reportData.recent_logs.map((log) => (
+                <div
+                  key={log._id}
+                  className="p-3 rounded"
+                  style={{
+                    background: "var(--lp-bg-surface)",
+                    border: "1px solid var(--lp-card-border)",
+                    boxShadow: "var(--lp-shadow-item)"
+                  }}
+                >
+                  <div className="d-flex align-items-center justify-content-between mb-1">
+                    <span style={{ fontWeight: 700, color: "var(--lp-primary)", fontSize: "0.92rem" }}>
+                      {log.ten_buoi_tap || "Buổi tập hoàn thành"}
+                    </span>
+                    <span className="badge-metric-tag font-numeric">
+                      ⏱️ {log.thoi_gian_tap_phut || 45} phút
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center justify-content-between" style={{ fontSize: "0.78rem", color: "var(--lp-text-muted)" }}>
+                    <span className="font-numeric">
+                      🗓️ {new Date(log.ngay_tap).toLocaleDateString("vi-VN", {
+                        weekday: "short",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit"
+                      })}
+                    </span>
+                    {log.ghi_chu && <span>{log.ghi_chu}</span>}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted" style={{ fontSize: "0.85rem" }}>
+                Chưa có nhật ký tập luyện nào được ghi nhận. Hãy hoàn thành buổi tập đầu tiên của bạn!
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -3307,9 +3355,9 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
           tabIndex="-1"
           style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
         >
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
-              <div className="modal-header">
+              <div className="modal-header d-flex align-items-center justify-content-between">
                 <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
                   {editingPlan ? "✏️ Chỉnh Sửa Kế Hoạch" : "➕ Tạo Kế Hoạch Mới"}
                 </h5>
@@ -3361,15 +3409,15 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                     </div>
                   )}
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer d-flex flex-column-reverse flex-sm-row gap-2 pt-3 border-top w-100 justify-content-end">
                   <button
                     type="button"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     onClick={() => setShowPlanModal(false)}
                   >
                     Hủy Bỏ
                   </button>
-                  <button type="submit" className="btn-action-pill btn-pill-primary" style={{ background: "var(--lp-primary)", color: "#fff" }}>
+                  <button type="submit" className="btn-action-pill btn-pill-primary w-100 w-sm-auto" style={{ background: "var(--lp-primary)", color: "#fff" }}>
                     {editingPlan ? "Cập Nhật" : "Tạo Kế Hoạch"}
                   </button>
                 </div>
@@ -3386,9 +3434,9 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
           tabIndex="-1"
           style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
         >
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
-              <div className="modal-header border-danger">
+              <div className="modal-header border-danger d-flex align-items-center justify-content-between">
                 <h5 className="modal-title text-danger font-weight-bold" style={{ fontSize: "1.05rem" }}>
                   ⚠️ Xác Nhận Xóa Kế Hoạch
                 </h5>
@@ -3416,17 +3464,17 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                   <b>Lịch sử tập luyện, Chuỗi Streak và Heatmap</b> trước đây của bạn vẫn được lưu giữ an toàn!
                 </div>
               </div>
-              <div className="modal-footer">
+              <div className="modal-footer d-flex flex-column-reverse flex-sm-row gap-2 pt-3 border-top w-100 justify-content-end">
                 <button
                   type="button"
-                  className="btn-action-pill btn-pill-primary"
+                  className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                   onClick={() => setShowDeleteModal(false)}
                 >
                   Hủy Bỏ
                 </button>
                 <button
                   type="button"
-                  className="btn-action-pill btn-pill-warning"
+                  className="btn-action-pill btn-pill-warning w-100 w-sm-auto"
                   style={{ background: "var(--lp-danger)", color: "#fff", border: "none" }}
                   onClick={handleConfirmDeletePlan}
                 >
@@ -3445,9 +3493,9 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
           tabIndex="-1"
           style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
         >
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
-              <div className="modal-header">
+              <div className="modal-header d-flex align-items-center justify-content-between">
                 <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
                   ➕ Thêm Bài Tập Vào: {currentBuoiForEx.ten_buoi_tap}
                 </h5>
@@ -3529,6 +3577,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                       </label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         max="20"
                         className="form-control font-numeric"
@@ -3542,6 +3591,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                       </label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         max="100"
                         className="form-control font-numeric"
@@ -3555,6 +3605,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                       </label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         max="180"
                         className="form-control font-numeric"
@@ -3564,15 +3615,15 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer d-flex flex-column-reverse flex-sm-row gap-2 pt-3 border-top w-100 justify-content-end">
                   <button
                     type="button"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     onClick={() => setShowAddExModal(false)}
                   >
                     Hủy Bỏ
                   </button>
-                  <button type="submit" className="btn-action-pill btn-pill-primary" style={{ background: "var(--lp-primary)", color: "#fff" }}>
+                  <button type="submit" className="btn-action-pill btn-pill-primary w-100 w-sm-auto" style={{ background: "var(--lp-primary)", color: "#fff" }}>
                     Thêm Vào Buổi Tập
                   </button>
                 </div>
@@ -3589,9 +3640,9 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
           tabIndex="-1"
           style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
         >
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
-              <div className="modal-header">
+              <div className="modal-header d-flex align-items-center justify-content-between">
                 <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
                   ✏️ Sửa Thông Số: {editingDetail.bai_tap_the_chat_id?.ten_bai_tap}
                 </h5>
@@ -3610,6 +3661,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                       </label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         max="20"
                         className="form-control font-numeric"
@@ -3623,6 +3675,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                       </label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         max="100"
                         className="form-control font-numeric"
@@ -3632,15 +3685,15 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer d-flex flex-column-reverse flex-sm-row gap-2 pt-3 border-top w-100 justify-content-end">
                   <button
                     type="button"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     onClick={() => setShowEditDetailModal(false)}
                   >
                     Hủy Bỏ
                   </button>
-                  <button type="submit" className="btn-action-pill btn-pill-primary" style={{ background: "var(--lp-primary)", color: "#fff" }}>
+                  <button type="submit" className="btn-action-pill btn-pill-primary w-100 w-sm-auto" style={{ background: "var(--lp-primary)", color: "#fff" }}>
                     Lưu Thay Đổi
                   </button>
                 </div>
@@ -3657,9 +3710,9 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
           tabIndex="-1"
           style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1070 }}
         >
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
-              <div className="modal-header">
+              <div className="modal-header d-flex align-items-center justify-content-between">
                 <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
                   ➕ Thêm Bài Tập Vào: {DAYS_OF_WEEK.find((d) => d.day === wizardTargetDay)?.fullName}
                 </h5>
@@ -3764,6 +3817,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                       </label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         max="20"
                         className="form-control font-numeric"
@@ -3780,6 +3834,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                       </label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         max="100"
                         className="form-control font-numeric"
@@ -3796,6 +3851,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                       </label>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         max="180"
                         className="form-control font-numeric"
@@ -3807,17 +3863,17 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer d-flex flex-column-reverse flex-sm-row gap-2 pt-3 border-top w-100 justify-content-end">
                   <button
                     type="button"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     onClick={() => setShowWizardAddExModal(false)}
                   >
                     Hủy Bỏ
                   </button>
                   <button
                     type="submit"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     style={{ background: "var(--lp-primary)", color: "#fff" }}
                   >
                     ➕ Thêm Vào Buổi Tập
@@ -3838,9 +3894,9 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
           tabIndex="-1"
           style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
         >
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div className="modal-content">
-              <div className="modal-header">
+              <div className="modal-header d-flex align-items-center justify-content-between">
                 <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
                   🔗 Chia Sẻ Giáo Án & Tạo Mã Code
                 </h5>
@@ -3868,10 +3924,10 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                         MÃ CODE CHIA SẺ HIỆN TẠI
                       </div>
                       <div className="share-modal-code-text">{shareModalPlan.share_code}</div>
-                      <div className="d-flex justify-content-center gap-2 mt-2">
+                      <div className="d-flex justify-content-center gap-2 mt-2 flex-wrap">
                         <button
                           type="button"
-                          className="btn-action-pill btn-pill-primary"
+                          className="btn-action-pill btn-pill-primary flex-fill flex-sm-grow-0"
                           style={{ height: "32px", fontSize: "0.76rem" }}
                           onClick={() => handleCopyCode(shareModalPlan.share_code)}
                         >
@@ -3879,7 +3935,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                         </button>
                         <button
                           type="button"
-                          className="btn-action-pill btn-pill-primary"
+                          className="btn-action-pill btn-pill-primary flex-fill flex-sm-grow-0"
                           style={{ height: "32px", fontSize: "0.76rem" }}
                           onClick={() => {
                             const shareUrl = `${window.location.origin}/workout?code=${shareModalPlan.share_code}`;
@@ -3956,17 +4012,17 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                   </small>
                 </div>
 
-                <div className="modal-footer">
+                <div className="modal-footer d-flex flex-column-reverse flex-sm-row gap-2 pt-3 border-top w-100 justify-content-end">
                   <button
                     type="button"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     onClick={() => setShowShareModal(false)}
                   >
                     Đóng
                   </button>
                   <button
                     type="submit"
-                    className="btn-action-pill btn-pill-primary"
+                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                     style={{ background: "var(--lp-primary)", color: "#fff" }}
                     disabled={isGeneratingCode}
                   >
@@ -3988,9 +4044,9 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
           tabIndex="-1"
           style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
         >
-          <div className="modal-dialog modal-dialog-centered modal-lg">
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
             <div className="modal-content">
-              <div className="modal-header">
+              <div className="modal-header d-flex align-items-center justify-content-between">
                 <div>
                   <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.1rem" }}>
                     ⚡ Xem Trước & Nhập Giáo Án Theo Mã Code
@@ -4035,7 +4091,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                     const dayLabel = DAYS_OF_WEEK.find(d => d.day === session.ngay_trong_tuan)?.fullName || `Thứ ${session.ngay_trong_tuan}`;
                     return (
                       <div key={session._id || sIdx} className="preview-session-item">
-                        <div className="d-flex align-items-center justify-content-between mb-2">
+                        <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
                           <div className="d-flex align-items-center gap-2">
                             <span className="badge-group-tag" style={{ fontSize: "0.72rem" }}>{dayLabel}</span>
                             <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--lp-text-main)" }}>
@@ -4115,17 +4171,17 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                 </div>
               </div>
 
-              <div className="modal-footer">
+              <div className="modal-footer d-flex flex-column-reverse flex-sm-row gap-2 pt-3 border-top w-100 justify-content-end">
                 <button
                   type="button"
-                  className="btn-action-pill btn-pill-primary"
+                  className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                   onClick={() => setShowPreviewModal(false)}
                 >
                   Hủy Bỏ
                 </button>
                 <button
                   type="button"
-                  className="btn-action-pill btn-pill-primary"
+                  className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
                   style={{ background: "var(--lp-primary)", color: "#fff", padding: "9px 20px" }}
                   disabled={isImportingPlan}
                   onClick={handleExecuteImportPlan}

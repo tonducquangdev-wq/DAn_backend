@@ -157,54 +157,55 @@ export const TutorView = ({ onBack, onOpenDangKyGiaSu, onNavigateToChat }) => {
       )}
 
       {/* Header Top với Nút Quay Lại */}
-      <div className="header-top" style={{ alignItems: "flex-start" }}>
+      {/* Header Top với Nút Quay Lại - Bootstrap Responsive Flex */}
+      <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4">
         <div>
           <button
             type="button"
-            className="btn-secondary"
+            className="btn-secondary d-inline-flex align-items-center gap-2 mb-2"
             onClick={onBack}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "14px",
-              padding: "8px 16px",
-              fontSize: "0.88rem",
+              padding: "7px 14px",
+              fontSize: "0.85rem",
               fontWeight: "700"
             }}
           >
             ← Quay Lại Quản Lý Học Tập
           </button>
-          <h1 className="page-title">👩‍🏫 Tìm Kiếm Gia Sư Hỗ Trợ</h1>
-          <p className="page-subtitle">
+          <h1 className="page-title fs-3 fw-bold mb-1 d-flex align-items-center gap-2">
+            <span>👩‍🏫</span> Tìm Kiếm Gia Sư Hỗ Trợ
+          </h1>
+          <p className="page-subtitle text-muted mb-0">
             Kết nối với các gia sư hàng đầu, hỗ trợ kèm môn học, ôn thi và làm đồ án theo lịch trình của bạn.
           </p>
         </div>
-        <div className="action-bar" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <div className="d-flex flex-wrap align-items-center gap-2 w-100 w-lg-auto">
           {onOpenDangKyGiaSu && (
             <button
               type="button"
-              className="btn-secondary"
+              className="btn-secondary flex-grow-1 flex-sm-grow-0 d-inline-flex align-items-center justify-content-center gap-1"
               onClick={onOpenDangKyGiaSu}
               style={{
                 fontWeight: "700",
                 background: "var(--neu-bg)",
                 color: "#10b981",
                 border: "1px solid rgba(16, 185, 129, 0.35)",
-                boxShadow: "4px 4px 10px var(--neu-shadow-dark), -4px -4px 10px var(--neu-shadow-light)"
+                boxShadow: "4px 4px 10px var(--neu-shadow-dark), -4px -4px 10px var(--neu-shadow-light)",
+                padding: "8px 14px",
+                fontSize: "0.85rem"
               }}
               title="Đăng ký trở thành Gia Sư chia sẻ kiến thức"
             >
-              🎓 Đăng Ký Làm Gia Sư
+              <span>🎓</span> <span>Đăng Ký Làm Gia Sư</span>
             </button>
           )}
           <span style={{
             background: "var(--neu-bg)",
-            padding: "8px 18px",
+            padding: "8px 16px",
             borderRadius: "12px",
             boxShadow: "var(--neu-shadow-sm)",
             fontWeight: "700",
-            fontSize: "0.9rem",
+            fontSize: "0.85rem",
             color: "var(--primary)"
           }}>
             🎯 {giaSus.length} gia sư sẵn sàng
@@ -213,24 +214,17 @@ export const TutorView = ({ onBack, onOpenDangKyGiaSu, onNavigateToChat }) => {
       </div>
 
       {/* BỘ LỌC TÌM KIẾM GIA SƯ */}
-      <div className="glass-card" style={{ marginBottom: "28px", padding: "22px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-          <h3 style={{ fontSize: "1.1rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "8px" }}>
-            🔍 Bộ Lọc Tìm Kiếm Nâng Cao
+      <div className="glass-card mb-4 p-3 p-sm-4">
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h3 className="fs-5 fw-bold d-flex align-items-center gap-2 m-0">
+            <span>🔍</span> Bộ Lọc Tìm Kiếm Nâng Cao
           </h3>
           {(search || selectedSubject !== "all" || selectedPrice !== "all" || selectedTime !== "all" || minRating !== "all") && (
             <button
               type="button"
               onClick={handleResetFilter}
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--primary)",
-                fontWeight: "700",
-                fontSize: "0.85rem",
-                cursor: "pointer",
-                textDecoration: "underline"
-              }}
+              className="btn btn-sm btn-link text-primary fw-bold text-decoration-none p-0"
+              style={{ fontSize: "0.85rem" }}
             >
               🔄 Đặt lại bộ lọc
             </button>
@@ -238,119 +232,89 @@ export const TutorView = ({ onBack, onOpenDangKyGiaSu, onNavigateToChat }) => {
         </div>
 
         {/* Ô tìm kiếm từ khóa */}
-        <div style={{ marginBottom: "16px" }}>
+        <div className="mb-3">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="🔎 Tìm kiếm theo tên gia sư, môn học, kỹ năng, chuyên môn..."
+            className="form-control"
             style={{
-              width: "100%",
-              padding: "12px 18px",
+              padding: "11px 16px",
               borderRadius: "12px",
-              border: "1px solid rgba(0,0,0,0.08)",
               background: "var(--neu-bg)",
               boxShadow: "var(--neu-shadow-inset)",
-              fontSize: "0.95rem",
-              color: "var(--text-main)",
-              outline: "none"
+              fontSize: "0.92rem",
+              color: "var(--text-main)"
             }}
           />
         </div>
 
-        {/* Các dropdown lọc */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "14px" }}>
+        {/* Các dropdown lọc - Bootstrap Responsive Grid */}
+        <div className="row g-2 g-md-3">
           {/* Lọc Môn học */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label style={{ fontSize: "0.82rem", fontWeight: "700", marginBottom: "6px" }}>📚 Môn học</label>
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                background: "var(--neu-bg)",
-                border: "1px solid rgba(0,0,0,0.08)",
-                boxShadow: "var(--neu-shadow-sm)",
-                fontWeight: "600",
-                color: "var(--text-main)"
-              }}
-            >
-              {SUBJECT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+          <div className="col-12 col-sm-6 col-lg-3">
+            <div className="form-group mb-0">
+              <label className="form-label fw-semibold small mb-1">📚 Môn học</label>
+              <select
+                className="form-select"
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+              >
+                {SUBJECT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Lọc Giá tiền mỗi giờ */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label style={{ fontSize: "0.82rem", fontWeight: "700", marginBottom: "6px" }}>💰 Mức giá mỗi giờ</label>
-            <select
-              value={selectedPrice}
-              onChange={(e) => setSelectedPrice(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                background: "var(--neu-bg)",
-                border: "1px solid rgba(0,0,0,0.08)",
-                boxShadow: "var(--neu-shadow-sm)",
-                fontWeight: "600",
-                color: "var(--text-main)"
-              }}
-            >
-              {PRICE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+          <div className="col-12 col-sm-6 col-lg-3">
+            <div className="form-group mb-0">
+              <label className="form-label fw-semibold small mb-1">💰 Mức giá mỗi giờ</label>
+              <select
+                className="form-select"
+                value={selectedPrice}
+                onChange={(e) => setSelectedPrice(e.target.value)}
+              >
+                {PRICE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Lọc Thời gian dạy */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label style={{ fontSize: "0.82rem", fontWeight: "700", marginBottom: "6px" }}>🕒 Thời gian dạy</label>
-            <select
-              value={selectedTime}
-              onChange={(e) => setSelectedTime(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                background: "var(--neu-bg)",
-                border: "1px solid rgba(0,0,0,0.08)",
-                boxShadow: "var(--neu-shadow-sm)",
-                fontWeight: "600",
-                color: "var(--text-main)"
-              }}
-            >
-              {TIME_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+          <div className="col-12 col-sm-6 col-lg-3">
+            <div className="form-group mb-0">
+              <label className="form-label fw-semibold small mb-1">🕒 Thời gian dạy</label>
+              <select
+                className="form-select"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+              >
+                {TIME_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Lọc Đánh giá */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label style={{ fontSize: "0.82rem", fontWeight: "700", marginBottom: "6px" }}>⭐ Đánh giá</label>
-            <select
-              value={minRating}
-              onChange={(e) => setMinRating(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                background: "var(--neu-bg)",
-                border: "1px solid rgba(0,0,0,0.08)",
-                boxShadow: "var(--neu-shadow-sm)",
-                fontWeight: "600",
-                color: "var(--text-main)"
-              }}
-            >
-              <option value="all">Tất cả đánh giá</option>
-              <option value="4.5">⭐ Từ 4.5 sao trở lên</option>
-              <option value="4.8">⭐ Từ 4.8 sao trở lên</option>
-              <option value="5.0">⭐ 5.0 tuyệt đối</option>
-            </select>
+          <div className="col-12 col-sm-6 col-lg-3">
+            <div className="form-group mb-0">
+              <label className="form-label fw-semibold small mb-1">⭐ Đánh giá</label>
+              <select
+                className="form-select"
+                value={minRating}
+                onChange={(e) => setMinRating(e.target.value)}
+              >
+                <option value="all">Tất cả đánh giá</option>
+                <option value="4.5">⭐ Từ 4.5 sao trở lên</option>
+                <option value="4.8">⭐ Từ 4.8 sao trở lên</option>
+                <option value="5.0">⭐ 5.0 tuyệt đối</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -361,7 +325,7 @@ export const TutorView = ({ onBack, onOpenDangKyGiaSu, onNavigateToChat }) => {
           🔄 Đang tìm kiếm danh sách gia sư...
         </div>
       ) : giaSus.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: "center", padding: "50px 20px" }}>
+        <div className="glass-card text-center py-5 px-3">
           <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🔍</div>
           <h4 style={{ fontWeight: "800", marginBottom: "8px" }}>Không tìm thấy gia sư phù hợp</h4>
           <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "20px" }}>
@@ -372,29 +336,21 @@ export const TutorView = ({ onBack, onOpenDangKyGiaSu, onNavigateToChat }) => {
           </button>
         </div>
       ) : (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))",
-          gap: "22px"
-        }}>
+        <div className="row g-3 g-xl-4">
           {giaSus.map((gs) => (
-            <div
-              key={gs._id}
-              className="glass-card"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                padding: "22px",
-                transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-                cursor: "pointer",
-                position: "relative",
-                border: "1px solid rgba(0,0,0,0.06)",
-                boxShadow: "var(--neu-shadow-sm)"
-              }}
-              onClick={() => openTutorDetails(gs, "degrees")}
-              title="Nhấp vào để xem chi tiết bằng cấp, bảng điểm và hồ sơ gia sư"
-            >
+            <div key={gs._id} className="col-12 col-md-6 col-xl-4 d-flex">
+              <div
+                className="glass-card w-100 d-flex flex-column justify-content-between p-3 p-sm-4"
+                style={{
+                  transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                  cursor: "pointer",
+                  position: "relative",
+                  border: "1px solid rgba(0,0,0,0.06)",
+                  boxShadow: "var(--neu-shadow-sm)"
+                }}
+                onClick={() => openTutorDetails(gs, "degrees")}
+                title="Nhấp vào để xem chi tiết bằng cấp, bảng điểm và hồ sơ gia sư"
+              >
               <div>
                 {/* Header card gia sư */}
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "12px" }}>
@@ -623,9 +579,10 @@ export const TutorView = ({ onBack, onOpenDangKyGiaSu, onNavigateToChat }) => {
                 )}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
+    )}
 
       {/* ============================================================
           MODAL CHI TIẾT GIA SƯ VỚI TAB BẰNG CẤP, BẢNG ĐIỂM, THÀNH TÍCH
@@ -1619,74 +1576,76 @@ export const TutorView = ({ onBack, onOpenDangKyGiaSu, onNavigateToChat }) => {
       {/* MODAL ĐẶT LỊCH HỌC THỬ */}
       {bookingModal.open && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: "520px" }}>
-            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", marginBottom: "6px" }}>
-              📅 Đăng Ký Học Thử Với Gia Sư
-            </h3>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "18px" }}>
+          <div className="modal-content p-3 p-sm-4" style={{ maxWidth: "520px", width: "95%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div className="d-flex justify-content-between align-items-start mb-2">
+              <h3 className="fs-5 fw-bold mb-0">
+                📅 Đăng Ký Học Thử Với Gia Sư
+              </h3>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setBookingModal({ open: false, tutor: null })}
+                aria-label="Đóng"
+                style={{ filter: "var(--close-btn-filter, none)" }}
+              />
+            </div>
+            <p className="small text-muted mb-3">
               Gia sư: <strong>{bookingModal.tutor?.ho_ten}</strong> ({bookingModal.tutor?.mon_hoc_chuyen_mon})
             </p>
 
             <form onSubmit={handleBookingSubmit}>
-              <div className="form-group">
-                <label>Họ và tên của bạn *</label>
+              <div className="form-group mb-3">
+                <label className="form-label fw-semibold small mb-1">Họ và tên của bạn *</label>
                 <input
                   type="text"
                   required
+                  className="form-control"
                   placeholder="VD: Nguyễn Văn B"
                   value={bookingForm.ho_ten}
                   onChange={(e) => setBookingForm({ ...bookingForm, ho_ten: e.target.value })}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Số điện thoại liên hệ *</label>
+              <div className="form-group mb-3">
+                <label className="form-label fw-semibold small mb-1">Số điện thoại liên hệ *</label>
                 <input
                   type="tel"
                   required
+                  className="form-control"
                   placeholder="VD: 0988 123 456"
                   value={bookingForm.so_dien_thoai}
                   onChange={(e) => setBookingForm({ ...bookingForm, so_dien_thoai: e.target.value })}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Thời gian bạn muốn học thử *</label>
+              <div className="form-group mb-3">
+                <label className="form-label fw-semibold small mb-1">Thời gian bạn muốn học thử *</label>
                 <input
                   type="text"
                   required
+                  className="form-control"
                   placeholder="VD: Tối Thứ 4 tuần này (20:00 - 21:30)"
                   value={bookingForm.thoi_gian_mong_muon}
                   onChange={(e) => setBookingForm({ ...bookingForm, thoi_gian_mong_muon: e.target.value })}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Ghi chú về nội dung cần hỗ trợ</label>
+              <div className="form-group mb-3">
+                <label className="form-label fw-semibold small mb-1">Ghi chú về nội dung cần hỗ trợ</label>
                 <textarea
                   rows="3"
+                  className="form-control"
                   placeholder="VD: Cần hỗ trợ ôn thi giữa kỳ phần Giải tích 2 và bài tập lớn..."
                   value={bookingForm.ghi_chu}
                   onChange={(e) => setBookingForm({ ...bookingForm, ghi_chu: e.target.value })}
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(0,0,0,0.08)",
-                    background: "var(--neu-bg)",
-                    boxShadow: "var(--neu-shadow-inset)",
-                    fontSize: "0.9rem",
-                    color: "var(--text-main)",
-                    outline: "none"
-                  }}
                 />
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "20px" }}>
-                <button type="button" className="btn-secondary" onClick={() => setBookingModal({ open: false, tutor: null })}>
+              <div className="d-flex flex-column-reverse flex-sm-row justify-content-end gap-2 pt-3 border-top">
+                <button type="button" className="btn-secondary btn-modal-action flex-grow-1 flex-sm-grow-0" onClick={() => setBookingModal({ open: false, tutor: null })}>
                   Hủy
                 </button>
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn-primary btn-modal-action flex-grow-1 flex-sm-grow-0">
                   Gửi Yêu Cầu Học Thử
                 </button>
               </div>

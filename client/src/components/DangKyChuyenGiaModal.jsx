@@ -488,208 +488,218 @@ export const DangKyChuyenGiaModal = ({ show, onClose, onSuccess }) => {
 
           {/* FORM NỘP ĐƠN THEO STYLE NEUMORPHISM (Chỉ hiển thị khi chưa có đơn pending hoặc chưa approved) */}
           {!pendingApp && !approvedApp && (
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
-              {/* Họ tên & Số điện thoại */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div className="form-group" style={{ margin: 0, minWidth: 0 }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
-                    Họ và tên *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={hoTen}
-                    onChange={(e) => setHoTen(e.target.value)}
-                    placeholder="Nguyễn Văn A"
-                    className="form-control"
-                    style={{
-                      background: "var(--neu-bg)",
-                      boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "14px",
-                      padding: "10px 14px",
-                      color: "var(--text-main)",
-                      fontSize: "0.9rem",
-                      width: "100%",
-                      minWidth: 0,
-                      boxSizing: "border-box"
-                    }}
-                  />
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {/* Họ tên & Số điện thoại - Bootstrap Grid */}
+              <div className="row g-3">
+                <div className="col-12 col-md-6">
+                  <div className="form-group mb-0">
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
+                      Họ và tên *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={hoTen}
+                      onChange={(e) => setHoTen(e.target.value)}
+                      placeholder="Nguyễn Văn A"
+                      className="form-control"
+                      style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "14px",
+                        padding: "10px 14px",
+                        color: "var(--text-main)",
+                        fontSize: "0.9rem"
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="form-group" style={{ margin: 0, minWidth: 0 }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
-                    Số điện thoại liên hệ *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={soDienThoai}
-                    onChange={(e) => setSoDienThoai(e.target.value)}
-                    placeholder="0912345678"
-                    className="form-control"
-                    style={{
-                      background: "var(--neu-bg)",
-                      boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "14px",
-                      padding: "10px 14px",
-                      color: "var(--text-main)",
-                      fontSize: "0.9rem",
-                      width: "100%",
-                      minWidth: 0,
-                      boxSizing: "border-box"
-                    }}
-                  />
+                <div className="col-12 col-md-6">
+                  <div className="form-group mb-0">
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
+                      Số điện thoại liên hệ *
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={soDienThoai}
+                      onChange={(e) => setSoDienThoai(e.target.value)}
+                      placeholder="0912345678"
+                      className="form-control"
+                      style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "14px",
+                        padding: "10px 14px",
+                        color: "var(--text-main)",
+                        fontSize: "0.9rem"
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Chuyên môn & Mức giá */}
-              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "1rem" }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
-                    {loai === "gia_su" ? "Môn học chuyên môn giảng dạy *" : "Thế mạnh huấn luyện Gym *"}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={chuyenMon}
-                    onChange={(e) => setChuyenMon(e.target.value)}
-                    placeholder={
-                      loai === "gia_su" ? "Ví dụ: Toán Cao Cấp, Lập trình Web..." : "Ví dụ: Tăng cơ, Giảm mỡ, Calisthenics..."
-                    }
-                    className="form-control"
-                    style={{
-                      background: "var(--neu-bg)",
-                      boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "14px",
-                      padding: "10px 14px",
-                      color: "var(--text-main)",
-                      fontSize: "0.9rem"
-                    }}
-                  />
+              {/* Chuyên môn & Mức giá - Bootstrap Grid */}
+              <div className="row g-3">
+                <div className="col-12 col-md-7">
+                  <div className="form-group mb-0">
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
+                      {loai === "gia_su" ? "Môn học chuyên môn giảng dạy *" : "Thế mạnh huấn luyện Gym *"}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={chuyenMon}
+                      onChange={(e) => setChuyenMon(e.target.value)}
+                      placeholder={
+                        loai === "gia_su" ? "Ví dụ: Toán Cao Cấp, Lập trình Web..." : "Ví dụ: Tăng cơ, Giảm mỡ, Calisthenics..."
+                      }
+                      className="form-control"
+                      style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "14px",
+                        padding: "10px 14px",
+                        color: "var(--text-main)",
+                        fontSize: "0.9rem"
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
-                    Học phí dự kiến (đ/giờ)
-                  </label>
-                  <input
-                    type="number"
-                    step="10000"
-                    value={giaTheoGio}
-                    onChange={(e) => setGiaTheoGio(e.target.value)}
-                    className="form-control"
-                    style={{
-                      background: "var(--neu-bg)",
-                      boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "14px",
-                      padding: "10px 14px",
-                      color: "var(--text-main)",
-                      fontSize: "0.9rem"
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Kinh nghiệm & Khu vực */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
-                    Kinh nghiệm làm việc
-                  </label>
-                  <select
-                    value={kinhNghiem}
-                    onChange={(e) => setKinhNghiem(e.target.value)}
-                    className="form-control"
-                    style={{
-                      background: "var(--neu-bg)",
-                      boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "14px",
-                      padding: "10px 14px",
-                      color: "var(--text-main)",
-                      fontSize: "0.9rem",
-                      cursor: "pointer"
-                    }}
-                  >
-                    <option value="Dưới 1 năm kinh nghiệm">Dưới 1 năm kinh nghiệm</option>
-                    <option value="1-2 năm kinh nghiệm">1-2 năm kinh nghiệm</option>
-                    <option value="3-5 năm kinh nghiệm">3-5 năm kinh nghiệm</option>
-                    <option value="Trên 5 năm chuyên nghiệp">Trên 5 năm chuyên nghiệp</option>
-                  </select>
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
-                    Khu vực giảng dạy / Kèm cặp
-                  </label>
-                  <input
-                    type="text"
-                    value={khuVuc}
-                    onChange={(e) => setKhuVuc(e.target.value)}
-                    placeholder="Ví dụ: Online toàn quốc / TP.HCM / Hà Nội..."
-                    className="form-control"
-                    style={{
-                      background: "var(--neu-bg)",
-                      boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "14px",
-                      padding: "10px 14px",
-                      color: "var(--text-main)",
-                      fontSize: "0.9rem"
-                    }}
-                  />
+                <div className="col-12 col-md-5">
+                  <div className="form-group mb-0">
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
+                      Học phí dự kiến (đ/giờ)
+                    </label>
+                    <input
+                      type="number"
+                      step="10000"
+                      value={giaTheoGio}
+                      onChange={(e) => setGiaTheoGio(e.target.value)}
+                      className="form-control"
+                      style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "14px",
+                        padding: "10px 14px",
+                        color: "var(--text-main)",
+                        fontSize: "0.9rem"
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Bằng cấp & Trường tốt nghiệp */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
-                    {loai === "gia_su" ? "Học vị / Trình độ cao nhất" : "Chứng chỉ chuyên môn PT"}
-                  </label>
-                  <input
-                    type="text"
-                    value={hocVi}
-                    onChange={(e) => setHocVi(e.target.value)}
-                    placeholder={loai === "gia_su" ? "Cử nhân / Thạc sĩ..." : "HLV Cấp Quốc Gia / NASM / ACE..."}
-                    className="form-control"
-                    style={{
-                      background: "var(--neu-bg)",
-                      boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "14px",
-                      padding: "10px 14px",
-                      color: "var(--text-main)",
-                      fontSize: "0.9rem"
-                    }}
-                  />
+              {/* Kinh nghiệm & Khu vực - Bootstrap Grid */}
+              <div className="row g-3">
+                <div className="col-12 col-md-6">
+                  <div className="form-group mb-0">
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
+                      Kinh nghiệm làm việc
+                    </label>
+                    <select
+                      value={kinhNghiem}
+                      onChange={(e) => setKinhNghiem(e.target.value)}
+                      className="form-control"
+                      style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "14px",
+                        padding: "10px 14px",
+                        color: "var(--text-main)",
+                        fontSize: "0.9rem",
+                        cursor: "pointer"
+                      }}
+                    >
+                      <option value="Dưới 1 năm kinh nghiệm">Dưới 1 năm kinh nghiệm</option>
+                      <option value="1-2 năm kinh nghiệm">1-2 năm kinh nghiệm</option>
+                      <option value="3-5 năm kinh nghiệm">3-5 năm kinh nghiệm</option>
+                      <option value="Trên 5 năm chuyên nghiệp">Trên 5 năm chuyên nghiệp</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
-                    Trường Đào Tạo / Đơn Vị Công Tác
-                  </label>
-                  <input
-                    type="text"
-                    value={truongTotNghiep}
-                    onChange={(e) => setTruongTotNghiep(e.target.value)}
-                    placeholder="Ví dụ: Đại học Bách Khoa / ĐH Sư Phạm..."
-                    className="form-control"
-                    style={{
-                      background: "var(--neu-bg)",
-                      boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "14px",
-                      padding: "10px 14px",
-                      color: "var(--text-main)",
-                      fontSize: "0.9rem"
-                    }}
-                  />
+                <div className="col-12 col-md-6">
+                  <div className="form-group mb-0">
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
+                      Khu vực giảng dạy / Kèm cặp
+                    </label>
+                    <input
+                      type="text"
+                      value={khuVuc}
+                      onChange={(e) => setKhuVuc(e.target.value)}
+                      placeholder="Ví dụ: Online toàn quốc / TP.HCM / Hà Nội..."
+                      className="form-control"
+                      style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "14px",
+                        padding: "10px 14px",
+                        color: "var(--text-main)",
+                        fontSize: "0.9rem"
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bằng cấp & Trường tốt nghiệp - Bootstrap Grid */}
+              <div className="row g-3">
+                <div className="col-12 col-md-6">
+                  <div className="form-group mb-0">
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
+                      {loai === "gia_su" ? "Học vị / Trình độ cao nhất" : "Chứng chỉ chuyên môn PT"}
+                    </label>
+                    <input
+                      type="text"
+                      value={hocVi}
+                      onChange={(e) => setHocVi(e.target.value)}
+                      placeholder={loai === "gia_su" ? "Cử nhân / Thạc sĩ..." : "HLV Cấp Quốc Gia / NASM / ACE..."}
+                      className="form-control"
+                      style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "14px",
+                        padding: "10px 14px",
+                        color: "var(--text-main)",
+                        fontSize: "0.9rem"
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="col-12 col-md-6">
+                  <div className="form-group mb-0">
+                    <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
+                      Trường Đào Tạo / Đơn Vị Công Tác
+                    </label>
+                    <input
+                      type="text"
+                      value={truongTotNghiep}
+                      onChange={(e) => setTruongTotNghiep(e.target.value)}
+                      placeholder="Ví dụ: Đại học Bách Khoa / ĐH Sư Phạm..."
+                      className="form-control"
+                      style={{
+                        background: "var(--neu-bg)",
+                        boxShadow: "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "14px",
+                        padding: "10px 14px",
+                        color: "var(--text-main)",
+                        fontSize: "0.9rem"
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Lời giới thiệu */}
-              <div className="form-group" style={{ margin: 0 }}>
+              <div className="form-group mb-0">
                 <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.4rem" }}>
                   Giới thiệu phương pháp giảng dạy & định hướng học tập
                 </label>
@@ -755,57 +765,52 @@ export const DangKyChuyenGiaModal = ({ show, onClose, onSuccess }) => {
                     />
                   </div>
 
-                  {/* Hàng 2: Nơi cấp + Năm cấp */}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1.4fr 1fr",
-                      gap: "0.75rem",
-                      alignItems: "center",
-                      width: "100%",
-                      boxSizing: "border-box"
-                    }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="Nơi cấp (ĐH Sư Phạm, IDP, NASM...)"
-                      value={noiCap}
-                      onChange={(e) => setNoiCap(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCert())}
-                      style={{
-                        width: "100%",
-                        minWidth: 0,
-                        boxSizing: "border-box",
-                        padding: "10px 14px",
-                        borderRadius: "12px",
-                        background: "var(--neu-bg)",
-                        boxShadow: "inset 2px 2px 5px var(--neu-inset-dark), inset -2px -2px 5px var(--neu-inset-light)",
-                        color: "var(--text-main)",
-                        border: "1px solid var(--border-color)",
-                        fontSize: "0.88rem",
-                        outline: "none"
-                      }}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Năm cấp (Ví dụ: 2024)"
-                      value={namCap}
-                      onChange={(e) => setNamCap(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCert())}
-                      style={{
-                        width: "100%",
-                        minWidth: 0,
-                        boxSizing: "border-box",
-                        padding: "10px 14px",
-                        borderRadius: "12px",
-                        background: "var(--neu-bg)",
-                        boxShadow: "inset 2px 2px 5px var(--neu-inset-dark), inset -2px -2px 5px var(--neu-inset-light)",
-                        color: "var(--text-main)",
-                        border: "1px solid var(--border-color)",
-                        fontSize: "0.88rem",
-                        outline: "none"
-                      }}
-                    />
+                  {/* Hàng 2: Nơi cấp + Năm cấp - Bootstrap Grid */}
+                  <div className="row g-2">
+                    <div className="col-12 col-sm-8">
+                      <input
+                        type="text"
+                        placeholder="Nơi cấp (ĐH Sư Phạm, IDP, NASM...)"
+                        value={noiCap}
+                        onChange={(e) => setNoiCap(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCert())}
+                        style={{
+                          width: "100%",
+                          minWidth: 0,
+                          boxSizing: "border-box",
+                          padding: "10px 14px",
+                          borderRadius: "12px",
+                          background: "var(--neu-bg)",
+                          boxShadow: "inset 2px 2px 5px var(--neu-inset-dark), inset -2px -2px 5px var(--neu-inset-light)",
+                          color: "var(--text-main)",
+                          border: "1px solid var(--border-color)",
+                          fontSize: "0.88rem",
+                          outline: "none"
+                        }}
+                      />
+                    </div>
+                    <div className="col-12 col-sm-4">
+                      <input
+                        type="text"
+                        placeholder="Năm cấp (Ví dụ: 2024)"
+                        value={namCap}
+                        onChange={(e) => setNamCap(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCert())}
+                        style={{
+                          width: "100%",
+                          minWidth: 0,
+                          boxSizing: "border-box",
+                          padding: "10px 14px",
+                          borderRadius: "12px",
+                          background: "var(--neu-bg)",
+                          boxShadow: "inset 2px 2px 5px var(--neu-inset-dark), inset -2px -2px 5px var(--neu-inset-light)",
+                          color: "var(--text-main)",
+                          border: "1px solid var(--border-color)",
+                          fontSize: "0.88rem",
+                          outline: "none"
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* Hàng 3: Chọn file ảnh chụp chứng chỉ + Nút Thêm vào danh sách */}
@@ -1003,12 +1008,12 @@ export const DangKyChuyenGiaModal = ({ show, onClose, onSuccess }) => {
                 )}
               </div>
 
-              {/* Actions Footer theo style Neumorphism */}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "0.6rem" }}>
+              {/* Actions Footer theo style Neumorphism - Bootstrap Responsive */}
+              <div className="d-flex flex-column-reverse flex-sm-row justify-content-end gap-2 pt-3 border-top mt-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="btn-secondary"
+                  className="btn-secondary btn-modal-action flex-grow-1 flex-sm-grow-0"
                   style={{
                     padding: "0.65rem 1.6rem",
                     borderRadius: "14px",
@@ -1022,7 +1027,7 @@ export const DangKyChuyenGiaModal = ({ show, onClose, onSuccess }) => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-primary"
+                  className="btn-primary btn-modal-action flex-grow-1 flex-sm-grow-0"
                   style={{
                     padding: "0.65rem 1.8rem",
                     borderRadius: "14px",

@@ -69,7 +69,7 @@
   width: 100%;
   max-width: 1300px;
   margin: 0 auto;
-  padding: 4px 0 140px 0;
+  padding: 8px 16px calc(110px + env(safe-area-inset-bottom, 20px)) 16px;
   box-sizing: border-box;
 }
 
@@ -144,6 +144,14 @@
   border: 1px solid var(--lp-card-border);
   max-width: 100%;
   overflow-x: auto;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.workout-nav-tabs-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .workout-nav-tab-btn {
@@ -1948,6 +1956,448 @@ textarea::placeholder {
   color: var(--lp-text-main);
   margin-right: 6px;
   margin-bottom: 6px;
+}
+
+/* ==========================================================================
+   13. COMPREHENSIVE RESPONSIVE MOBILE & TABLET SYSTEM (2026 UPDATE)
+   Tối ưu hóa hiển thị di động hoàn hảo trên mọi kích thước màn hình
+   ========================================================================== */
+
+/* Tablet & Mobile Screens (<= 991px) */
+@media (max-width: 991px) {
+  .workout-header-block {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .workout-title-row {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .workout-nav-tabs-bar {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .workout-timer-sticky {
+    position: static !important;
+    margin-top: 0 !important;
+  }
+}
+
+/* Medium & Small Phones (<= 768px) */
+@media (max-width: 768px) {
+  .workout-container {
+    padding: 6px 12px calc(110px + env(safe-area-inset-bottom, 20px)) 12px;
+  }
+
+  .workout-header-block {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin-bottom: 12px !important;
+  }
+
+  .workout-title-row {
+    display: none !important;
+  }
+
+  .workout-title-icon-badge {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+    border-radius: 12px;
+  }
+
+  .workout-page-title {
+    font-size: 1.25rem;
+  }
+
+  .workout-page-subtitle {
+    font-size: 0.76rem;
+    line-height: 1.35;
+  }
+
+  .workout-nav-tabs-bar {
+    padding: 3px;
+    gap: 3px;
+    border-radius: 14px;
+  }
+
+  .workout-nav-tab-btn {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
+  /* Progress Card */
+  .workout-progress-card {
+    padding: 12px 14px;
+    gap: 12px;
+    border-radius: var(--radius, 20px);
+    margin-bottom: 16px;
+  }
+
+  .workout-progress-left {
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .workout-progress-icon-badge {
+    width: 36px;
+    height: 36px;
+    font-size: 1.05rem;
+    border-radius: 10px;
+  }
+
+  .workout-progress-title {
+    font-size: 0.92rem;
+  }
+
+  .workout-progress-sub {
+    font-size: 0.74rem;
+  }
+
+  .workout-progress-bar-wrap {
+    min-width: 100%;
+    max-width: 100%;
+    order: 3;
+    margin-top: -4px;
+  }
+
+  .workout-progress-percent {
+    font-size: 1.05rem;
+  }
+
+  /* Wizard Stepper */
+  .wizard-stepper-wrap {
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    border-radius: 16px;
+  }
+
+  .wizard-step-node {
+    gap: 6px;
+  }
+
+  .wizard-step-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 0.78rem;
+  }
+
+  .wizard-step-text-title {
+    font-size: 0.74rem;
+  }
+
+  .wizard-step-text-sub {
+    display: none !important;
+  }
+
+  .wizard-step-divider {
+    width: 12px;
+    margin: 0 2px;
+  }
+
+  /* Community Hero */
+  .community-hero-card {
+    padding: 18px 16px;
+    border-radius: var(--radius, 20px);
+    margin-bottom: 18px;
+  }
+
+  .community-hero-title {
+    font-size: 1.25rem;
+  }
+
+  .community-hero-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+  }
+
+  .community-filter-bar {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .community-search-box {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .community-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+/* Extra Small Phones (<= 576px) */
+@media (max-width: 576px) {
+  .workout-container {
+    padding: 4px 8px calc(110px + env(safe-area-inset-bottom, 20px)) 8px;
+  }
+
+  .workout-main-card {
+    padding: 14px 12px;
+    border-radius: 18px;
+  }
+
+  .schedule-strip-card {
+    padding: 12px 10px;
+    border-radius: 18px;
+    margin-bottom: 14px;
+  }
+
+  .schedule-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .schedule-header-left {
+    justify-content: space-between;
+  }
+
+  .schedule-header-title {
+    font-size: 0.95rem;
+  }
+
+  .schedule-plan-badge {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+  }
+
+  .schedule-day-box {
+    min-width: 90px;
+    padding: 8px 10px;
+    min-height: 68px;
+    border-radius: 12px;
+  }
+
+  .schedule-day-box .day-code {
+    font-size: 0.78rem;
+  }
+
+  .schedule-day-box .session-name {
+    font-size: 0.72rem;
+  }
+
+  /* Checklist Mobile Alignment */
+  .checklist-header-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .checklist-header-actions {
+    display: flex;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .checklist-header-actions .btn-action-pill {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.74rem;
+    padding: 0 10px;
+  }
+
+  .checklist-exercise-item {
+    padding: 10px 10px;
+    border-radius: 12px;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .checklist-item-checkbox-col {
+    margin-top: 2px;
+    margin-right: 0;
+  }
+
+  .checklist-item-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .checklist-item-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .exercise-title {
+    font-size: 0.85rem;
+    line-height: 1.3;
+  }
+
+  .checklist-item-meta-col {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .badge-group-tag,
+  .badge-metric-tag {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+  }
+
+  .btn-finish-workout {
+    width: 100%;
+    justify-content: center;
+    height: 44px;
+    font-size: 0.88rem;
+    margin-top: 8px;
+  }
+
+  /* Timer Controls */
+  .timer-display {
+    font-size: 2.1rem;
+    padding: 10px 14px;
+    margin: 8px 0 10px 0;
+    border-radius: 14px;
+  }
+
+  .workout-timer-box {
+    padding: 14px 12px;
+    border-radius: 16px;
+    margin-bottom: 12px;
+  }
+
+  .active-exercise-card {
+    padding: 12px 10px;
+    border-radius: 16px;
+  }
+
+  /* Heatmap */
+  .heatmap-grid {
+    grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
+    gap: 4px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  /* Wizard 7-day Toggles Row on mobile */
+  .wizard-day-toggles-row {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .wizard-day-toggles-row > .col {
+    padding: 0 !important;
+    flex: unset !important;
+    width: 100% !important;
+  }
+
+  .wizard-day-toggle-card {
+    min-height: 64px;
+    padding: 6px 2px;
+    border-radius: 10px;
+  }
+
+  /* Community Code Wrap */
+  .community-code-box-wrap {
+    flex-direction: column;
+    padding: 6px;
+    gap: 8px;
+  }
+
+  .community-code-input {
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 8px 10px;
+  }
+
+  .community-code-import-btn {
+    width: 100%;
+    justify-content: center;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  .community-quick-tags {
+    gap: 6px;
+  }
+
+  .community-quick-pill {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+  }
+
+  .community-pills-group {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .community-filter-pill-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    font-size: 0.76rem;
+  }
+
+  /* Modals Mobile System */
+  .modal-dialog {
+    margin: 8px auto !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+
+  .modal-content {
+    border-radius: 18px !important;
+    padding: 4px 6px !important;
+  }
+
+  .modal-header {
+    padding: 12px 14px !important;
+  }
+
+  .modal-body {
+    padding: 14px 14px !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+  }
+
+  .modal-footer {
+    padding: 12px 14px !important;
+  }
+
+  .modal-footer .btn-action-pill {
+    width: 100% !important;
+    height: 42px !important;
+    justify-content: center !important;
+  }
+
+  /* Floating Chat Window on Small Mobile */
+  .workout-chat-window {
+    right: 8px !important;
+    left: 8px !important;
+    width: auto !important;
+    max-width: calc(100vw - 16px) !important;
+    bottom: calc(75px + env(safe-area-inset-bottom, 10px)) !important;
+    height: calc(100vh - 145px) !important;
+    max-height: 80vh !important;
+    border-radius: 20px !important;
+  }
 }
 
 

@@ -346,6 +346,12 @@ function MainApp() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenProfile={() => setShowProfileModal(true)}
+        onOpenCreateEvent={() => {
+          if (activeTab !== "calendar") {
+            sessionStorage.setItem("autoOpenCreateEvent", "true");
+            setActiveTab("calendar");
+          }
+        }}
       />
 
       {/* Banner / Prompt Gợi Ý Cài Đặt PWA Ra Màn Hình Chính */}

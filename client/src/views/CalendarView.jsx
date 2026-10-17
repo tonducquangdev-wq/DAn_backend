@@ -324,6 +324,24 @@ export const CalendarView = () => {
     setShowModal(true);
   };
 
+  // Lắng nghe sự kiện mở modal thêm sự kiện từ nút [+] ở thanh footer MobileBottomNav
+  useEffect(() => {
+    if (sessionStorage.getItem("autoOpenCreateEvent") === "true") {
+      sessionStorage.removeItem("autoOpenCreateEvent");
+      handleOpenCreateModal(currentDate || new Date());
+    }
+
+    const handleExternalOpenCreate = (e) => {
+      const targetDate = e?.detail?.date || currentDate || new Date();
+      handleOpenCreateModal(targetDate);
+    };
+
+    window.addEventListener("open-create-event-modal", handleExternalOpenCreate);
+    return () => {
+      window.removeEventListener("open-create-event-modal", handleExternalOpenCreate);
+    };
+  }, [currentDate]);
+
   // Mở modal chỉnh sửa
   const handleOpenEditModal = (event) => {
     setDetailEvent(null);
@@ -704,7 +722,7 @@ export const CalendarView = () => {
           </div>
 
           {/* Filter Pills */}
-          <div className="cal-filter-pills d-flex align-items-center gap-1.5 gap-md-2 flex-nowrap overflow-x-auto mt-2.5 pt-1 pb-2 w-100" style={{ scrollbarWidth: "none" }}>
+          <div className="cal-filter-pills d-flex align-items-center gap-1.5 gap-md-2 flex-nowrap overflow-x-auto mt-2 pt-0.5 pb-0.5 w-100" style={{ scrollbarWidth: "none" }}>
             <button
               className={`filter-pill flex-shrink-0 ${filterType === "all" ? "active-all" : ""}`}
               onClick={() => setFilterType("all")}
@@ -731,14 +749,14 @@ export const CalendarView = () => {
       {/* ============================================================
           MAIN 2-COLUMN GRID LAYOUT (BOOTSTRAP RESPONSIVE: DESKTOP 2 CỘT / TABLET 2 CỘT WIDGET / MOBILE FULL)
           ============================================================ */}
-      <div className="row g-3 g-xl-4 flex-grow-1 min-vh-0 m-0 w-100 cal-main-layout-row">
+      <div className="row gx-0 gy-0 flex-grow-1 min-vh-0 m-0 w-100 cal-main-layout-row">
 
         {/* LEFT COLUMN: CỘT CHÍNH LỊCH (col-12 col-xl-8 col-xxl-9) */}
-        <div className="col-12 col-xl-8 col-xxl-9 d-flex flex-column h-100 min-vh-0 p-0 cal-left-column">
+        <div className="col-12 col-xl-8 col-xxl-9 d-flex flex-column h-100 min-vh-0 p-0 cal-left-column mb-4 mb-xl-0">
 
           {/* HIỂN THỊ CHẾ ĐỘ XEM THÁNG (MONTH VIEW TRÊN LAPTOP / DESKTOP) */}
           {currentView === "month" && (
-            <div className="cal-month-card h-100 d-flex flex-column min-vh-0">
+            <div className="cal-month-card flex-grow-1 d-flex flex-column min-vh-0">
               {/* Header Tên Thứ (CN, T2, T3, T4, T5, T6, T7) */}
               <div className="cal-month-header flex-shrink-0">
                 {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map((dName, idx) => (
@@ -846,29 +864,19 @@ export const CalendarView = () => {
             </div>
           )}
 
-          {/* HIỂN THỊ CHẾ ĐỘ XEM TUẦN (WEEK VIEW TRÊN MOBILE HOẶC KHI CHỌN TRÊN DESKTOP) */}
-          {currentView === "week" && (
-            <div className="cal-week-card h-100 d-flex flex-column min-vh-0">
-              {/* 1. TOP HEADER: 📅 DD/MM/YYYY + 2 NÚT TRÒN < > */}
+              {/* HIỂN THỊ CHẾ ĐỘ XEM TUẦN (WEEK VIEW TRÊN MOBILE HOẶC KHI CHỌN TRÊN DESKTOP) */}
+              {currentView === "week" && (
+                <div className="cal-week-card flex-grow-1 d-flex flex-column min-vh-0">
+              {/* 1. TOP HEADER: 📅 DD/MM/YYYY + NÚT HÔM NAY */}
               <div className="cal-week-card-header d-flex align-items-center justify-content-between mb-2.5 flex-shrink-0">
-                <div className="d-flex align-items-center gap-2 ps-1">
-                  <div className="d-flex align-items-center gap-1.5">
-                    <span className="cal-card-calendar-icon">📅</span>
-                    <span className="cal-card-date-title">
-                      {currentDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                    </span>
-                  </div>
-                  <div className="d-flex align-items-center gap-1.5 ms-1">
-                    <button className="cal-circle-nav-btn" onClick={handlePrev} title="Tuần trước">
-                      &lt;
-                    </button>
-                    <button className="cal-circle-nav-btn" onClick={handleNext} title="Tuần sau">
-                      &gt;
-                    </button>
-                  </div>
+                <div className="d-flex align-items-center gap-1.5 ps-1">
+                  <span className="cal-card-calendar-icon">📅</span>
+                  <span className="cal-card-date-title">
+                    {currentDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                  </span>
                 </div>
 
-                <div className="d-flex align-items-center gap-1.5 me-1">
+                <div className="d-flex align-items-center me-1">
                   <button
                     type="button"
                     className="cal-today-circle-btn"
@@ -876,14 +884,6 @@ export const CalendarView = () => {
                     title="Quay về hôm nay"
                   >
                     Hôm nay
-                  </button>
-                  <button
-                    type="button"
-                    className="cal-add-event-circle-btn"
-                    onClick={() => handleOpenCreateModal(currentDate)}
-                    title="Thêm sự kiện mới"
-                  >
-                    + Thêm
                   </button>
                 </div>
               </div>
@@ -950,6 +950,7 @@ export const CalendarView = () => {
                         setActiveDayIdx(idx);
                         setCurrentDate(dayDate);
                         scrollToDay(idx);
+                        handleDayClick(dayDate);
                       }}
                     >
                       {/* Header Cột Ngày: Tên Thứ + Badge Hôm nay + Số ngày (Đồng bộ chuẩn Lịch Tháng) */}
@@ -995,9 +996,13 @@ export const CalendarView = () => {
                                 style={{ background: eventBg }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setDetailEvent(ev);
+                                  if (isMobile) {
+                                    handleDayClick(dayDate);
+                                  } else {
+                                    setDetailEvent(ev);
+                                  }
                                 }}
-                                title="Bấm để xem chi tiết hoặc sửa"
+                                title="Bấm để xem danh sách hoặc chi tiết sự kiện"
                               >
                                 {/* Dòng 1: Chấm tròn ● + Tiêu đề sự kiện + Chuông 🔔 */}
                                 <div className="week-event-chip-header">
@@ -1039,10 +1044,10 @@ export const CalendarView = () => {
 
         {/* RIGHT COLUMN: WIDGETS PHỤ (BOOTSTRAP RESPONSIVE: TABLET 2 CỘT / DESKTOP STACK) */}
         <div className="col-12 col-xl-4 col-xxl-3 d-flex flex-column p-0 cal-right-column">
-          <div className="row g-3 flex-grow-1">
+          <div className="row gx-0 gy-0 flex-grow-1 m-0">
             
             {/* WIDGET 1: LỊCH TRÌNH HÔM NAY (Tablet: col-md-6 / Desktop: col-xl-12) */}
-            <div className="col-12 col-md-6 col-xl-12 d-flex flex-column">
+            <div className="col-12 col-md-6 col-xl-12 d-flex flex-column m-0 p-0 pe-md-2 pe-xl-0">
               <div className="widget-card flex-grow-1">
                 <div className="widget-header">
                   <div className="widget-title">
@@ -1080,7 +1085,7 @@ export const CalendarView = () => {
             </div>
 
             {/* WIDGET 2: DEADLINE SẮP TỚI (Tablet: col-md-6 / Desktop: col-xl-12) */}
-            <div className="col-12 col-md-6 col-xl-12 d-flex flex-column">
+            <div className="col-12 col-md-6 col-xl-12 d-flex flex-column m-0 p-0 ps-md-2 ps-xl-0 pt-3 pt-md-0 pt-xl-3">
               <div className="widget-card flex-grow-1">
                 <div className="widget-header">
                   <div className="widget-title">
@@ -1451,11 +1456,11 @@ export const CalendarView = () => {
             </div>
 
             {/* Footer Buttons (Bootstrap Responsive Grid) */}
-            <div className="row g-2 pt-2 border-top w-100 m-0">
+            <div className="row g-2 pt-3 mt-3 border-top w-100 m-0 pb-1">
               <div className="col-6 col-sm-auto">
                 <button
                   type="button"
-                  className="btn btn-primary w-100 py-2 rounded-3 fw-bold"
+                  className="btn btn-primary w-100 py-2.5 rounded-3 fw-bold shadow-sm"
                   onClick={() => handleOpenEditModal(detailEvent)}
                 >
                   ✏️ Chỉnh sửa
@@ -1464,7 +1469,7 @@ export const CalendarView = () => {
               <div className="col-6 col-sm-auto">
                 <button
                   type="button"
-                  className="btn btn-danger w-100 py-2 rounded-3 fw-bold"
+                  className="btn btn-danger w-100 py-2.5 rounded-3 fw-bold shadow-sm"
                   onClick={() => handleOpenDeleteModal(detailEvent)}
                 >
                   🗑️ Xóa
@@ -1473,7 +1478,7 @@ export const CalendarView = () => {
               <div className="col-12 col-sm-auto ms-sm-auto">
                 <button
                   type="button"
-                  className="btn btn-outline-secondary w-100 py-2 rounded-3"
+                  className="btn btn-outline-secondary w-100 py-2.5 rounded-3"
                   onClick={() => setDetailEvent(null)}
                 >
                   Đóng
@@ -1770,11 +1775,11 @@ export const CalendarView = () => {
               </div>
 
               {/* Footer Buttons (Bootstrap Grid Responsive) */}
-              <div className="row g-2 pt-2 border-top w-100 m-0">
+              <div className="row g-2 pt-3 mt-3 border-top w-100 m-0 pb-1">
                 <div className="col-6 col-sm-auto ms-sm-auto">
                   <button
                     type="button"
-                    className="btn btn-outline-secondary w-100 px-4 py-2 rounded-3"
+                    className="btn btn-outline-secondary w-100 px-4 py-2.5 rounded-3 fw-semibold"
                     onClick={() => setShowModal(false)}
                     disabled={submitting}
                   >
@@ -1784,7 +1789,7 @@ export const CalendarView = () => {
                 <div className="col-6 col-sm-auto">
                   <button
                     type="submit"
-                    className="btn btn-primary w-100 px-4 py-2 rounded-3 fw-bold"
+                    className="btn btn-primary w-100 px-4 py-2.5 rounded-3 fw-bold shadow-sm"
                     disabled={submitting}
                   >
                     {submitting ? "⏳ Đang lưu..." : editingEvent ? "Cập Nhật" : "Lưu Sự Kiện"}
@@ -1848,11 +1853,11 @@ export const CalendarView = () => {
               </div>
             )}
 
-            <div className="row g-2 pt-2 border-top w-100 m-0">
+            <div className="row g-2 pt-3 mt-3 border-top w-100 m-0 pb-1">
               <div className="col-6">
                 <button
                   type="button"
-                  className="btn btn-outline-secondary w-100 py-2 rounded-3"
+                  className="btn btn-outline-secondary w-100 py-2.5 rounded-3 fw-semibold"
                   onClick={() => setDeleteModal({ show: false, event: null, deleteMode: "single", submitting: false })}
                   disabled={deleteModal.submitting}
                 >
@@ -1861,8 +1866,8 @@ export const CalendarView = () => {
               </div>
               <div className="col-6">
                 <button
-                  type="button"
-                  className="btn btn-danger w-100 py-2 rounded-3 fw-bold"
+                  type="submit"
+                  className="btn btn-danger w-100 py-2.5 rounded-3 fw-bold shadow-sm"
                   onClick={handleConfirmDelete}
                   disabled={deleteModal.submitting}
                 >
@@ -1874,20 +1879,7 @@ export const CalendarView = () => {
         </div>
       )}
 
-      {/* ============================================================
-          NÚT TẠO SỰ KIỆN NỔI (FLOATING ACTION BUTTON - FAB) TRÊN MOBILE
-          ============================================================ */}
-      {isMobile && (
-        <button
-          type="button"
-          className="cal-fab-btn d-flex align-items-center justify-content-center shadow-lg"
-          onClick={() => handleOpenCreateModal(currentDate)}
-          title="Tạo sự kiện mới"
-          aria-label="Tạo sự kiện mới"
-        >
-          <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>➕</span>
-        </button>
-      )}
+
     </div>
   );
 };

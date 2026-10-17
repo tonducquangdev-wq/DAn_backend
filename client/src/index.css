@@ -575,6 +575,16 @@ body {
   white-space: nowrap;
 }
 
+@media (max-width: 576px) {
+  .modal-content .btn-primary,
+  .modal-content .btn-secondary,
+  .btn-modal-action {
+    min-height: 44px;
+    font-size: 0.9rem !important;
+    white-space: normal;
+  }
+}
+
 /* Neumorphic Circular Icon Button (like plus btn in image) */
 .neu-circle-btn {
   width: 44px;
@@ -700,13 +710,13 @@ body {
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 25000 !important;
   padding: 20px;
   box-sizing: border-box;
 }
@@ -900,11 +910,12 @@ body {
 
 .neu-table-wrapper {
   background: var(--neu-bg);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg, 16px);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 2px 2px 5px var(--neu-inset-dark),
+             inset -2px -2px 5px var(--neu-inset-light);
   overflow: hidden;
-  box-shadow: inset 3px 3px 6px var(--neu-inset-dark),
-             inset -3px -3px 6px var(--neu-inset-light);
-  padding: 8px;
+  padding: 0;
 }
 
 [data-theme='dark'] .neu-table-wrapper,
@@ -915,60 +926,133 @@ body {
              inset -1px -1px 3px rgba(255, 255, 255, 0.04) !important;
 }
 
-table {
+/* Override Bootstrap's table cell background and borders */
+.neu-table-wrapper .table,
+.neu-table-wrapper table {
   width: 100%;
-  border-collapse: collapse;
+  margin-bottom: 0 !important;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent !important;
+  --bs-table-bg: transparent !important;
+  --bs-table-accent-bg: transparent !important;
+  --bs-table-striped-bg: transparent !important;
+  --bs-table-hover-bg: transparent !important;
 }
 
-thead th {
-  padding: 14px 16px;
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid var(--border-color);
-}
-
-[data-theme='dark'] thead th,
-[data-bs-theme='dark'] thead th {
-  color: #94a3b8;
-  border-bottom-color: rgba(255, 255, 255, 0.12);
-}
-
-tbody tr {
+.neu-table-wrapper .table > :not(caption) > * > * {
+  background-color: transparent !important;
+  box-shadow: none !important;
   border-bottom: 1px solid var(--border-color);
-  transition: background-color 0.2s ease;
 }
 
-tbody tr:last-child {
-  border-bottom: none;
+.neu-table-wrapper thead,
+.neu-table-wrapper thead tr {
+  background: rgba(0, 0, 0, 0.02) !important;
 }
 
-tbody tr:hover {
-  background-color: rgba(37, 99, 235, 0.04);
+[data-theme='dark'] .neu-table-wrapper thead,
+[data-theme='dark'] .neu-table-wrapper thead tr,
+[data-bs-theme='dark'] .neu-table-wrapper thead,
+[data-bs-theme='dark'] .neu-table-wrapper thead tr {
+  background: rgba(255, 255, 255, 0.03) !important;
 }
 
-[data-theme='dark'] tbody tr,
-[data-bs-theme='dark'] tbody tr {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme='dark'] tbody tr:hover,
-[data-bs-theme='dark'] tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.04);
-}
-
-tbody td {
-  padding: 14px 16px;
-  font-size: 0.92rem;
-  color: var(--text-main);
+.neu-table-wrapper thead th,
+thead th {
+  padding: 14px 18px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: var(--text-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  border-bottom: 2px solid var(--border-color) !important;
+  white-space: nowrap;
   vertical-align: middle;
 }
 
+[data-theme='dark'] .neu-table-wrapper thead th,
+[data-bs-theme='dark'] .neu-table-wrapper thead th,
+[data-theme='dark'] thead th,
+[data-bs-theme='dark'] thead th {
+  color: #94a3b8 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.neu-table-wrapper tbody tr,
+tbody tr {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.neu-table-wrapper tbody tr:last-child > * {
+  border-bottom: none !important;
+}
+
+.neu-table-wrapper tbody tr:hover,
+.neu-table-wrapper tbody tr:hover > * {
+  background-color: rgba(37, 99, 235, 0.04) !important;
+}
+
+[data-theme='dark'] .neu-table-wrapper tbody tr:hover,
+[data-theme='dark'] .neu-table-wrapper tbody tr:hover > *,
+[data-bs-theme='dark'] .neu-table-wrapper tbody tr:hover,
+[data-bs-theme='dark'] .neu-table-wrapper tbody tr:hover > * {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+.neu-table-wrapper tbody td,
+tbody td {
+  padding: 14px 18px !important;
+  font-size: 0.88rem !important;
+  color: var(--text-main) !important;
+  vertical-align: middle !important;
+}
+
+[data-theme='dark'] .neu-table-wrapper tbody td,
+[data-bs-theme='dark'] .neu-table-wrapper tbody td,
 [data-theme='dark'] tbody td,
 [data-bs-theme='dark'] tbody td {
-  color: #f8fafc;
+  color: #f8fafc !important;
+}
+
+/* Action button delete in tables */
+.btn-table-action-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-table-action-delete:hover {
+  background: #ef4444;
+  color: #ffffff !important;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+[data-theme='dark'] .btn-table-action-delete,
+[data-bs-theme='dark'] .btn-table-action-delete {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+[data-theme='dark'] .btn-table-action-delete:hover,
+[data-bs-theme='dark'] .btn-table-action-delete:hover {
+  background: #ef4444;
+  color: #ffffff !important;
 }
 
 /* ============================================================
@@ -1044,7 +1128,7 @@ tbody td {
 .calendar-page-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   height: 100%;
   min-height: 0;
   flex: 1 1 auto;
@@ -1059,9 +1143,9 @@ tbody td {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   background: var(--neu-bg);
-  padding: 12px 18px 16px 18px;
+  padding: 10px 18px 12px 18px;
   border-radius: var(--radius);
   box-shadow: 6px 6px 16px var(--neu-shadow-dark),
              -6px -6px 16px var(--neu-shadow-light);
@@ -1383,7 +1467,9 @@ tbody td {
   flex: 1 1 auto;
   min-height: 0;
   margin: 0 !important;
-  padding: 2px 4px 6px;
+  padding: 0 !important;
+  --bs-gutter-x: 0 !important;
+  --bs-gutter-y: 0 !important;
   box-sizing: border-box;
 }
 
@@ -1400,6 +1486,24 @@ tbody td {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+@media (min-width: 1200px) {
+  .cal-left-column {
+    padding-right: 6px !important;
+    padding-left: 0 !important;
+  }
+  .cal-right-column {
+    padding-left: 6px !important;
+    padding-right: 0 !important;
+  }
+}
+
+/* Đảm bảo đỉnh của Lịch trình hôm nay luôn ngang bằng 100% với Lịch tuần / Lịch tháng */
+.cal-right-column .row > :first-child,
+.cal-right-column .row > div:first-of-type {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 /* Month Grid Card */
@@ -1649,17 +1753,16 @@ tbody td {
 .cal-week-card {
   background: var(--neu-bg);
   border-radius: var(--radius-lg);
-  padding: 18px 18px 12px 18px;
+  padding: 14px 16px;
   border: 1px solid var(--border-color);
-  box-shadow: 6px 6px 16px var(--neu-shadow-dark),
-             -6px -6px 16px var(--neu-shadow-light);
+  box-shadow: 8px 8px 20px var(--neu-shadow-dark),
+             -8px -8px 20px var(--neu-shadow-light);
   height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  width: 100% !important;
-  max-width: 100% !important;
+  overflow: visible;
+  width: 100%;
   box-sizing: border-box;
 }
 
@@ -1765,28 +1868,7 @@ tbody td {
 }
 
 .cal-fab-btn {
-  position: fixed;
-  bottom: 84px;
-  right: 18px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--primary-gradient, linear-gradient(135deg, #3b82f6 0%, #2563eb 100%));
-  color: #ffffff;
-  border: none;
-  z-index: 1050;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.cal-fab-btn:hover {
-  transform: scale(1.08);
-  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.6);
-}
-
-.cal-fab-btn:active {
-  transform: scale(0.94);
+  display: none !important;
 }
 
 /* 2. Container Các Cột Ngày Trượt Ngang (Khung Inset Neumorphic chuẩn Lịch Tháng) */
@@ -1835,12 +1917,16 @@ tbody td {
   scroll-snap-align: start;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+  cursor: pointer;
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(163, 177, 198, 0.3);
   box-sizing: border-box;
 }
 
 @media (max-width: 1199px) {
+  .cal-left-column {
+    margin-bottom: 24px !important;
+  }
   .week-day-column {
     flex: 0 0 calc(33.33% - 8px);
     min-width: 170px;
@@ -2048,7 +2134,8 @@ tbody td {
 [data-bs-theme='dark'] .cal-week-card {
   background: #161f30 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 8px 8px 22px rgba(0, 0, 0, 0.45) !important;
+  box-shadow: 8px 8px 24px rgba(0, 0, 0, 0.55),
+             -8px -8px 24px rgba(255, 255, 255, 0.03) !important;
 }
 
 [data-theme='dark'] .cal-card-date-title {
@@ -2864,14 +2951,17 @@ tbody td {
     height: auto !important;
     min-height: 420px;
     max-width: 100% !important;
-    overflow-x: hidden !important;
-    padding: 4px 6px 10px 6px !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin-bottom: 24px !important;
   }
   .cal-week-card {
     max-width: 100% !important;
-    padding: 18px 16px 14px 16px !important;
-    box-shadow: 4px 4px 14px var(--neu-shadow-dark),
-               -4px -4px 14px var(--neu-shadow-light) !important;
+    padding: 14px 16px !important;
+    border-radius: var(--radius-lg) !important;
+    overflow: visible !important;
+    box-shadow: 8px 8px 20px var(--neu-shadow-dark),
+               -8px -8px 20px var(--neu-shadow-light) !important;
   }
   .cal-week-card-header {
     padding: 4px 6px 12px 6px !important;
@@ -2942,10 +3032,11 @@ tbody td {
     padding: 8px 8px 6px 8px;
   }
   .cal-week-card {
-    padding: 18px 16px 12px 16px !important;
-    border-radius: 22px !important;
-    box-shadow: 4px 4px 12px var(--neu-shadow-dark),
-               -4px -4px 12px var(--neu-shadow-light) !important;
+    padding: 14px 14px !important;
+    border-radius: var(--radius-lg) !important;
+    overflow: visible !important;
+    box-shadow: 8px 8px 20px var(--neu-shadow-dark),
+               -8px -8px 20px var(--neu-shadow-light) !important;
   }
   .cal-week-card-header {
     padding: 2px 6px 12px 6px !important;
@@ -2973,13 +3064,15 @@ tbody td {
     grid-template-columns: repeat(6, 1fr);
   }
   .modal-overlay {
-    padding: 12px 10px !important;
+    z-index: 25000 !important;
+    padding: 12px 10px calc(20px + env(safe-area-inset-bottom, 0px)) 10px !important;
   }
   .modal-content {
-    padding: 20px 16px !important;
-    border-radius: 20px !important;
-    max-height: 90vh !important;
+    padding: 20px 14px 24px 14px !important;
+    border-radius: 18px !important;
+    max-height: calc(100dvh - 28px - env(safe-area-inset-bottom, 0px)) !important;
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
   .modal-content .form-label {
     font-size: 0.8rem !important;
@@ -3164,9 +3257,30 @@ tbody td {
 }
 
 @media (max-width: 768px) {
-  /* Ẩn floating menu tròn ở góc phải trên mobile */
-  .floating-menu-container {
+  /* Ẩn floating menu tròn ở góc phải trên mobile vì đã có Bottom Nav */
+  .floating-menu-container,
+  .neu-floating-container {
     display: none !important;
+  }
+
+  /* Tối ưu Modal trên màn hình Mobile để không bị dính đáy hay che khuất */
+  .modal-overlay {
+    z-index: 25000 !important;
+    padding: 14px 12px calc(24px + env(safe-area-inset-bottom, 0px)) 12px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .modal-content {
+    width: 100% !important;
+    max-width: 540px !important;
+    max-height: calc(100dvh - 36px - env(safe-area-inset-bottom, 0px)) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 20px !important;
+    padding: 22px 16px 24px 16px !important;
+    margin: auto 0 !important;
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.35) !important;
   }
 
   .mobile-bottom-nav-bar {
@@ -3476,9 +3590,30 @@ tbody td {
   .main-wrapper.full-width {
     padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
   }
-  /* Ẩn Floating menu trên mobile để tránh chồng đè lên bottom nav */
+  /* Ẩn hoàn toàn Floating menu trên mobile để tránh chồng đè lên bottom nav hoặc modal */
   .neu-floating-container {
-    bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+    display: none !important;
+  }
+
+  /* Study page & related modals mobile responsiveness */
+  .study-view-container {
+    padding: 0 !important;
+  }
+  .study-view-container .page-title {
+    font-size: 1.45rem !important;
+  }
+  .study-view-container .deadline-item-title {
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+  .study-view-container .glass-card {
+    padding: 16px 14px !important;
+    border-radius: 18px !important;
+    margin-bottom: 20px !important;
+  }
+  .btn-modal-action {
+    min-height: 44px;
+    font-size: 0.9rem !important;
   }
 
   /* Messages page mobile adaptation */
