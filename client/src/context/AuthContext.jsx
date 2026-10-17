@@ -49,6 +49,16 @@ export const AuthProvider = ({ children }) => {
     return res;
   };
 
+  const adminLogin = async (email, password) => {
+    const res = await api.adminLogin({ email, password });
+    if (res.success) {
+      localStorage.setItem("life_planner_token", res.data.token);
+      setToken(res.data.token);
+      setUser(res.data.user);
+    }
+    return res;
+  };
+
   const register = async (name, email, password) => {
     const res = await api.register({ name, email, password });
     if (res.success) {
@@ -65,8 +75,40 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const res = await api.getMe();
+      if (res.success) {
+        setUser(res.data);
+      }
+    } catch (e) {
+      console.error("Lỗi làm mới thông tin user:", e);
+    }
+  };
+
+  const isAdmin = user?.role === "admin";
+  const isTutor = user?.role === "tutor";
+  const isPT = user?.role === "pt";
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, theme, toggleTheme, login, register, logout, setUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        theme,
+        toggleTheme,
+        login,
+        adminLogin,
+        register,
+        logout,
+        setUser,
+        refreshUser,
+        isAdmin,
+        isTutor,
+        isPT
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

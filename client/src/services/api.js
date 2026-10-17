@@ -57,6 +57,7 @@ export const api = {
   // Auth
   register: (data) => request("/auth/register", { method: "POST", body: JSON.stringify(data) }),
   login: (data) => request("/auth/login", { method: "POST", body: JSON.stringify(data) }),
+  adminLogin: (data) => request("/auth/admin-login", { method: "POST", body: JSON.stringify(data) }),
   getMe: () => request("/auth/me"),
   updateProfile: (data) => request("/auth/me", { method: "PUT", body: JSON.stringify(data) }),
   changePassword: (data) => request("/auth/me/password", { method: "PUT", body: JSON.stringify(data) }),
@@ -65,6 +66,8 @@ export const api = {
   getDashboard: () => request("/dashboard"),
   getThongBao: () => request("/thong-bao"),
   markThongBaoRead: (id) => request(`/thong-bao/${id}/read`, { method: "PATCH" }),
+  markAllThongBaoRead: () => request("/thong-bao/read-all", { method: "PATCH" }),
+  deleteThongBao: (id) => request(`/thong-bao/${id}`, { method: "DELETE" }),
 
   // Lịch & Sự kiện
   getSuKien: (params = "") => request(`/su-kien${params}`),
@@ -107,6 +110,12 @@ export const api = {
   getCommunityPlans: (params = "") => request(`/tap-luyen/community/explore${params}`),
   toggleLikeCommunityPlan: (planId) => request(`/tap-luyen/community/${planId}/like`, { method: "POST" }),
 
+  // Kênh Chat Tổng Tập Luyện (Workout Community Chat)
+  getTinNhanTapLuyen: (query = "") => request(`/chat-tap-luyen${query}`),
+  guiTinNhanTapLuyen: (data) => request("/chat-tap-luyen", { method: "POST", body: JSON.stringify(data) }),
+  reactTinNhanTapLuyen: (id, icon) => request(`/chat-tap-luyen/${id}/react`, { method: "POST", body: JSON.stringify({ icon }) }),
+  xoaTinNhanTapLuyen: (id) => request(`/chat-tap-luyen/${id}`, { method: "DELETE" }),
+
   // Dự án & Task
   getDuAn: () => request("/du-an"),
   createDuAn: (data) => request("/du-an", { method: "POST", body: JSON.stringify(data) }),
@@ -122,5 +131,37 @@ export const api = {
   createCaLamViec: (data) => request("/ca-lam-viec", { method: "POST", body: JSON.stringify(data) }),
   bulkCreateCaLamViec: (data) => request("/ca-lam-viec/bulk", { method: "POST", body: JSON.stringify(data) }),
   updateCaLamViec: (id, data) => request(`/ca-lam-viec/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  deleteCaLamViec: (id) => request(`/ca-lam-viec/${id}`, { method: "DELETE" })
+  deleteCaLamViec: (id) => request(`/ca-lam-viec/${id}`, { method: "DELETE" }),
+
+  // Đăng ký Chuyên gia (Gia sư & PT)
+  dangKyChuyenGia: (data) => request("/chuyen-gia/dang-ky", { method: "POST", body: JSON.stringify(data) }),
+  getTrangThaiHoSo: () => request("/chuyen-gia/trang-thai-ho-so"),
+  huyHoSo: (id) => request(`/chuyen-gia/huy-ho-so/${id}`, { method: "DELETE" }),
+  getPTs: (params = "") => request(`/chuyen-gia/pt${params}`),
+
+  // Quản trị viên (Admin Portal)
+  getAdminStats: () => request("/admin/thong-ke"),
+  getAdminHoSo: (params = "") => request(`/admin/ho-so${params}`),
+  duyetHoSo: (id) => request(`/admin/duyet-ho-so/${id}`, { method: "POST" }),
+  tuChoiHoSo: (id, data) => request(`/admin/tu-choi-ho-so/${id}`, { method: "POST", body: JSON.stringify(data) }),
+  getAdminUsers: (params = "") => request(`/admin/users${params}`),
+  updateAdminUser: (id, data) => request(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  sendAdminNotification: (data) => request("/admin/notifications/broadcast", { method: "POST", body: JSON.stringify(data) }),
+  getAdminNotificationHistory: () => request("/admin/notifications/history"),
+
+  // Bạn bè (Friend system)
+  getDanhSachBanBe: () => request("/ban-be"),
+  getLoiMoiKetBan: () => request("/ban-be/loi-moi"),
+  guiLoiMoiKetBan: (nguoi_nhan_id) => request("/ban-be/loi-moi", { method: "POST", body: JSON.stringify({ nguoi_nhan_id }) }),
+  chapNhanLoiMoi: (friendshipId) => request(`/ban-be/loi-moi/${friendshipId}/chap-nhan`, { method: "PATCH" }),
+  tuChoiLoiMoi: (friendshipId) => request(`/ban-be/loi-moi/${friendshipId}`, { method: "DELETE" }),
+  huyKetBan: (friendUserId) => request(`/ban-be/${friendUserId}`, { method: "DELETE" }),
+  timKiemNguoiDung: (params = "") => request(`/ban-be/tim-kiem${params}`),
+
+  // Tin nhắn riêng 1-on-1 (Direct Messaging cho Bạn bè & Gia Sư)
+  getHoiThoaiRieng: () => request("/tin-nhan-rieng/hoi-thoai"),
+  getTinNhanVoiNguoiDung: (partnerId) => request(`/tin-nhan-rieng/user/${partnerId}`),
+  guiTinNhanRieng: (data) => request("/tin-nhan-rieng", { method: "POST", body: JSON.stringify(data) }),
+  getTongTinNhanChuaDoc: () => request("/tin-nhan-rieng/chua-doc/count"),
+  xoaTinNhanRieng: (id) => request(`/tin-nhan-rieng/${id}`, { method: "DELETE" })
 };

@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const giaSuSchema = new mongoose.Schema(
     {
+        user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
         ho_ten: { type: String, required: true, trim: true },
         mon_hoc_chuyen_mon: { type: String, required: true, trim: true },
         so_dien_thoai: { type: String, default: null },

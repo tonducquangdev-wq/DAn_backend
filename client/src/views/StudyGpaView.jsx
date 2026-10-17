@@ -25,7 +25,7 @@ const formatDateDisplay = (dateStr) => {
   return d.toLocaleDateString("vi-VN");
 };
 
-export const StudyGpaView = ({ onNavigateToTutor }) => {
+export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
   const [monHocs, setMonHocs] = useState([]);
   const [baiTaps, setBaiTaps] = useState([]);
   const [showMonModal, setShowMonModal] = useState(false);
@@ -181,6 +181,23 @@ export const StudyGpaView = ({ onNavigateToTutor }) => {
           <p className="page-subtitle">Theo dõi lịch học, phòng học, giảng viên và hạn nộp bài tập</p>
         </div>
         <div className="action-bar">
+          {onOpenDangKyGiaSu && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={onOpenDangKyGiaSu}
+              style={{
+                fontWeight: "700",
+                background: "var(--neu-bg)",
+                color: "#10b981",
+                border: "1px solid rgba(16, 185, 129, 0.35)",
+                boxShadow: "4px 4px 10px var(--neu-shadow-dark), -4px -4px 10px var(--neu-shadow-light)"
+              }}
+              title="Đăng ký trở thành Gia Sư chia sẻ kiến thức"
+            >
+              🎓 Đăng Ký Gia Sư
+            </button>
+          )}
           <button
             type="button"
             className="btn-secondary"

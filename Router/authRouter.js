@@ -3,6 +3,7 @@ const router = express.Router();
 const { 
     register, 
     login, 
+    adminLogin,
     getMe, 
     updateProfile, 
     changePassword 
@@ -12,6 +13,7 @@ const authMiddleware = require("../Middleware/authMiddleware");
 // Public Auth routes
 router.post("/register", register);
 router.post("/login", login);
+router.post("/admin-login", adminLogin);
 
 // Protected Profile routes
 router.get("/me", authMiddleware, getMe);

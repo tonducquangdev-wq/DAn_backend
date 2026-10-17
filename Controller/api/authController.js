@@ -107,6 +107,62 @@ const login = async (req, res) => {
     }
 };
 
+// Đăng nhập dành riêng cho Cổng Quản Trị Viên (Admin Portal)
+const adminLogin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Vui lòng nhập Email và Mật khẩu Quản trị"
+            });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Tài khoản hoặc mật khẩu Quản trị không chính xác"
+            });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Tài khoản hoặc mật khẩu Quản trị không chính xác"
+            });
+        }
+
+        // Kiểm tra quyền Quản trị viên nghiêm ngặt
+        if (user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Từ chối truy cập: Tài khoản của bạn không có quyền Quản Trị Viên (Admin)!"
+            });
+        }
+
+        const token = generateToken(user._id);
+        const userData = user.toObject();
+        delete userData.password;
+
+        res.status(200).json({
+            success: true,
+            message: "Đăng nhập Cổng Quản Trị thành công! Chào mừng Quản Trị Viên.",
+            data: {
+                user: userData,
+                token
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Lỗi đăng nhập Quản trị: " + error.message
+        });
+    }
+};
+
 // Lấy thông tin cá nhân hiện tại
 const getMe = async (req, res) => {
     try {
@@ -199,6 +255,7 @@ const changePassword = async (req, res) => {
 module.exports = {
     register,
     login,
+    adminLogin,
     getMe,
     updateProfile,
     changePassword

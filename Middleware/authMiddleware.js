@@ -22,6 +22,13 @@ const authMiddleware = async (req, res, next) => {
             });
         }
 
+        if (user.status === "banned") {
+            return res.status(403).json({
+                success: false,
+                message: "Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ ban quản trị."
+            });
+        }
+
         req.user = user;
         next();
     } catch (error) {

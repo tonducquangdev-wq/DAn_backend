@@ -16,7 +16,7 @@ const EVENT_CATEGORIES = {
   "cong-viec": { label: "Công việc", icon: "💼", color: "#6366f1" }
 };
 
-export const ProfileModal = ({ show, onClose }) => {
+export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
   const { user, setUser, theme, toggleTheme } = useAuth();
 
   // Tab State: "info" | "notifications" | "security"
@@ -494,14 +494,97 @@ export const ProfileModal = ({ show, onClose }) => {
                 {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h4 style={{ margin: "0 0 2px 0", fontSize: "1.05rem", fontWeight: 800, color: "var(--text-main)" }}>
-                  {user?.name || "Người dùng"}
-                </h4>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "2px" }}>
+                  <h4 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-main)" }}>
+                    {user?.name || "Người dùng"}
+                  </h4>
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      background:
+                        user?.role === "admin"
+                          ? "rgba(245, 158, 11, 0.2)"
+                          : user?.role === "tutor"
+                          ? "rgba(16, 185, 129, 0.2)"
+                          : user?.role === "pt"
+                          ? "rgba(139, 92, 246, 0.2)"
+                          : "rgba(59, 130, 246, 0.2)",
+                      color:
+                        user?.role === "admin"
+                          ? "#f59e0b"
+                          : user?.role === "tutor"
+                          ? "#10b981"
+                          : user?.role === "pt"
+                          ? "#a78bfa"
+                          : "#60a5fa",
+                      border: "1px solid currentColor"
+                    }}
+                  >
+                    {user?.role === "admin"
+                      ? "👑 Quản Trị Viên"
+                      : user?.role === "tutor"
+                      ? "🎓 Gia Sư Đã Xác Thực"
+                      : user?.role === "pt"
+                      ? "🏋️ Huấn Luyện Viên PT"
+                      : "👤 Sinh Viên / Học Viên"}
+                  </span>
+                </div>
                 <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-muted)" }}>
                   {user?.email || ""}
                 </p>
               </div>
             </div>
+
+            {/* Banner đăng ký làm chuyên gia nếu chưa là Gia sư hoặc PT hoặc Admin */}
+            {(!user?.role || user?.role === "user") && (
+              <div
+                style={{
+                  marginBottom: "18px",
+                  padding: "12px 14px",
+                  borderRadius: "14px",
+                  background: "linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.1))",
+                  border: "1px solid rgba(16, 185, 129, 0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "10px",
+                  flexWrap: "wrap"
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#10b981" }}>
+                    🎓 Bạn muốn trở thành Gia Sư hoặc HLV?
+                  </div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                    Đăng ký làm Gia Sư hoặc HLV PT để kết nối và hướng dẫn học viên.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    if (onOpenDangKyExpert) onOpenDangKyExpert();
+                  }}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "10px",
+                    background: "linear-gradient(135deg, #10b981, #059669)",
+                    color: "#fff",
+                    border: "none",
+                    fontWeight: 700,
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 3px 10px rgba(16, 185, 129, 0.3)"
+                  }}
+                >
+                  Đăng Ký Gia Sư ➔
+                </button>
+              </div>
+            )}
 
             <div className="form-group" style={{ marginBottom: "14px" }}>
               <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: "6px", display: "block" }}>

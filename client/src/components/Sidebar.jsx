@@ -8,6 +8,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: "calendar", label: "Lịch & Sự Kiện", icon: "📅" },
     { id: "study", label: "Học Tập", icon: "🎓" },
     { id: "workout", label: "Tập Luyện Gym", icon: "🏋️" },
+    { id: "messages", label: "Tin Nhắn & Bạn Bè", icon: "💬" },
     { id: "projects", label: "Dự Án & Task", icon: "📋" },
     { id: "profile", label: "Cài Đặt Cá Nhân", icon: "⚙️" }
   ];

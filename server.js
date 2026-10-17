@@ -12,16 +12,24 @@ const monHocRouter = require("./Router/monHocRouter");
 const tapLuyenRouter = require("./Router/tapLuyenRouter");
 const duAnRouter = require("./Router/duAnRouter");
 const dashboardRouter = require("./Router/dashboardRouter");
+const chuyenGiaRouter = require("./Router/chuyenGiaRouter");
+const adminRouter = require("./Router/adminRouter");
+const chatTapLuyenRouter = require("./Router/chatTapLuyenRouter");
+const banBeRouter = require("./Router/banBeRouter");
+const tinNhanRiengRouter = require("./Router/tinNhanRiengRouter");
+const syncExpertUsers = require("./Utils/syncExpertUsers");
 
 dotenv.config();
-connectDB(); // Gọi kết nối MongoDB
+connectDB().then(() => {
+    syncExpertUsers();
+});
 
 const app = express();
 
 // Middlewares
 app.use(cors()); // Cho phép React gọi API
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 // Thư mục chứa file đính kèm/avatar tĩnh
 app.use("/public", express.static(path.join(__dirname, "Public")));
@@ -30,6 +38,11 @@ app.use("/public", express.static(path.join(__dirname, "Public")));
 app.use("/api/auth", authRouter);
 app.use("/api/su-kien", suKienRouter);
 app.use("/api/tap-luyen", tapLuyenRouter);
+app.use("/api/chat-tap-luyen", chatTapLuyenRouter);
+app.use("/api/ban-be", banBeRouter);
+app.use("/api/tin-nhan-rieng", tinNhanRiengRouter);
+app.use("/api/chuyen-gia", chuyenGiaRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api", monHocRouter);
 app.use("/api", duAnRouter);
 app.use("/api", dashboardRouter);

@@ -93,8 +93,29 @@ const markThongBaoAsRead = async (req, res) => {
     }
 };
 
+const markAllThongBaoAsRead = async (req, res) => {
+    try {
+        await ThongBao.updateMany({ user_id: req.user._id, da_doc: false }, { $set: { da_doc: true } });
+        res.status(200).json({ success: true, message: "Đã đánh dấu tất cả thông báo là đã đọc" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi đánh dấu đọc: " + error.message });
+    }
+};
+
+const deleteThongBao = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await ThongBao.deleteOne({ _id: id, user_id: req.user._id });
+        res.status(200).json({ success: true, message: "Đã xóa thông báo" });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi xóa thông báo: " + error.message });
+    }
+};
+
 module.exports = {
     getDashboardKPI,
     getThongBao,
-    markThongBaoAsRead
+    markThongBaoAsRead,
+    markAllThongBaoAsRead,
+    deleteThongBao
 };

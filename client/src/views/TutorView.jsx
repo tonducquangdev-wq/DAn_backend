@@ -27,7 +27,7 @@ const TIME_OPTIONS = [
   { value: "cuoi_tuan", label: "📅 Cuối Tuần (T7, Chủ Nhật)" }
 ];
 
-export const TutorView = ({ onBack }) => {
+export const TutorView = ({ onBack, onOpenDangKyGiaSu, onNavigateToChat }) => {
   const [giaSus, setGiaSus] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -180,7 +180,24 @@ export const TutorView = ({ onBack }) => {
             Kết nối với các gia sư hàng đầu, hỗ trợ kèm môn học, ôn thi và làm đồ án theo lịch trình của bạn.
           </p>
         </div>
-        <div className="action-bar">
+        <div className="action-bar" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {onOpenDangKyGiaSu && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={onOpenDangKyGiaSu}
+              style={{
+                fontWeight: "700",
+                background: "var(--neu-bg)",
+                color: "#10b981",
+                border: "1px solid rgba(16, 185, 129, 0.35)",
+                boxShadow: "4px 4px 10px var(--neu-shadow-dark), -4px -4px 10px var(--neu-shadow-light)"
+              }}
+              title="Đăng ký trở thành Gia Sư chia sẻ kiến thức"
+            >
+              🎓 Đăng Ký Làm Gia Sư
+            </button>
+          )}
           <span style={{
             background: "var(--neu-bg)",
             padding: "8px 18px",
@@ -532,7 +549,7 @@ export const TutorView = ({ onBack }) => {
                   </span>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "8px" }}>
                   <button
                     type="button"
                     className="btn-secondary"
@@ -568,6 +585,42 @@ export const TutorView = ({ onBack }) => {
                     <span>📅 Đặt Học Thử</span>
                   </button>
                 </div>
+                {onNavigateToChat && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tutorUserId = gs.user_id?._id || gs.user_id;
+                      onNavigateToChat(tutorUserId, gs.ho_ten);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      borderRadius: "12px",
+                      background: "linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(139, 92, 246, 0.12))",
+                      border: "1px solid rgba(59, 130, 246, 0.35)",
+                      color: "#3b82f6",
+                      fontWeight: "700",
+                      fontSize: "0.82rem",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, #3b82f6, #2563eb)";
+                      e.currentTarget.style.color = "#ffffff";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(139, 92, 246, 0.12))";
+                      e.currentTarget.style.color = "#3b82f6";
+                    }}
+                  >
+                    <span>💬</span>
+                    <span>Nhắn Tin Riêng Với Gia Sư</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -1382,6 +1435,32 @@ export const TutorView = ({ onBack }) => {
                 >
                   Đóng
                 </button>
+                {onNavigateToChat && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tutor = detailModal.tutor;
+                      const tutorUserId = tutor.user_id?._id || tutor.user_id;
+                      setDetailModal({ ...detailModal, open: false });
+                      onNavigateToChat(tutorUserId, tutor.ho_ten);
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      fontWeight: "700",
+                      background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                      color: "#ffffff",
+                      border: "none",
+                      padding: "8px 16px",
+                      borderRadius: "10px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <span>💬</span>
+                    <span>Nhắn Tin Riêng</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn-primary"

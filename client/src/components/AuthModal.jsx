@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import "../styles/login.css";
 
-export const AuthModal = () => {
+export const AuthModal = ({ onGoToAdminLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -139,6 +139,20 @@ export const AuthModal = () => {
                 +
               </button>
             </div>
+
+            {onGoToAdminLogin && (
+              <div className="neu-admin-switch-container">
+                <button
+                  type="button"
+                  className="neu-admin-portal-link"
+                  onClick={onGoToAdminLogin}
+                  title="Chuyển sang Cổng Đăng Nhập dành riêng cho Quản Trị Viên"
+                >
+                  <span>👑 Cổng Quản Trị Viên (Admin)</span>
+                  <span>➔</span>
+                </button>
+              </div>
+            )}
           </div>
 
 

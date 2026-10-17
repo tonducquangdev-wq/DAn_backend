@@ -10,6 +10,10 @@ const connectDB = async () => {
 
         const conn = await mongoose.connect(mongoUri);
         console.log(`✅ MongoDB Connected thành công: ${conn.connection.host}/${conn.connection.name}`);
+
+        // Khởi tạo tài khoản Admin mặc định
+        const seedAdmin = require("./seedAdmin");
+        await seedAdmin();
     } catch (error) {
         console.error(`❌ Lỗi kết nối MongoDB: ${error.message}`);
         process.exit(1);

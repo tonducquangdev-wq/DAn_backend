@@ -17,7 +17,20 @@ const userSchema = new mongoose.Schema(
         notify_workouts: { type: Boolean, default: true },
         notify_sound: { type: Boolean, default: true },
         notify_lead_time: { type: Number, default: 15 },
-        workout_default_initialized: { type: Boolean, default: false }
+        workout_default_initialized: { type: Boolean, default: false },
+        role: {
+            type: String,
+            enum: ["user", "tutor", "gia_su", "pt", "admin"],
+            default: "user"
+        },
+        status: {
+            type: String,
+            enum: ["active", "banned"],
+            default: "active"
+        },
+        phone: { type: String, default: null },
+        bio: { type: String, default: null },
+        is_expert_verified: { type: Boolean, default: false }
     },
     { timestamps: true }
 );
