@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { api } from "../services/api";
 import { LEAD_TIME_OPTIONS, formatLeadTime } from "../services/notificationService";
 
@@ -49,9 +49,20 @@ export const CalendarView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
 
-  // State Chế độ xem & Điều hướng thời gian
-  const [viewMode, setViewMode] = useState("month"); // 'month' | 'week' | 'day' | 'list'
+  // Nhận diện thiết bị Mobile (< 992px) vs Laptop/Desktop (>= 992px)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 992);
+
+  // State Chế độ xem: Trên Laptop/Web mặc định là "month", trên Mobile tự động là "week"
+  const [viewMode, setViewMode] = useState("month");
+  const currentView = isMobile ? "week" : viewMode;
+
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Ref và state phục vụ trượt ngang (Horizontal Swipe & Scroll)
+  const weekContainerRef = useRef(null);
+  const dayRefs = useRef({});
+  const touchStartX = useRef(null);
+  const [activeDayIdx, setActiveDayIdx] = useState(null);
 
   // State Thời gian thực tế hiện tại (tự động cập nhật mỗi 10 giây để đảm bảo realtime)
   const [currentTime, setCurrentTime] = useState(() => new Date());
@@ -139,9 +150,14 @@ export const CalendarView = () => {
       loadEvents(true);
     };
 
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 992);
+    };
+
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("calendar-refresh", handleCalendarRefresh);
+    window.addEventListener("resize", handleResize);
 
     return () => {
       clearInterval(clockInterval);
@@ -149,6 +165,7 @@ export const CalendarView = () => {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("calendar-refresh", handleCalendarRefresh);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -232,21 +249,49 @@ export const CalendarView = () => {
       .slice(0, 4);
   }, [events, currentTime]);
 
-  // Điều hướng ngày
-  const handleToday = () => setCurrentDate(new Date());
+  // Cuộn mượt đến ngày được chọn trên thanh trượt ngang (chỉ cuộn bên trong week-days-container)
+  const scrollToDay = (idx) => {
+    setActiveDayIdx(idx);
+    const container = weekContainerRef.current;
+    const targetCol = dayRefs.current[idx];
+    if (container && targetCol) {
+      // Đảm bảo thẻ cha cal-week-card không bao giờ bị cuộn ngang
+      if (container.parentElement) {
+        container.parentElement.scrollLeft = 0;
+      }
+      const targetLeft = targetCol.offsetLeft;
+      const targetWidth = targetCol.offsetWidth;
+      const containerWidth = container.clientWidth;
+      const desiredScrollLeft = Math.max(0, targetLeft - (containerWidth - targetWidth) / 2);
+      container.scrollTo({
+        left: desiredScrollLeft,
+        behavior: "smooth"
+      });
+    }
+  };
+
+  // Điều hướng ngày & tuần
+  const handleToday = () => {
+    const now = new Date();
+    setCurrentDate(now);
+    const todayIndex = weekDaysGrid.findIndex((d) => isSameDay(d, now));
+    if (todayIndex !== -1) {
+      scrollToDay(todayIndex);
+    }
+  };
 
   const handlePrev = () => {
     const d = new Date(currentDate);
-    if (viewMode === "month") d.setMonth(d.getMonth() - 1);
-    else if (viewMode === "week") d.setDate(d.getDate() - 7);
+    if (currentView === "month") d.setMonth(d.getMonth() - 1);
+    else if (currentView === "week") d.setDate(d.getDate() - 7);
     else d.setDate(d.getDate() - 1);
     setCurrentDate(d);
   };
 
   const handleNext = () => {
     const d = new Date(currentDate);
-    if (viewMode === "month") d.setMonth(d.getMonth() + 1);
-    else if (viewMode === "week") d.setDate(d.getDate() + 7);
+    if (currentView === "month") d.setMonth(d.getMonth() + 1);
+    else if (currentView === "week") d.setDate(d.getDate() + 7);
     else d.setDate(d.getDate() + 1);
     setCurrentDate(d);
   };
@@ -499,21 +544,68 @@ export const CalendarView = () => {
     return days;
   }, [currentDate]);
 
-  // 7 Ngày Tuần Hiện Tại
+  // 7 Ngày Tuần Hiện Tại (Thứ Hai -> Chủ Nhật theo lịch Việt Nam)
   const weekDaysGrid = useMemo(() => {
     const curr = new Date(currentDate);
-    const dayOfWeek = curr.getDay(); // 0 = CN
-    const first = new Date(curr);
-    first.setDate(curr.getDate() - dayOfWeek);
+    const dayOfWeek = curr.getDay(); // 0 = CN, 1 = T2, 2 = T3, ..., 6 = T7
+    const diff = curr.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const monday = new Date(curr);
+    monday.setDate(diff);
 
     const days = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(first);
-      d.setDate(first.getDate() + i);
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
       days.push(d);
     }
     return days;
   }, [currentDate]);
+
+  // Nhãn hiển thị khoảng ngày tuần (VD: 11/10 - 17/10/2026)
+  const weekRangeLabel = useMemo(() => {
+    if (!weekDaysGrid || weekDaysGrid.length < 7) return "";
+    const start = weekDaysGrid[0];
+    const end = weekDaysGrid[6];
+    const startDay = String(start.getDate()).padStart(2, "0");
+    const startMonth = String(start.getMonth() + 1).padStart(2, "0");
+    const endDay = String(end.getDate()).padStart(2, "0");
+    const endMonth = String(end.getMonth() + 1).padStart(2, "0");
+    const endYear = end.getFullYear();
+
+    if (start.getMonth() === end.getMonth()) {
+      return `${startDay} - ${endDay}/${endMonth}/${endYear}`;
+    }
+    return `${startDay}/${startMonth} - ${endDay}/${endMonth}/${endYear}`;
+  }, [weekDaysGrid]);
+
+  // Tự động cuộn đến ngày hôm nay khi đổi tuần hoặc vào màn hình tuần
+  const weekStartStr = weekDaysGrid.length > 0 ? weekDaysGrid[0].toDateString() : "";
+
+  useEffect(() => {
+    if (currentView === "week" && weekDaysGrid.length > 0) {
+      const todayIdx = weekDaysGrid.findIndex((d) => isSameDay(d, currentTime));
+      const targetIdx = todayIdx !== -1 ? todayIdx : 0;
+      setActiveDayIdx(targetIdx);
+      const timer = setTimeout(() => {
+        const container = weekContainerRef.current;
+        const targetCol = dayRefs.current[targetIdx];
+        if (container && targetCol) {
+          if (container.parentElement) {
+            container.parentElement.scrollLeft = 0;
+          }
+          const targetLeft = targetCol.offsetLeft;
+          const targetWidth = targetCol.offsetWidth;
+          const containerWidth = container.clientWidth;
+          const desiredScrollLeft = Math.max(0, targetLeft - (containerWidth - targetWidth) / 2);
+          container.scrollTo({
+            left: desiredScrollLeft,
+            behavior: "smooth"
+          });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [weekStartStr, currentView]);
 
   const rowCount = monthDaysGrid.length > 35 ? 6 : 5;
 
@@ -547,86 +639,105 @@ export const CalendarView = () => {
       {/* ============================================================
           TOP CONTROL BAR (BOOTSTRAP RESPONSIVE FLEX)
           ============================================================ */}
-      <div className="cal-header-bar flex-shrink-0">
-        {/* Nút Date Picker & Điều hướng Prev/Next */}
-        <div className="cal-date-nav d-flex align-items-center gap-2 gap-md-3">
-          <div className="cal-date-badge">
-            <span className="cal-date-icon">📅</span>
-            <span className="cal-date-text">
-              {currentDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-            </span>
-          </div>
-          <div className="cal-nav-buttons">
-            <button className="cal-nav-btn" onClick={handlePrev} title="Trước">
-              &lt;
-            </button>
-            <button className="cal-nav-btn" onClick={handleNext} title="Tiếp">
-              &gt;
-            </button>
-          </div>
-        </div>
+      {/* ============================================================
+          TOP CONTROL BAR (BOOTSTRAP RESPONSIVE FLEX)
+          ============================================================ */}
+      {/* TOP CONTROL BAR: CHỈ HIỂN THỊ TRÊN LAPTOP/DESKTOP (d-none d-lg-block) */}
+      {!isMobile && (
+        <div className="cal-header-bar flex-shrink-0">
+          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
+            {/* Nút Date Picker & Điều hướng Prev/Next + Hôm Nay */}
+            <div className="cal-date-nav d-flex align-items-center gap-2">
+              <div className="cal-date-badge">
+                <span className="cal-date-icon">📅</span>
+                <span className="cal-date-text">
+                  {currentView === "week"
+                    ? `Tuần: ${weekRangeLabel}`
+                    : `Tháng ${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`}
+                </span>
+              </div>
+              <div className="cal-nav-buttons d-flex gap-1">
+                <button className="cal-nav-btn" onClick={handlePrev} title="Thời gian trước">
+                  &lt;
+                </button>
+                <button className="cal-nav-btn" onClick={handleNext} title="Thời gian sau">
+                  &gt;
+                </button>
+                <button
+                  type="button"
+                  className="cal-nav-btn px-2.5"
+                  style={{ width: "auto", fontSize: "0.75rem", fontWeight: 700 }}
+                  onClick={handleToday}
+                  title="Quay về hôm nay"
+                >
+                  Hôm nay
+                </button>
+              </div>
+            </div>
 
-        {/* Filter Pills (Tất cả, Học tập, Tập luyện, Deadline, Cá nhân, Công việc) */}
-        <div className="cal-filter-pills d-flex align-items-center gap-1.5 gap-md-2 flex-wrap">
-          <button
-            className={`filter-pill ${filterType === "all" ? "active-all" : ""}`}
-            onClick={() => setFilterType("all")}
-          >
-            <span>⣿</span> Tất cả
-          </button>
-          {Object.keys(EVENT_TYPE_MAP).map((typeKey) => {
-            const info = EVENT_TYPE_MAP[typeKey];
-            const isActive = filterType === typeKey;
-            return (
+            {/* View Mode Switcher & Nút Tạo Sự Kiện Nhanh trên Laptop */}
+            <div className="d-flex align-items-center gap-2 ms-auto">
+              <div className="cal-view-switcher">
+                <button
+                  className={`view-switcher-btn ${viewMode === "week" ? "active" : ""}`}
+                  onClick={() => setViewMode("week")}
+                >
+                  📅 Tuần
+                </button>
+                <button
+                  className={`view-switcher-btn ${viewMode === "month" ? "active" : ""}`}
+                  onClick={() => setViewMode("month")}
+                >
+                  🗓️ Tháng
+                </button>
+              </div>
+
               <button
-                key={typeKey}
-                className={`filter-pill pill-${typeKey} ${isActive ? "active-type" : ""}`}
-                onClick={() => setFilterType(typeKey)}
+                className="btn-primary d-flex align-items-center gap-1.5"
+                style={{ padding: "6px 14px", fontSize: "0.82rem", whiteSpace: "nowrap" }}
+                onClick={() => handleOpenCreateModal(currentDate)}
               >
-                <span>●</span> {info.label}
+                <span>➕</span>
+                <span>Tạo sự kiện</span>
               </button>
-            );
-          })}
-        </div>
-
-        {/* View Mode Switcher & Nút Tạo Sự Kiện Nhanh */}
-        <div className="d-flex align-items-center gap-2">
-          <div className="cal-view-switcher">
-            <button
-              className={`view-switcher-btn ${viewMode === "week" ? "active" : ""}`}
-              onClick={() => setViewMode("week")}
-            >
-              📅 Tuần
-            </button>
-            <button
-              className={`view-switcher-btn ${viewMode === "month" ? "active" : ""}`}
-              onClick={() => setViewMode("month")}
-            >
-              🗓️ Tháng
-            </button>
+            </div>
           </div>
 
-          <button
-            className="btn-primary d-none d-sm-flex align-items-center gap-1.5"
-            style={{ padding: "6px 14px", fontSize: "0.82rem", whiteSpace: "nowrap" }}
-            onClick={() => handleOpenCreateModal(currentDate)}
-          >
-            <span>➕</span>
-            <span>Tạo sự kiện</span>
-          </button>
+          {/* Filter Pills */}
+          <div className="cal-filter-pills d-flex align-items-center gap-1.5 gap-md-2 flex-nowrap overflow-x-auto mt-2.5 pt-1 pb-2 w-100" style={{ scrollbarWidth: "none" }}>
+            <button
+              className={`filter-pill flex-shrink-0 ${filterType === "all" ? "active-all" : ""}`}
+              onClick={() => setFilterType("all")}
+            >
+              <span>⣿</span> Tất cả
+            </button>
+            {Object.keys(EVENT_TYPE_MAP).map((typeKey) => {
+              const info = EVENT_TYPE_MAP[typeKey];
+              const isActive = filterType === typeKey;
+              return (
+                <button
+                  key={typeKey}
+                  className={`filter-pill flex-shrink-0 pill-${typeKey} ${isActive ? "active-type" : ""}`}
+                  onClick={() => setFilterType(typeKey)}
+                >
+                  <span>●</span> {info.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ============================================================
-          MAIN 2-COLUMN GRID LAYOUT (DESKTOP: GRID / MOBILE: FLEX)
+          MAIN 2-COLUMN GRID LAYOUT (BOOTSTRAP RESPONSIVE: DESKTOP 2 CỘT / TABLET 2 CỘT WIDGET / MOBILE FULL)
           ============================================================ */}
-      <div className="cal-main-layout flex-grow-1 min-vh-0">
+      <div className="row g-3 g-xl-4 flex-grow-1 min-vh-0 m-0 w-100 cal-main-layout-row">
 
-        {/* LEFT COLUMN: CỘT CHÍNH LỊCH */}
-        <div className="cal-left-column d-flex flex-column h-100 min-vh-0">
+        {/* LEFT COLUMN: CỘT CHÍNH LỊCH (col-12 col-xl-8 col-xxl-9) */}
+        <div className="col-12 col-xl-8 col-xxl-9 d-flex flex-column h-100 min-vh-0 p-0 cal-left-column">
 
-          {/* HIỂN THỊ CHẾ ĐỘ XEM THÁNG (MONTH VIEW - 100VH GRID FIT) */}
-          {viewMode === "month" && (
+          {/* HIỂN THỊ CHẾ ĐỘ XEM THÁNG (MONTH VIEW TRÊN LAPTOP / DESKTOP) */}
+          {currentView === "month" && (
             <div className="cal-month-card h-100 d-flex flex-column min-vh-0">
               {/* Header Tên Thứ (CN, T2, T3, T4, T5, T6, T7) */}
               <div className="cal-month-header flex-shrink-0">
@@ -662,43 +773,71 @@ export const CalendarView = () => {
                         <span className={`day-number ${isToday ? "today-num" : ""}`}>
                           {item.date.getDate()}
                         </span>
-                        {isToday && <span className="today-badge">Hôm nay</span>}
+                        {isToday && <span className="today-badge d-none d-sm-inline">Hôm nay</span>}
                       </div>
 
                       {/* Danh sách Sự kiện thuộc Ngày */}
                       <div className="day-events-list flex-grow-1 overflow-y-auto">
-                        {dayEvents.slice(0, 2).map((ev) => {
-                          const typeInfo = EVENT_TYPE_MAP[ev.loai_su_kien] || { color: ev.mau_sac || "#3b82f6" };
-                          return (
+                        {/* 1. Trên Desktop & Tablet (>= 768px): Hiển thị thanh chip sự kiện chi tiết */}
+                        <div className="d-none d-md-flex flex-column gap-1">
+                          {dayEvents.slice(0, 2).map((ev) => {
+                            const typeInfo = EVENT_TYPE_MAP[ev.loai_su_kien] || { color: ev.mau_sac || "#3b82f6" };
+                            return (
+                              <div
+                                key={ev._id}
+                                className="day-event-chip"
+                                style={{ background: ev.mau_sac || typeInfo.color }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDayClick(item.date);
+                                }}
+                                title={ev.tieu_de}
+                              >
+                                <span className="event-chip-dot">●</span>
+                                <span className="event-chip-title">
+                                  {ev.tieu_de} {ev.bat_thong_bao !== false ? "🔔" : ""}
+                                </span>
+                              </div>
+                            );
+                          })}
+
+                          {dayEvents.length > 2 && (
                             <div
-                              key={ev._id}
-                              className="day-event-chip"
-                              style={{ background: ev.mau_sac || typeInfo.color }}
+                              className="event-overflow-text"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDayClick(item.date);
                               }}
-                              title={ev.tieu_de}
                             >
-                              <span className="event-chip-dot">●</span>
-                              <span className="event-chip-title">
-                                {ev.tieu_de} {ev.bat_thong_bao !== false ? "🔔" : ""}
-                              </span>
+                              +{dayEvents.length - 2} sự kiện
                             </div>
-                          );
-                        })}
+                          )}
+                        </div>
 
-                        {dayEvents.length > 2 && (
-                          <div
-                            className="event-overflow-text"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDayClick(item.date);
-                            }}
-                          >
-                            +{dayEvents.length - 2} sự kiện
-                          </div>
-                        )}
+                        {/* 2. Trên Mobile (< 768px): Hiển thị các chấm màu (Event Dots) siêu gọn gàng */}
+                        <div className="d-flex d-md-none flex-wrap gap-1 align-items-center justify-content-center mt-1">
+                          {dayEvents.slice(0, 3).map((ev) => {
+                            const typeColor = ev.mau_sac || (EVENT_TYPE_MAP[ev.loai_su_kien]?.color || "#3b82f6");
+                            return (
+                              <span
+                                key={ev._id}
+                                style={{
+                                  width: "6px",
+                                  height: "6px",
+                                  borderRadius: "50%",
+                                  backgroundColor: typeColor,
+                                  display: "inline-block"
+                                }}
+                                title={ev.tieu_de}
+                              />
+                            );
+                          })}
+                          {dayEvents.length > 3 && (
+                            <span style={{ fontSize: "0.6rem", fontWeight: "800", color: "var(--primary)" }}>
+                              +{dayEvents.length - 3}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -707,53 +846,183 @@ export const CalendarView = () => {
             </div>
           )}
 
-          {/* HIỂN THỊ CHẾ ĐỘ XEM TUẦN (WEEK VIEW) */}
-          {viewMode === "week" && (
-            <div className="cal-week-card h-100 d-flex flex-column min-vh-0 overflow-y-auto">
-              <div className="week-days-container">
+          {/* HIỂN THỊ CHẾ ĐỘ XEM TUẦN (WEEK VIEW TRÊN MOBILE HOẶC KHI CHỌN TRÊN DESKTOP) */}
+          {currentView === "week" && (
+            <div className="cal-week-card h-100 d-flex flex-column min-vh-0">
+              {/* 1. TOP HEADER: 📅 DD/MM/YYYY + 2 NÚT TRÒN < > */}
+              <div className="cal-week-card-header d-flex align-items-center justify-content-between mb-2.5 flex-shrink-0">
+                <div className="d-flex align-items-center gap-2 ps-1">
+                  <div className="d-flex align-items-center gap-1.5">
+                    <span className="cal-card-calendar-icon">📅</span>
+                    <span className="cal-card-date-title">
+                      {currentDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center gap-1.5 ms-1">
+                    <button className="cal-circle-nav-btn" onClick={handlePrev} title="Tuần trước">
+                      &lt;
+                    </button>
+                    <button className="cal-circle-nav-btn" onClick={handleNext} title="Tuần sau">
+                      &gt;
+                    </button>
+                  </div>
+                </div>
+
+                <div className="d-flex align-items-center gap-1.5 me-1">
+                  <button
+                    type="button"
+                    className="cal-today-circle-btn"
+                    onClick={handleToday}
+                    title="Quay về hôm nay"
+                  >
+                    Hôm nay
+                  </button>
+                  <button
+                    type="button"
+                    className="cal-add-event-circle-btn"
+                    onClick={() => handleOpenCreateModal(currentDate)}
+                    title="Thêm sự kiện mới"
+                  >
+                    + Thêm
+                  </button>
+                </div>
+              </div>
+
+              {/* Thanh Lọc Sự Kiện (Filter Pills) Trượt Ngang trên Mobile */}
+              <div className="cal-filter-pills d-flex align-items-center gap-1.5 flex-nowrap overflow-x-auto w-100 mb-2 px-1 flex-shrink-0" style={{ scrollbarWidth: "none" }}>
+                <button
+                  className={`filter-pill flex-shrink-0 ${filterType === "all" ? "active-all" : ""}`}
+                  onClick={() => setFilterType("all")}
+                >
+                  <span>⣿</span> Tất cả
+                </button>
+                {Object.keys(EVENT_TYPE_MAP).map((typeKey) => {
+                  const info = EVENT_TYPE_MAP[typeKey];
+                  const isActive = filterType === typeKey;
+                  return (
+                    <button
+                      key={typeKey}
+                      className={`filter-pill flex-shrink-0 pill-${typeKey} ${isActive ? "active-type" : ""}`}
+                      onClick={() => setFilterType(typeKey)}
+                    >
+                      <span>●</span> {info.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 2. KHU VỰC CÁC CỘT NGÀY TRƯỢT NGANG (2 CỘT SONG SONG TRÊN MOBILE) */}
+              <div
+                ref={weekContainerRef}
+                className="week-days-container flex-grow-1 min-vh-0"
+                onTouchStart={(e) => {
+                  touchStartX.current = e.touches[0].clientX;
+                }}
+                onTouchEnd={(e) => {
+                  if (touchStartX.current === null) return;
+                  const container = e.currentTarget;
+                  const diff = touchStartX.current - e.changedTouches[0].clientX;
+                  const atStart = container.scrollLeft <= 5;
+                  const atEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 5;
+
+                  if (diff > 70 && atEnd) {
+                    handleNext();
+                  } else if (diff < -70 && atStart) {
+                    handlePrev();
+                  }
+                  touchStartX.current = null;
+                }}
+              >
                 {weekDaysGrid.map((dayDate, idx) => {
                   const isToday = isSameDay(dayDate, currentTime);
+                  const isSelected = activeDayIdx === idx;
                   const dayEvents = filteredEvents.filter((ev) => isSameDay(ev.thoi_gian_bat_dau, dayDate));
-                  const dayName = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][dayDate.getDay()];
+                  const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+                  const dayName = dayNames[dayDate.getDay()];
+                  const isWeekend = dayDate.getDay() === 0 || dayDate.getDay() === 6;
 
                   return (
                     <div
                       key={idx}
-                      className={`week-day-column ${isToday ? "active-week-column" : ""}`}
-                      onClick={() => handleDayClick(dayDate)}
+                      ref={(el) => (dayRefs.current[idx] = el)}
+                      className={`week-day-column ${isToday ? "today-week-column" : "regular-week-column"}`}
+                      onClick={() => {
+                        setActiveDayIdx(idx);
+                        setCurrentDate(dayDate);
+                        scrollToDay(idx);
+                      }}
                     >
-                      <div className="week-day-header">
-                        <span className="week-day-name">{dayName}</span>
-                        <span className="week-day-date">{dayDate.getDate()}</span>
+                      {/* Header Cột Ngày: Tên Thứ + Badge Hôm nay + Số ngày (Đồng bộ chuẩn Lịch Tháng) */}
+                      <div className="week-day-header-box">
+                        <div className="d-flex align-items-center justify-content-between w-100 mb-1">
+                          <span className={`week-day-title ${isWeekend ? "weekend-title" : ""}`}>{dayName}</span>
+                          {isToday && <span className="today-badge">Hôm nay</span>}
+                        </div>
+                        <div className="d-flex align-items-center justify-content-center">
+                          <span className={`day-number ${isToday ? "today-num" : "week-day-num-standard"}`}>
+                            {dayDate.getDate()}
+                          </span>
+                        </div>
                       </div>
 
+                      {/* Danh sách Sự Kiện: Thẻ Chip Sự Kiện đồng bộ màu sắc & dot với Lịch Tháng */}
                       <div className="week-day-body">
                         {dayEvents.length === 0 ? (
-                          <div className="week-empty-text">Chưa có lịch</div>
+                          <div className="week-empty-box text-center my-auto py-3">
+                            <span className="week-empty-text">Trống lịch</span>
+                            <button
+                              type="button"
+                              className="week-empty-add-btn mt-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenCreateModal(dayDate);
+                              }}
+                            >
+                              + Thêm
+                            </button>
+                          </div>
                         ) : (
                           dayEvents.map((ev) => {
+                            const typeInfo = EVENT_TYPE_MAP[ev.loai_su_kien] || { color: ev.mau_sac || "#3b82f6", icon: "📌" };
+                            const eventBg = ev.mau_sac || typeInfo.color || "#3b82f6";
                             const startTime = new Date(ev.thoi_gian_bat_dau).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
                             const endTime = new Date(ev.thoi_gian_ket_thuc).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
                             return (
                               <div
                                 key={ev._id}
-                                className="week-event-card"
-                                style={{
-                                  borderLeft: `4px solid ${ev.mau_sac || "#3b82f6"}`
-                                }}
+                                className="week-event-chip-card"
+                                style={{ background: eventBg }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDayClick(dayDate);
+                                  setDetailEvent(ev);
                                 }}
+                                title="Bấm để xem chi tiết hoặc sửa"
                               >
-                                <div className="week-event-title">📖 {ev.tieu_de} {ev.bat_thong_bao !== false ? "🔔" : ""}</div>
-                                {ev.loai_su_kien === "deadline" ? (
-                                  <div className="week-event-time">⏰ Hạn: {startTime}</div>
-                                ) : (
-                                  <div className="week-event-time">🕒 {startTime} - {endTime}</div>
+                                {/* Dòng 1: Chấm tròn ● + Tiêu đề sự kiện + Chuông 🔔 */}
+                                <div className="week-event-chip-header">
+                                  <span className="event-chip-dot">●</span>
+                                  <span className="week-event-chip-title">{ev.tieu_de}</span>
+                                  {ev.bat_thong_bao !== false && <span className="week-event-chip-bell">🔔</span>}
+                                </div>
+
+                                {/* Dòng 2: Thời gian diễn ra 🕒 */}
+                                <div className="week-event-chip-time d-flex align-items-center gap-1 mt-1">
+                                  <i className="bi bi-clock week-chip-sub-icon"></i>
+                                  {ev.loai_su_kien === "deadline" ? (
+                                    <span>Hạn: {startTime}</span>
+                                  ) : (
+                                    <span>{startTime} - {endTime}</span>
+                                  )}
+                                </div>
+
+                                {/* Dòng 3 (nếu có địa điểm): Địa điểm 📍 */}
+                                {ev.dia_diem && (
+                                  <div className="week-event-chip-loc d-flex align-items-center gap-1 mt-0.5">
+                                    <i className="bi bi-geo-alt week-chip-sub-icon"></i>
+                                    <span className="week-chip-loc-text">{ev.dia_diem}</span>
+                                  </div>
                                 )}
-                                {ev.dia_diem && <div className="week-event-loc">📍 {ev.dia_diem}</div>}
                               </div>
                             );
                           })
@@ -768,104 +1037,110 @@ export const CalendarView = () => {
 
         </div>
 
-        {/* RIGHT COLUMN: WIDGETS PHỤ (LỊCH TRÌNH & DEADLINE) */}
-        <div className="cal-right-column d-flex flex-column gap-2 h-100 min-vh-0">
-          
-          {/* WIDGET 1: LỊCH TRÌNH HÔM NAY */}
-          <div className="widget-card">
-            <div className="widget-header">
-              <div className="widget-title">
-                <span>🕒</span>
-                <span>Lịch trình hôm nay</span>
-              </div>
-              <span className="widget-count-badge">{todayEvents.length}</span>
-            </div>
-
-            <div className="widget-body">
-              {todayEvents.length === 0 ? (
-                <div className="widget-empty-msg">
-                  Hôm nay không có lịch trình nào.
+        {/* RIGHT COLUMN: WIDGETS PHỤ (BOOTSTRAP RESPONSIVE: TABLET 2 CỘT / DESKTOP STACK) */}
+        <div className="col-12 col-xl-4 col-xxl-3 d-flex flex-column p-0 cal-right-column">
+          <div className="row g-3 flex-grow-1">
+            
+            {/* WIDGET 1: LỊCH TRÌNH HÔM NAY (Tablet: col-md-6 / Desktop: col-xl-12) */}
+            <div className="col-12 col-md-6 col-xl-12 d-flex flex-column">
+              <div className="widget-card flex-grow-1">
+                <div className="widget-header">
+                  <div className="widget-title">
+                    <span>🕒</span>
+                    <span>Lịch trình hôm nay</span>
+                  </div>
+                  <span className="widget-count-badge">{todayEvents.length}</span>
                 </div>
-              ) : (
-                <div className="today-events-list">
-                  {todayEvents.map((ev) => (
-                    <div
-                      key={ev._id}
-                      className="today-event-item"
-                      style={{ borderLeftColor: ev.mau_sac || "#3b82f6" }}
-                      onClick={() => setDetailEvent(ev)}
-                    >
-                      <div className="today-event-title">● {ev.tieu_de} {ev.bat_thong_bao !== false ? "🔔" : ""}</div>
-                      <div className="today-event-meta">
-                        <span>🕒 {new Date(ev.thoi_gian_bat_dau).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>
-                        {ev.dia_diem && <span>📍 {ev.dia_diem}</span>}
-                      </div>
+
+                <div className="widget-body">
+                  {todayEvents.length === 0 ? (
+                    <div className="widget-empty-msg">
+                      Hôm nay không có lịch trình nào.
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* WIDGET 2: DEADLINE SẮP TỚI */}
-          <div className="widget-card">
-            <div className="widget-header">
-              <div className="widget-title">
-                <span>⏳</span>
-                <span>Deadline sắp tới</span>
-              </div>
-              <span className="widget-count-badge warning">{upcomingDeadlines.length}</span>
-            </div>
-
-            <div className="widget-body">
-              {upcomingDeadlines.length === 0 ? (
-                <div className="widget-empty-msg">
-                  Hiện không có deadline sắp tới.
-                </div>
-              ) : (
-                <div className="deadlines-list">
-                  {upcomingDeadlines.map((dl) => {
-                    const isTodayDl = dl.diffDays === 0;
-                    let badgeText = isTodayDl ? "Hôm nay" : `Còn ${dl.diffDays} ngày`;
-                    if (isTodayDl) {
-                      if (dl.diffHours > 0) {
-                        badgeText = `Hôm nay (còn ${dl.diffHours}h)`;
-                      } else if (dl.diffMinutes > 0) {
-                        badgeText = `Hôm nay (còn ${dl.diffMinutes}p)`;
-                      } else {
-                        badgeText = "Hôm nay";
-                      }
-                    }
-                    const badgeClass = isTodayDl ? "dl-badge-today" : "dl-badge-warning";
-                    const timeStr = dl.endDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-                    const dateStr = dl.endDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
-
-                    return (
-                      <div
-                        key={dl._id}
-                        className="deadline-item"
-                        style={{ borderLeftColor: isTodayDl ? "#ef4444" : "#f59e0b" }}
-                        onClick={() => setDetailEvent(dl)}
-                      >
-                        <div className="deadline-item-top">
-                          <div className="deadline-item-title">
-                            <span style={{ color: isTodayDl ? "#ef4444" : "#f59e0b" }}>●</span> {dl.tieu_de}
+                  ) : (
+                    <div className="today-events-list">
+                      {todayEvents.map((ev) => (
+                        <div
+                          key={ev._id}
+                          className="today-event-item"
+                          style={{ borderLeftColor: ev.mau_sac || "#3b82f6" }}
+                          onClick={() => setDetailEvent(ev)}
+                        >
+                          <div className="today-event-title">● {ev.tieu_de} {ev.bat_thong_bao !== false ? "🔔" : ""}</div>
+                          <div className="today-event-meta">
+                            <span>🕒 {new Date(ev.thoi_gian_bat_dau).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>
+                            {ev.dia_diem && <span>📍 {ev.dia_diem}</span>}
                           </div>
-                          <span className={`dl-badge ${badgeClass}`}>{badgeText}</span>
                         </div>
-
-                        <div className="deadline-item-bottom">
-                          <span className="dl-subject">🎓 {dl.dia_diem || "Công việc"}</span>
-                          <span className="dl-time">🕒 {timeStr} • {dateStr}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
 
+            {/* WIDGET 2: DEADLINE SẮP TỚI (Tablet: col-md-6 / Desktop: col-xl-12) */}
+            <div className="col-12 col-md-6 col-xl-12 d-flex flex-column">
+              <div className="widget-card flex-grow-1">
+                <div className="widget-header">
+                  <div className="widget-title">
+                    <span>⏳</span>
+                    <span>Deadline sắp tới</span>
+                  </div>
+                  <span className="widget-count-badge warning">{upcomingDeadlines.length}</span>
+                </div>
+
+                <div className="widget-body">
+                  {upcomingDeadlines.length === 0 ? (
+                    <div className="widget-empty-msg">
+                      Hiện không có deadline sắp tới.
+                    </div>
+                  ) : (
+                    <div className="deadlines-list">
+                      {upcomingDeadlines.map((dl) => {
+                        const isTodayDl = dl.diffDays === 0;
+                        let badgeText = isTodayDl ? "Hôm nay" : `Còn ${dl.diffDays} ngày`;
+                        if (isTodayDl) {
+                          if (dl.diffHours > 0) {
+                            badgeText = `Hôm nay (còn ${dl.diffHours}h)`;
+                          } else if (dl.diffMinutes > 0) {
+                            badgeText = `Hôm nay (còn ${dl.diffMinutes}p)`;
+                          } else {
+                            badgeText = "Hôm nay";
+                          }
+                        }
+                        const badgeClass = isTodayDl ? "dl-badge-today" : "dl-badge-warning";
+                        const timeStr = dl.endDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+                        const dateStr = dl.endDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+
+                        return (
+                          <div
+                            key={dl._id}
+                            className="deadline-item"
+                            style={{ borderLeftColor: isTodayDl ? "#ef4444" : "#f59e0b" }}
+                            onClick={() => setDetailEvent(dl)}
+                          >
+                            <div className="deadline-item-top">
+                              <div className="deadline-item-title">
+                                <span style={{ color: isTodayDl ? "#ef4444" : "#f59e0b" }}>●</span> {dl.tieu_de}
+                              </div>
+                              <span className={`dl-badge ${badgeClass}`}>{badgeText}</span>
+                            </div>
+
+                            <div className="deadline-item-bottom">
+                              <span className="dl-subject">🎓 {dl.dia_diem || "Công việc"}</span>
+                              <span className="dl-time">🕒 {timeStr} • {dateStr}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
 
       </div>
@@ -881,24 +1156,26 @@ export const CalendarView = () => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="day-modal-header d-flex justify-content-between align-items-center mb-3">
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
               <div>
                 <div className="d-flex align-items-center gap-2">
-                  <span style={{ fontSize: "1.3rem" }}>📋</span>
-                  <h3 style={{ fontSize: "1.25rem", fontWeight: "800", margin: 0, color: "var(--text-main)" }}>
+                  <span className="fs-5">📋</span>
+                  <h4 className="fw-bold m-0 fs-5" style={{ color: "var(--text-main)" }}>
                     Sự Kiện Trong Ngày
-                  </h3>
-                  <span className="badge badge-primary" style={{ fontSize: "0.75rem", padding: "4px 8px" }}>
+                  </h4>
+                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1" style={{ fontSize: "0.74rem" }}>
                     {selectedDayEvents.length} sự kiện
                   </span>
                 </div>
-                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "4px", fontWeight: "600" }}>
+                <div className="text-secondary small mt-1 fw-semibold">
                   📅 {selectedDayDate.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
                 </div>
               </div>
               <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0"
+                style={{ width: "32px", height: "32px" }}
                 onClick={() => setSelectedDayDate(null)}
-                style={{ background: "none", border: "none", fontSize: "1.3rem", cursor: "pointer", color: "var(--text-muted)", lineHeight: 1 }}
                 title="Đóng"
               >
                 ✖
@@ -906,14 +1183,14 @@ export const CalendarView = () => {
             </div>
 
             {/* Danh sách sự kiện hoặc Trạng thái trống */}
-            <div className="day-modal-body" style={{ maxHeight: "380px", overflowY: "auto", paddingRight: "4px" }}>
+            <div className="day-modal-body overflow-y-auto pe-1" style={{ maxHeight: "380px" }}>
               {selectedDayEvents.length === 0 ? (
                 <div className="day-modal-empty text-center py-4">
                   <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>☕</div>
-                  <h5 style={{ fontWeight: "700", color: "var(--text-main)", marginBottom: "6px", fontSize: "1rem" }}>
+                  <h5 className="fw-bold mb-1 fs-6" style={{ color: "var(--text-main)" }}>
                     Chưa có sự kiện nào trong ngày này
                   </h5>
-                  <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>
+                  <p className="small text-secondary m-0">
                     Bạn có thể bấm nút "Thêm sự kiện mới" bên dưới để lên kế hoạch học tập, tập luyện hoặc công việc!
                   </p>
                 </div>
@@ -932,7 +1209,7 @@ export const CalendarView = () => {
                     return (
                       <div
                         key={ev._id}
-                        className="day-modal-event-card"
+                        className="day-modal-event-card p-3 rounded-3"
                         style={{
                           borderLeft: `5px solid ${ev.mau_sac || typeInfo.color}`
                         }}
@@ -942,38 +1219,38 @@ export const CalendarView = () => {
                         }}
                         title="Bấm để xem chi tiết sự kiện"
                       >
-                        <div className="d-flex justify-content-between align-items-start gap-2">
-                          <div className="flex-grow-1 min-w-0">
+                        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2">
+                          <div className="flex-grow-1 min-w-0 w-100">
                             {/* Phân loại & Quy tắc lặp */}
-                            <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <div className="d-flex align-items-center gap-1.5 mb-1.5 flex-wrap">
                               <span className={`badge ${typeInfo.badgeClass}`} style={{ fontSize: "0.72rem", padding: "2px 8px" }}>
                                 {typeInfo.icon} {typeInfo.label}
                               </span>
                               {ev.quy_tac_lap && ev.quy_tac_lap !== "once" && (
-                                <span style={{ fontSize: "0.72rem", color: "var(--accent-success)", fontWeight: "700" }}>
+                                <span className="small fw-bold text-success">
                                   🔄 {REPEAT_RULE_MAP[ev.quy_tac_lap]}
                                 </span>
                               )}
                               {ev.bat_thong_bao !== false ? (
-                                <span style={{ fontSize: "0.72rem", color: "#10b981", fontWeight: "700", background: "rgba(16, 185, 129, 0.12)", padding: "2px 8px", borderRadius: "6px" }}>
+                                <span className="small fw-bold text-success bg-success-subtle px-2 py-0.5 rounded">
                                   🔔 Nhắc trước {formatLeadTime(ev.thoi_gian_nhac_truoc !== undefined ? ev.thoi_gian_nhac_truoc : 15)}
                                 </span>
                               ) : (
-                                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", background: "rgba(100, 116, 139, 0.12)", padding: "2px 8px", borderRadius: "6px" }}>
-                                  🔕 Tắt thông báo
+                                <span className="small text-secondary bg-secondary-subtle px-2 py-0.5 rounded">
+                                  🔕 Tắt chuông
                                 </span>
                               )}
                             </div>
 
                             {/* Tiêu đề */}
-                            <div className="day-modal-event-title" style={{ fontWeight: "800", fontSize: "0.95rem", color: "var(--text-main)", marginBottom: "4px" }}>
+                            <div className="day-modal-event-title fw-bold text-break mb-1" style={{ fontSize: "0.95rem", color: "var(--text-main)" }}>
                               {ev.tieu_de}
                             </div>
 
                             {/* Thời gian & Địa điểm */}
-                            <div className="d-flex align-items-center gap-3 flex-wrap" style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                            <div className="d-flex align-items-center gap-2.5 flex-wrap small text-secondary">
                               {ev.loai_su_kien === "deadline" ? (
-                                <span>⏰ Hạn chót: {startTime}</span>
+                                <span>⏰ Hạn: {startTime}</span>
                               ) : (
                                 <span>🕒 {startTime} - {endTime}</span>
                               )}
@@ -982,14 +1259,14 @@ export const CalendarView = () => {
 
                             {/* Mô tả tóm tắt nếu có */}
                             {ev.mo_ta && (
-                              <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              <div className="small text-secondary mt-1 text-truncate">
                                 📝 {ev.mo_ta}
                               </div>
                             )}
                           </div>
 
                           {/* Action Buttons: 🔔 Bật/Tắt, ✏️ Sửa & 🗑️ Xóa */}
-                          <div className="day-modal-event-actions d-flex align-items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <div className="d-flex align-items-center gap-1.5 flex-wrap mt-2 mt-sm-0 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               className="day-action-btn"
@@ -1036,60 +1313,68 @@ export const CalendarView = () => {
               )}
             </div>
 
-            {/* Footer */}
-            <div className="day-modal-footer d-flex justify-content-between align-items-center mt-3 pt-3" style={{ borderTop: "1px solid var(--border-color)" }}>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setSelectedDayDate(null)}
-              >
-                Đóng
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => {
-                  const targetDate = selectedDayDate;
-                  setSelectedDayDate(null);
-                  handleOpenCreateModal(targetDate);
-                }}
-              >
-                ➕ Thêm Sự Kiện Mới
-              </button>
+            {/* Footer Buttons (Bootstrap Grid Responsive) */}
+            <div className="row g-2 pt-3 mt-2 border-top w-100 m-0">
+              <div className="col-4 col-sm-auto">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary w-100 py-2 rounded-3"
+                  onClick={() => setSelectedDayDate(null)}
+                >
+                  Đóng
+                </button>
+              </div>
+              <div className="col-8 col-sm-auto ms-sm-auto">
+                <button
+                  type="button"
+                  className="btn btn-primary w-100 py-2 rounded-3 fw-bold"
+                  onClick={() => {
+                    const targetDate = selectedDayDate;
+                    setSelectedDayDate(null);
+                    handleOpenCreateModal(targetDate);
+                  }}
+                >
+                  ➕ Thêm Sự Kiện
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* ============================================================
-          CỬA SỔ MODAL CHI TIẾT SỰ KIỆN (EVENT DETAIL MODAL)
+          CỬA SỔ MODAL CHI TIẾT SỰ KIỆN (BOOTSTRAP RESPONSIVE)
           ============================================================ */}
       {detailEvent && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: "480px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <span className={`badge ${EVENT_TYPE_MAP[detailEvent.loai_su_kien]?.badgeClass || "badge-primary"}`}>
+            {/* Header */}
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+              <span className={`badge ${EVENT_TYPE_MAP[detailEvent.loai_su_kien]?.badgeClass || "badge-primary"} rounded-pill px-3 py-1.5`}>
                 {EVENT_TYPE_MAP[detailEvent.loai_su_kien]?.icon} {EVENT_TYPE_MAP[detailEvent.loai_su_kien]?.label || detailEvent.loai_su_kien}
               </span>
               <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0"
+                style={{ width: "32px", height: "32px" }}
                 onClick={() => setDetailEvent(null)}
-                style={{ background: "none", border: "none", fontSize: "1.2rem", cursor: "pointer", color: "var(--text-muted)" }}
+                title="Đóng"
               >
                 ✖
               </button>
             </div>
 
-            <h3 style={{ fontSize: "1.3rem", fontWeight: "800", color: "var(--text-main)", marginBottom: "12px", lineHeight: "1.4" }}>
+            <h4 className="fw-bold text-break mb-3 fs-5" style={{ color: "var(--text-main)" }}>
               {detailEvent.tieu_de}
-            </h3>
+            </h4>
 
             {detailEvent.mo_ta && (
-              <div className="modal-desc-box">
+              <div className="modal-desc-box mb-3">
                 {detailEvent.mo_ta}
               </div>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.88rem", color: "var(--text-main)", marginBottom: "20px" }}>
+            <div className="d-flex flex-column gap-2 mb-3 small text-secondary">
               {detailEvent.loai_su_kien === "deadline" ? (
                 <div>⏰ <strong>Hạn Deadline:</strong> {new Date(detailEvent.thoi_gian_ket_thuc || detailEvent.thoi_gian_bat_dau).toLocaleString("vi-VN", { dateStyle: "full", timeStyle: "short" })}</div>
               ) : (
@@ -1102,7 +1387,7 @@ export const CalendarView = () => {
               )}
               {detailEvent.dia_diem && <div>📍 <strong>Địa điểm:</strong> {detailEvent.dia_diem}</div>}
               {detailEvent.quy_tac_lap !== "once" && (
-                <div style={{ color: "var(--accent-success)", fontWeight: "700" }}>
+                <div className="text-success fw-bold">
                   🔄 <strong>Quy tắc lặp:</strong> {REPEAT_RULE_MAP[detailEvent.quy_tac_lap]}
                 </div>
               )}
@@ -1110,24 +1395,22 @@ export const CalendarView = () => {
 
             {/* THẺ ĐIỀU KHIỂN BẬT/TẮT THÔNG BÁO CHO SỰ KIỆN */}
             <div
+              className="card p-3 rounded-3 mb-3 border"
               style={{
                 background: detailEvent.bat_thong_bao !== false ? "rgba(16, 185, 129, 0.08)" : "rgba(100, 116, 139, 0.08)",
-                border: `1px solid ${detailEvent.bat_thong_bao !== false ? "rgba(16, 185, 129, 0.25)" : "rgba(100, 116, 139, 0.25)"}`,
-                borderRadius: "14px",
-                padding: "14px 16px",
-                marginBottom: "20px"
+                borderColor: detailEvent.bat_thong_bao !== false ? "rgba(16, 185, 129, 0.25)" : "rgba(100, 116, 139, 0.25)"
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "1.3rem" }}>
+              <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                <div className="d-flex align-items-center gap-2">
+                  <span className="fs-4">
                     {detailEvent.bat_thong_bao !== false ? "🔔" : "🔕"}
                   </span>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: "0.9rem", color: detailEvent.bat_thong_bao !== false ? "var(--accent-success)" : "var(--text-muted)" }}>
+                    <div className="fw-bold small" style={{ color: detailEvent.bat_thong_bao !== false ? "var(--accent-success)" : "var(--text-muted)" }}>
                       {detailEvent.bat_thong_bao !== false ? "Thông báo ĐANG BẬT" : "Thông báo ĐANG TẮT"}
                     </div>
-                    <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                    <div className="small text-secondary" style={{ fontSize: "0.78rem" }}>
                       {detailEvent.bat_thong_bao !== false
                         ? `Nhắc trước: ${formatLeadTime(detailEvent.thoi_gian_nhac_truoc !== undefined ? detailEvent.thoi_gian_nhac_truoc : 15)}`
                         : "Sự kiện này hiện không gửi thông báo chuông"}
@@ -1138,40 +1421,24 @@ export const CalendarView = () => {
                 {/* Nút bật/tắt nhanh 1-click */}
                 <button
                   type="button"
-                  className={detailEvent.bat_thong_bao !== false ? "btn-secondary" : "btn-primary"}
+                  className={detailEvent.bat_thong_bao !== false ? "btn btn-sm btn-outline-success rounded-pill px-3 py-1.5 fw-bold" : "btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-bold"}
                   onClick={() => handleQuickToggleNotification(detailEvent)}
-                  style={{
-                    padding: "6px 14px",
-                    fontSize: "0.82rem",
-                    fontWeight: 700,
-                    borderRadius: "9999px",
-                    whiteSpace: "nowrap"
-                  }}
                   title={detailEvent.bat_thong_bao !== false ? "Bấm để Tắt thông báo cho sự kiện này" : "Bấm để Bật thông báo cho sự kiện này"}
                 >
-                  {detailEvent.bat_thong_bao !== false ? "🔕 Tắt thông báo" : "🔔 Bật thông báo"}
+                  {detailEvent.bat_thong_bao !== false ? "🔕 Tắt chuông" : "🔔 Bật chuông"}
                 </button>
               </div>
 
               {/* Lựa chọn số phút nhắc trước khi đang bật */}
               {detailEvent.bat_thong_bao !== false && (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "12px", paddingTop: "10px", borderTop: "1px dashed rgba(16, 185, 129, 0.25)" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-main)", whiteSpace: "nowrap" }}>
+                <div className="d-flex align-items-center gap-2 mt-2.5 pt-2.5 border-top border-success-subtle">
+                  <label className="small fw-bold text-nowrap m-0" style={{ color: "var(--text-main)" }}>
                     ⏰ Nhắc trước:
                   </label>
                   <select
+                    className="form-select form-select-sm rounded-3"
                     value={detailEvent.thoi_gian_nhac_truoc !== undefined ? detailEvent.thoi_gian_nhac_truoc : 15}
                     onChange={(e) => handleQuickChangeLeadTime(detailEvent, e.target.value)}
-                    style={{
-                      flex: 1,
-                      padding: "6px 10px",
-                      borderRadius: "8px",
-                      fontSize: "0.82rem",
-                      border: "1px solid var(--border-color)",
-                      background: "var(--card-bg)",
-                      color: "var(--text-main)",
-                      cursor: "pointer"
-                    }}
                   >
                     {LEAD_TIME_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -1183,50 +1450,77 @@ export const CalendarView = () => {
               )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-              <button className="btn-secondary" onClick={() => setDetailEvent(null)}>
-                Đóng
-              </button>
-              <button className="btn-primary" onClick={() => handleOpenEditModal(detailEvent)}>
-                ✏️ Chỉnh sửa
-              </button>
-              <button className="btn-primary" style={{ background: "#ef4444" }} onClick={() => handleOpenDeleteModal(detailEvent)}>
-                🗑️ Xóa
-              </button>
+            {/* Footer Buttons (Bootstrap Responsive Grid) */}
+            <div className="row g-2 pt-2 border-top w-100 m-0">
+              <div className="col-6 col-sm-auto">
+                <button
+                  type="button"
+                  className="btn btn-primary w-100 py-2 rounded-3 fw-bold"
+                  onClick={() => handleOpenEditModal(detailEvent)}
+                >
+                  ✏️ Chỉnh sửa
+                </button>
+              </div>
+              <div className="col-6 col-sm-auto">
+                <button
+                  type="button"
+                  className="btn btn-danger w-100 py-2 rounded-3 fw-bold"
+                  onClick={() => handleOpenDeleteModal(detailEvent)}
+                >
+                  🗑️ Xóa
+                </button>
+              </div>
+              <div className="col-12 col-sm-auto ms-sm-auto">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary w-100 py-2 rounded-3"
+                  onClick={() => setDetailEvent(null)}
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* ============================================================
-          CỬA SỔ MODAL THÊM / SỬA SỰ KIỆN (CREATE / EDIT FORM MODAL)
+          CỬA SỔ MODAL THÊM / SỬA SỰ KIỆN (BOOTSTRAP RESPONSIVE FORM)
           ============================================================ */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: "560px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "1.3rem", fontWeight: "800", margin: 0 }}>
+            {/* Header */}
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+              <h4 className="fw-bold m-0 fs-5 text-truncate" style={{ color: "var(--text-main)" }}>
                 {editingEvent ? "✏️ Chỉnh Sửa Sự Kiện" : "➕ Tạo Sự Kiện Mới"}
-              </h3>
+              </h4>
               <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0"
+                style={{ width: "32px", height: "32px" }}
                 onClick={() => setShowModal(false)}
-                style={{ background: "none", border: "none", fontSize: "1.2rem", cursor: "pointer", color: "var(--text-muted)" }}
+                title="Đóng"
               >
                 ✖
               </button>
             </div>
 
             {formError && (
-              <div style={{ background: "rgba(239, 68, 68, 0.15)", color: "var(--accent-danger)", border: "1px solid rgba(239, 68, 68, 0.3)", padding: "12px 16px", borderRadius: "14px", fontSize: "0.85rem", fontWeight: "600", marginBottom: "16px" }}>
+              <div className="alert alert-danger py-2 px-3 small rounded-3 mb-3 fw-semibold">
                 ⚠️ {formError}
               </div>
             )}
 
             <form onSubmit={handleSubmitForm}>
-              <div className="form-group">
-                <label>Tiêu đề sự kiện *</label>
+              {/* Tiêu đề sự kiện */}
+              <div className="mb-3">
+                <label className="form-label fw-bold small text-secondary mb-1">
+                  Tiêu đề sự kiện <span className="text-danger">*</span>
+                </label>
                 <input
                   type="text"
+                  className="form-control form-control-md rounded-3"
                   required
                   value={formData.tieu_de}
                   onChange={(e) => setFormData({ ...formData, tieu_de: e.target.value })}
@@ -1234,10 +1528,14 @@ export const CalendarView = () => {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                <div className="form-group">
-                  <label>Loại sự kiện *</label>
+              {/* Hàng 1: Loại sự kiện & Quy tắc lặp (Bootstrap Grid) */}
+              <div className="row g-2 g-sm-3 mb-3">
+                <div className="col-12 col-sm-6">
+                  <label className="form-label fw-bold small text-secondary mb-1">
+                    Loại sự kiện <span className="text-danger">*</span>
+                  </label>
                   <select
+                    className="form-select rounded-3"
                     value={formData.loai_su_kien}
                     onChange={(e) => {
                       const newType = e.target.value;
@@ -1265,9 +1563,12 @@ export const CalendarView = () => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Quy tắc lặp lại</label>
+                <div className="col-12 col-sm-6">
+                  <label className="form-label fw-bold small text-secondary mb-1">
+                    Quy tắc lặp lại
+                  </label>
                   <select
+                    className="form-select rounded-3"
                     value={formData.quy_tac_lap}
                     onChange={(e) => setFormData({ ...formData, quy_tac_lap: e.target.value })}
                     disabled={!!editingEvent}
@@ -1281,43 +1582,52 @@ export const CalendarView = () => {
               </div>
 
               {editingEvent && (editingEvent.quy_tac_lap !== "once" || editingEvent.nhom_lap_id) && (
-                <div className="modal-notice-box info">
-                  <label className="notice-label">
+                <div className="alert alert-info py-2 px-3 mb-3 rounded-3 small">
+                  <div className="fw-bold mb-1">
                     🔄 Sự kiện này thuộc một chuỗi lặp lại. Chọn phạm vi áp dụng sửa:
-                  </label>
-                  <div style={{ display: "flex", gap: "16px", fontSize: "0.85rem" }}>
-                    <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+                  </div>
+                  <div className="d-flex gap-3 flex-wrap">
+                    <div className="form-check m-0">
                       <input
+                        className="form-check-input"
                         type="radio"
+                        id="upSingle"
                         name="update_mode"
                         value="single"
                         checked={formData.update_mode === "single"}
                         onChange={() => setFormData({ ...formData, update_mode: "single" })}
                       />
-                      <span>Chỉ sự kiện này</span>
-                    </label>
-                    <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <label className="form-check-label" htmlFor="upSingle">
+                        Chỉ sự kiện này
+                      </label>
+                    </div>
+                    <div className="form-check m-0">
                       <input
+                        className="form-check-input"
                         type="radio"
+                        id="upAll"
                         name="update_mode"
                         value="all"
                         checked={formData.update_mode === "all"}
                         onChange={() => setFormData({ ...formData, update_mode: "all" })}
                       />
-                      <span>Toàn bộ chuỗi lặp</span>
-                    </label>
+                      <label className="form-check-label" htmlFor="upAll">
+                        Toàn bộ chuỗi lặp
+                      </label>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* NẾU LÀ DEADLINE: CHỈ HIỂN THỊ HẠN DEADLINE (ẨN THỜI GIAN KẾT THÚC) */}
+              {/* NẾU LÀ DEADLINE: CHỈ HIỂN THỊ HẠN DEADLINE */}
               {formData.loai_su_kien === "deadline" ? (
-                <div className="form-group" style={{ marginBottom: "16px" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, color: "var(--text-main)" }}>
-                    <span>⏰</span> Hạn chót Deadline *
+                <div className="mb-3">
+                  <label className="form-label fw-bold small text-secondary mb-1">
+                    ⏰ Hạn chót Deadline <span className="text-danger">*</span>
                   </label>
                   <input
                     type="datetime-local"
+                    className="form-control rounded-3"
                     required
                     value={formData.thoi_gian_bat_dau}
                     onChange={(e) =>
@@ -1328,27 +1638,33 @@ export const CalendarView = () => {
                       })
                     }
                   />
-                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                  <div className="small text-secondary mt-1">
                     💡 Đối với Deadline, chỉ cần chọn hạn chót. Hệ thống sẽ theo dõi và nhắc bạn đúng hạn.
                   </div>
                 </div>
               ) : (
-                /* NẾU LÀ LOẠI SỰ KIỆN KHÁC: HIỂN THỊ CẢ THỜI GIAN BẮT ĐẦU VÀ KẾT THÚC */
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                  <div className="form-group">
-                    <label>Thời gian bắt đầu *</label>
+                /* NẾU LÀ LOẠI SỰ KIỆN KHÁC: HIỂN THỊ CẢ BẮT ĐẦU VÀ KẾT THÚC */
+                <div className="row g-2 g-sm-3 mb-3">
+                  <div className="col-12 col-sm-6">
+                    <label className="form-label fw-bold small text-secondary mb-1">
+                      Thời gian bắt đầu <span className="text-danger">*</span>
+                    </label>
                     <input
                       type="datetime-local"
+                      className="form-control rounded-3"
                       required
                       value={formData.thoi_gian_bat_dau}
                       onChange={(e) => setFormData({ ...formData, thoi_gian_bat_dau: e.target.value })}
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label>Thời gian kết thúc *</label>
+                  <div className="col-12 col-sm-6">
+                    <label className="form-label fw-bold small text-secondary mb-1">
+                      Thời gian kết thúc <span className="text-danger">*</span>
+                    </label>
                     <input
                       type="datetime-local"
+                      className="form-control rounded-3"
                       required
                       value={formData.thoi_gian_ket_thuc}
                       onChange={(e) => setFormData({ ...formData, thoi_gian_ket_thuc: e.target.value })}
@@ -1357,107 +1673,91 @@ export const CalendarView = () => {
                 </div>
               )}
 
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "14px" }}>
-                <div className="form-group">
-                  <label>Địa điểm (nếu có)</label>
+              {/* Hàng: Địa điểm & Màu sắc (Bootstrap Grid) */}
+              <div className="row g-2 g-sm-3 mb-3">
+                <div className="col-8 col-sm-8">
+                  <label className="form-label fw-bold small text-secondary mb-1">
+                    Địa điểm (nếu có)
+                  </label>
                   <input
                     type="text"
+                    className="form-control rounded-3"
                     value={formData.dia_diem}
                     onChange={(e) => setFormData({ ...formData, dia_diem: e.target.value })}
-                    placeholder="Phòng B302 / Online Zoom / Gym Fitness"
+                    placeholder="Phòng B302 / Online Zoom / Gym"
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Màu hiển thị</label>
+                <div className="col-4 col-sm-4">
+                  <label className="form-label fw-bold small text-secondary mb-1">
+                    Màu sắc
+                  </label>
                   <input
                     type="color"
+                    className="form-control form-control-color w-100 rounded-3"
+                    style={{ height: "38px" }}
                     value={formData.mau_sac}
                     onChange={(e) => setFormData({ ...formData, mau_sac: e.target.value })}
-                    style={{ height: "46px", padding: "4px", cursor: "pointer" }}
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Ghi chú / Mô tả chi tiết</label>
+              {/* Ghi chú / Mô tả chi tiết */}
+              <div className="mb-3">
+                <label className="form-label fw-bold small text-secondary mb-1">
+                  Ghi chú / Mô tả chi tiết
+                </label>
                 <textarea
+                  className="form-control rounded-3"
                   rows="3"
                   value={formData.mo_ta}
                   onChange={(e) => setFormData({ ...formData, mo_ta: e.target.value })}
-                  placeholder="Ghi chú nội dung môn học, bài tập gym hoặc công việc cần thực hiện..."
+                  placeholder="Ghi chú nội dung môn học, bài tập hoặc công việc cần thực hiện..."
                 />
               </div>
 
-              {/* CỤM CÀI ĐẶT THÔNG BÁO CHO SỰ KIỆN */}
+              {/* CỤM CÀI ĐẶT THÔNG BÁO CHO SỰ KIỆN (Bootstrap Switch & Card) */}
               <div
+                className="card p-3 rounded-3 mb-3 border"
                 style={{
                   background: formData.bat_thong_bao ? "rgba(59, 130, 246, 0.08)" : "rgba(100, 116, 139, 0.08)",
-                  border: `1px solid ${formData.bat_thong_bao ? "rgba(59, 130, 246, 0.25)" : "rgba(100, 116, 139, 0.2)"}`,
-                  borderRadius: "14px",
-                  padding: "14px 16px",
-                  marginBottom: "18px"
+                  borderColor: formData.bat_thong_bao ? "rgba(59, 130, 246, 0.25)" : "rgba(100, 116, 139, 0.2)"
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div className="d-flex justify-content-between align-items-center">
                   <div>
-                    <label style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", marginBottom: "2px" }}>
+                    <div className="fw-bold small d-flex align-items-center gap-1.5 mb-0.5" style={{ color: "var(--text-main)" }}>
                       <span>{formData.bat_thong_bao ? "🔔" : "🔕"}</span>
                       <span>Bật thông báo sự kiện</span>
-                    </label>
-                    <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                    </div>
+                    <div className="small text-secondary" style={{ fontSize: "0.78rem" }}>
                       Hệ thống sẽ nhắc nhở và phát chuông khi sự kiện sắp diễn ra
                     </div>
                   </div>
 
-                  {/* Toggle switch */}
-                  <label style={{ cursor: "pointer", position: "relative", display: "inline-block", width: "46px", height: "24px", margin: 0 }}>
+                  {/* Bootstrap Switch */}
+                  <div className="form-check form-switch m-0 fs-5">
                     <input
+                      className="form-check-input"
                       type="checkbox"
+                      role="switch"
+                      id="eventNotifySwitch"
                       checked={formData.bat_thong_bao}
                       onChange={(e) => setFormData({ ...formData, bat_thong_bao: e.target.checked })}
-                      style={{ opacity: 0, width: 0, height: 0 }}
+                      style={{ cursor: "pointer" }}
                     />
-                    <span
-                      style={{
-                        position: "absolute",
-                        cursor: "pointer",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: formData.bat_thong_bao ? "var(--primary)" : "#cbd5e1",
-                        transition: "0.3s",
-                        borderRadius: "24px"
-                      }}
-                    >
-                      <span
-                        style={{
-                          position: "absolute",
-                          content: '""',
-                          height: "18px",
-                          width: "18px",
-                          left: formData.bat_thong_bao ? "24px" : "3px",
-                          bottom: "3px",
-                          backgroundColor: "white",
-                          transition: "0.3s",
-                          borderRadius: "50%",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-                        }}
-                      />
-                    </span>
-                  </label>
+                  </div>
                 </div>
 
                 {formData.bat_thong_bao && (
-                  <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px dashed rgba(59, 130, 246, 0.2)" }}>
-                    <label style={{ fontSize: "0.82rem", fontWeight: 700, marginBottom: "6px", display: "block" }}>
+                  <div className="mt-2.5 pt-2.5 border-top border-primary-subtle">
+                    <label className="form-label small fw-bold text-secondary mb-1">
                       ⏰ Thời gian thông báo trước:
                     </label>
                     <select
+                      className="form-select form-select-sm rounded-3"
                       value={formData.thoi_gian_nhac_truoc}
                       onChange={(e) => setFormData({ ...formData, thoi_gian_nhac_truoc: Number(e.target.value) })}
-                      style={{ width: "100%" }}
                     >
                       {LEAD_TIME_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -1469,13 +1769,27 @@ export const CalendarView = () => {
                 )}
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "24px" }}>
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)} disabled={submitting}>
-                  Hủy
-                </button>
-                <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? "⏳ Đang lưu..." : editingEvent ? "Cập Nhật Sự Kiện" : "Lưu Sự Kiện Mới"}
-                </button>
+              {/* Footer Buttons (Bootstrap Grid Responsive) */}
+              <div className="row g-2 pt-2 border-top w-100 m-0">
+                <div className="col-6 col-sm-auto ms-sm-auto">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary w-100 px-4 py-2 rounded-3"
+                    onClick={() => setShowModal(false)}
+                    disabled={submitting}
+                  >
+                    Hủy
+                  </button>
+                </div>
+                <div className="col-6 col-sm-auto">
+                  <button
+                    type="submit"
+                    className="btn btn-primary w-100 px-4 py-2 rounded-3 fw-bold"
+                    disabled={submitting}
+                  >
+                    {submitting ? "⏳ Đang lưu..." : editingEvent ? "Cập Nhật" : "Lưu Sự Kiện"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -1483,69 +1797,96 @@ export const CalendarView = () => {
       )}
 
       {/* ============================================================
-          CỬA SỔ MODAL XÁC NHẬN XÓA (DELETE CONFIRMATION MODAL)
+          CỬA SỔ MODAL XÁC NHẬN XÓA (BOOTSTRAP RESPONSIVE)
           ============================================================ */}
       {deleteModal.show && deleteModal.event && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: "440px" }}>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: "800", marginBottom: "12px", color: "var(--accent-danger)" }}>
-              🗑️ Xác Nhận Xóa Sự Kiện
-            </h3>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-main)", marginBottom: "16px" }}>
+            <div className="d-flex align-items-center gap-2 mb-2 text-danger">
+              <span className="fs-4">🗑️</span>
+              <h5 className="fw-bold m-0 fs-5">Xác Nhận Xóa Sự Kiện</h5>
+            </div>
+            <p className="small text-secondary mb-3">
               Bạn có chắc chắn muốn xóa sự kiện <strong>"{deleteModal.event.tieu_de}"</strong>?
             </p>
 
             {(deleteModal.event.quy_tac_lap !== "once" || deleteModal.event.nhom_lap_id) && (
-              <div className="modal-notice-box danger">
-                <label className="notice-label danger">
+              <div className="alert alert-danger py-2.5 px-3 mb-3 rounded-3 small">
+                <div className="fw-bold mb-2">
                   🔄 Sự kiện này thuộc một chuỗi lặp lại. Chọn phạm vi xóa:
-                </label>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.85rem" }}>
-                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+                </div>
+                <div className="d-flex flex-column gap-1.5">
+                  <div className="form-check">
                     <input
+                      className="form-check-input"
                       type="radio"
+                      id="delSingle"
                       name="delete_mode"
                       value="single"
                       checked={deleteModal.deleteMode === "single"}
                       onChange={() => setDeleteModal((prev) => ({ ...prev, deleteMode: "single" }))}
                     />
-                    <span>Chỉ xóa sự kiện này</span>
-                  </label>
-                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <label className="form-check-label" htmlFor="delSingle">
+                      Chỉ xóa sự kiện này
+                    </label>
+                  </div>
+                  <div className="form-check">
                     <input
+                      className="form-check-input"
                       type="radio"
+                      id="delAll"
                       name="delete_mode"
                       value="all"
                       checked={deleteModal.deleteMode === "all"}
                       onChange={() => setDeleteModal((prev) => ({ ...prev, deleteMode: "all" }))}
                     />
-                    <span>Xóa tất cả các sự kiện trong chuỗi lặp</span>
-                  </label>
+                    <label className="form-check-label" htmlFor="delAll">
+                      Xóa tất cả sự kiện trong chuỗi lặp
+                    </label>
+                  </div>
                 </div>
               </div>
             )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "16px" }}>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setDeleteModal({ show: false, event: null, deleteMode: "single", submitting: false })}
-                disabled={deleteModal.submitting}
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
-                style={{ background: "#ef4444" }}
-                onClick={handleConfirmDelete}
-                disabled={deleteModal.submitting}
-              >
-                {deleteModal.submitting ? "⏳ Đang xóa..." : "Xác Nhận Xóa"}
-              </button>
+            <div className="row g-2 pt-2 border-top w-100 m-0">
+              <div className="col-6">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary w-100 py-2 rounded-3"
+                  onClick={() => setDeleteModal({ show: false, event: null, deleteMode: "single", submitting: false })}
+                  disabled={deleteModal.submitting}
+                >
+                  Hủy
+                </button>
+              </div>
+              <div className="col-6">
+                <button
+                  type="button"
+                  className="btn btn-danger w-100 py-2 rounded-3 fw-bold"
+                  onClick={handleConfirmDelete}
+                  disabled={deleteModal.submitting}
+                >
+                  {deleteModal.submitting ? "⏳ Đang xóa..." : "Xác Nhận Xóa"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* ============================================================
+          NÚT TẠO SỰ KIỆN NỔI (FLOATING ACTION BUTTON - FAB) TRÊN MOBILE
+          ============================================================ */}
+      {isMobile && (
+        <button
+          type="button"
+          className="cal-fab-btn d-flex align-items-center justify-content-center shadow-lg"
+          onClick={() => handleOpenCreateModal(currentDate)}
+          title="Tạo sự kiện mới"
+          aria-label="Tạo sự kiện mới"
+        >
+          <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>➕</span>
+        </button>
       )}
     </div>
   );

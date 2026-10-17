@@ -15,6 +15,8 @@ import { ProjectsView } from "./views/ProjectsView";
 import { AdminDashboardView } from "./views/AdminDashboardView";
 import { MessagesView } from "./views/MessagesView";
 import { DangKyChuyenGiaModal } from "./components/DangKyChuyenGiaModal";
+import { MobileBottomNav } from "./components/MobileBottomNav";
+import { PwaInstallPrompt } from "./components/PwaInstallPrompt";
 
 function MainApp() {
   const { user, loading, theme, toggleTheme, isAdmin } = useAuth();
@@ -138,9 +140,9 @@ function MainApp() {
     <div className={`app-container no-sidebar ${activeTab === "calendar" ? "calendar-view-active" : ""}`}>
       {/* Top Header Bar */}
       <header className="neu-top-header">
-        <div className="brand-logo-inline" onClick={() => setActiveTab("calendar")}>
+        <div className="brand-logo-inline" onClick={() => setActiveTab("calendar")} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
           <div className="logo-icon-circle">LP</div>
-          <span className="logo-title">LIFE PLANNER</span>
+          <span className="logo-title" style={{ whiteSpace: "nowrap" }}>LIFE PLANNER</span>
         </div>
 
         {/* Header Right Actions */}
@@ -271,8 +273,7 @@ function MainApp() {
             <span className="d-none d-sm-inline">Tin Nhắn</span>
           </button>
 
-          {/* Chuông Trung Tâm Thông Báo (Tất cả người dùng & Quản trị viên) */}
-          <NotificationCenterDropdown />
+          {/* Icon Chuông Thông Báo đã được ẩn theo yêu cầu */}
 
           <button
             id="header-theme-toggle"
@@ -339,6 +340,16 @@ function MainApp() {
         show={showDangKyModal}
         onClose={() => setShowDangKyModal(false)}
       />
+
+      {/* Thanh Điều Hướng Đáy Màn Hình Mobile (PWA Mobile Bottom Bar) */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenProfile={() => setShowProfileModal(true)}
+      />
+
+      {/* Banner / Prompt Gợi Ý Cài Đặt PWA Ra Màn Hình Chính */}
+      <PwaInstallPrompt />
     </div>
   );
 }

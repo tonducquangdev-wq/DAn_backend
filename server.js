@@ -17,11 +17,14 @@ const adminRouter = require("./Router/adminRouter");
 const chatTapLuyenRouter = require("./Router/chatTapLuyenRouter");
 const banBeRouter = require("./Router/banBeRouter");
 const tinNhanRiengRouter = require("./Router/tinNhanRiengRouter");
+const pushRouter = require("./Router/pushRouter");
 const syncExpertUsers = require("./Utils/syncExpertUsers");
+const { startDailyBriefingScheduler } = require("./Utils/dailyBriefingScheduler");
 
 dotenv.config();
 connectDB().then(() => {
     syncExpertUsers();
+    startDailyBriefingScheduler();
 });
 
 const app = express();
@@ -41,6 +44,7 @@ app.use("/api/tap-luyen", tapLuyenRouter);
 app.use("/api/chat-tap-luyen", chatTapLuyenRouter);
 app.use("/api/ban-be", banBeRouter);
 app.use("/api/tin-nhan-rieng", tinNhanRiengRouter);
+app.use("/api/push", pushRouter);
 app.use("/api/chuyen-gia", chuyenGiaRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api", monHocRouter);

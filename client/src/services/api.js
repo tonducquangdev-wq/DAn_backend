@@ -4,6 +4,7 @@ const request = async (endpoint, options = {}) => {
   const token = localStorage.getItem("life_planner_token");
   const headers = {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
     ...(options.headers || {})
   };
   if (token) {
@@ -163,5 +164,16 @@ export const api = {
   getTinNhanVoiNguoiDung: (partnerId) => request(`/tin-nhan-rieng/user/${partnerId}`),
   guiTinNhanRieng: (data) => request("/tin-nhan-rieng", { method: "POST", body: JSON.stringify(data) }),
   getTongTinNhanChuaDoc: () => request("/tin-nhan-rieng/chua-doc/count"),
-  xoaTinNhanRieng: (id) => request(`/tin-nhan-rieng/${id}`, { method: "DELETE" })
+  xoaTinNhanRieng: (id) => request(`/tin-nhan-rieng/${id}`, { method: "DELETE" }),
+
+  // Web Push Notifications (Thông báo đẩy trên điện thoại PWA)
+  getPushPublicKey: () => request("/push/public-key"),
+  subscribePush: (data) => request("/push/subscribe", { method: "POST", body: JSON.stringify(data) }),
+  unsubscribePush: (data) => request("/push/unsubscribe", { method: "POST", body: JSON.stringify(data) }),
+  sendTestPush: () => request("/push/test", { method: "POST" }),
+  
+  // Thông báo tổng hợp sự kiện trong ngày (Daily Event Briefing)
+  getDailyBriefingSettings: () => request("/push/daily-briefing"),
+  updateDailyBriefingSettings: (data) => request("/push/daily-briefing", { method: "PUT", body: JSON.stringify(data) }),
+  testDailyBriefing: () => request("/push/daily-briefing/test", { method: "POST" })
 };

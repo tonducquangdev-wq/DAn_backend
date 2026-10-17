@@ -2,6 +2,7 @@ const TinNhanRieng = require("../../Model/TinNhanRieng");
 const User = require("../../Model/User");
 const GiaSu = require("../../Model/GiaSu");
 const HuanLuyenVien = require("../../Model/HuanLuyenVien");
+const { sendPushToUser } = require("../../Utils/pushService");
 const mongoose = require("mongoose");
 
 /**
@@ -213,6 +214,14 @@ const guiTinNhan = async (req, res) => {
         const populated = await TinNhanRieng.findById(message._id)
             .populate("nguoi_gui", "name email role avatar")
             .populate("nguoi_nhan", "name email role avatar");
+
+        // Gửi push notification ra màn hình khóa điện thoại của người nhận
+        sendPushToUser(recipient_id, {
+            title: `💬 Tin nhắn từ ${req.user.name}`,
+            body: noi_dung.trim(),
+            url: "/#messages",
+            data: { partnerId: currentUserId }
+        }).catch(err => console.error("Lỗi gửi push tin nhắn:", err));
 
         res.status(201).json({
             success: true,

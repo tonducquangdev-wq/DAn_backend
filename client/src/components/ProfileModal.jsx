@@ -7,6 +7,8 @@ import {
   playNotificationSound,
   requestBrowserNotificationPermission
 } from "../services/notificationService";
+import { PushNotificationManager } from "./PushNotificationManager";
+import { DailyBriefingSettings } from "./DailyBriefingSettings";
 
 const EVENT_CATEGORIES = {
   "hoc-tap": { label: "Học tập", icon: "📚", color: "#3b82f6" },
@@ -300,7 +302,7 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
         className="modal-content profile-modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: activeTab === "notifications" ? "680px" : "520px",
+          maxWidth: activeTab === "notifications" ? "700px" : "600px",
           width: "95%",
           maxHeight: "90vh",
           overflowY: "auto",
@@ -346,7 +348,8 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
             padding: "4px",
             borderRadius: "9999px",
             marginBottom: "18px",
-            border: "1px solid var(--border-color)"
+            border: "1px solid var(--border-color)",
+            alignItems: "center"
           }}
         >
           <button
@@ -366,21 +369,23 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "6px"
+              gap: "6px",
+              whiteSpace: "nowrap"
             }}
             onClick={() => {
               setActiveTab("info");
               setStatusMsg({ type: "", text: "" });
             }}
           >
-            <span>👤</span> Thông Tin
+            <span>👤</span>
+            <span>Thông Tin</span>
           </button>
 
           <button
             type="button"
             className="profile-modal-tab-btn"
             style={{
-              flex: 1.2,
+              flex: 1.4,
               padding: "8px 12px",
               borderRadius: "9999px",
               border: "none",
@@ -393,14 +398,16 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "6px"
+              gap: "6px",
+              whiteSpace: "nowrap"
             }}
             onClick={() => {
               setActiveTab("notifications");
               setStatusMsg({ type: "", text: "" });
             }}
           >
-            <span>🔔</span> Thông Báo Sự Kiện
+            <span>🔔</span>
+            <span>Thông Báo Sự Kiện</span>
           </button>
 
           <button
@@ -420,14 +427,16 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "6px"
+              gap: "6px",
+              whiteSpace: "nowrap"
             }}
             onClick={() => {
               setActiveTab("security");
               setStatusMsg({ type: "", text: "" });
             }}
           >
-            <span>🔒</span> Bảo Mật
+            <span>🔒</span>
+            <span>Bảo Mật</span>
           </button>
         </div>
 
@@ -661,6 +670,12 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
             ============================================================ */}
         {activeTab === "notifications" && (
           <div>
+            {/* THÔNG BÁO ĐẨY RA MÀN HÌNH KHÓA ĐIỆN THOẠI (WEB PUSH PWA) */}
+            <PushNotificationManager />
+
+            {/* THÔNG BÁO TỔNG HỢP SỰ KIỆN TRONG NGÀY (DAILY DIGEST) */}
+            <DailyBriefingSettings />
+
             {/* Phân vùng 1: Cài đặt thông báo chung */}
             <div
               style={{

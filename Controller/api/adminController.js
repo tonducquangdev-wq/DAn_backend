@@ -8,6 +8,7 @@ const MonHoc = require("../../Model/MonHoc");
 const SuKien = require("../../Model/SuKien");
 const DuAn = require("../../Model/DuAn");
 const KeHoachTapLuyen = require("../../Model/KeHoachTapLuyen");
+const { sendPushBroadcast } = require("../../Utils/pushService");
 
 /**
  * 1. Thống kê tổng quan hệ thống cho Admin Dashboard
@@ -539,6 +540,13 @@ const guiThongBaoAdmin = async (req, res) => {
         }));
 
         await ThongBao.insertMany(notifications);
+
+        // Bắn Push Notification ra điện thoại của tất cả người nhận
+        sendPushBroadcast({
+            title: `📢 ${tieu_de.trim()}`,
+            body: noi_dung.trim(),
+            url: "/"
+        }, target_type).catch(err => console.error("Lỗi gửi push broadcast:", err));
 
         res.status(200).json({
             success: true,
