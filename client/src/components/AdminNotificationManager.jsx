@@ -196,9 +196,10 @@ export const AdminNotificationManager = ({ usersList = [], onSelectUser, initial
                     type="button"
                     onClick={() => setTargetType(item.id)}
                     style={{
+                      minHeight: "42px",
                       padding: "8px 14px",
                       borderRadius: "14px",
-                      fontSize: "0.8rem",
+                      fontSize: "0.82rem",
                       fontWeight: 700,
                       cursor: "pointer",
                       border: targetType === item.id ? "1px solid #3b82f6" : "1px solid var(--border-color)",
@@ -264,9 +265,10 @@ export const AdminNotificationManager = ({ usersList = [], onSelectUser, initial
                     type="button"
                     onClick={() => setLoai(item.id)}
                     style={{
-                      padding: "6px 12px",
+                      minHeight: "40px",
+                      padding: "8px 14px",
                       borderRadius: "12px",
-                      fontSize: "0.78rem",
+                      fontSize: "0.82rem",
                       fontWeight: 700,
                       cursor: "pointer",
                       display: "flex",
@@ -509,15 +511,12 @@ export const AdminNotificationManager = ({ usersList = [], onSelectUser, initial
           <button
             type="button"
             onClick={fetchHistory}
+            className="btn btn-outline-secondary btn-sm"
             style={{
+              minHeight: "38px",
               padding: "6px 14px",
               borderRadius: "12px",
-              border: "1px solid var(--border-color)",
-              background: "var(--neu-bg)",
-              color: "var(--text-main)",
-              fontSize: "0.8rem",
-              fontWeight: 700,
-              cursor: "pointer"
+              fontWeight: 700
             }}
           >
             🔄 Làm Mới
@@ -534,7 +533,7 @@ export const AdminNotificationManager = ({ usersList = [], onSelectUser, initial
             Chưa có đợt phát thông báo nào được thực hiện. Hãy soạn thông báo ở biểu mẫu phía trên để gửi thông báo đầu tiên!
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div className="table-responsive">
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
               <thead>
                 <tr style={{ background: "rgba(0,0,0,0.03)", borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)", textTransform: "uppercase", fontSize: "0.78rem" }}>

@@ -247,28 +247,30 @@ export const AdminChartsAnalytics = ({ stats, loading }) => {
           </div>
 
           {/* Bộ lọc loại dữ liệu hiển thị */}
+          {/* Bộ lọc loại dữ liệu hiển thị (Touch-friendly on mobile) */}
           <div
+            className="d-flex flex-wrap gap-1 p-1 rounded-3 border w-100 w-sm-auto"
             style={{
-              display: "inline-flex",
               background: "var(--neu-bg)",
-              boxShadow: "inset 2px 2px 5px var(--neu-inset-dark), inset -2px -2px 5px var(--neu-inset-light)",
-              borderRadius: "12px",
-              padding: "4px"
+              boxShadow: "inset 2px 2px 5px var(--neu-inset-dark), inset -2px -2px 5px var(--neu-inset-light)"
             }}
           >
             <button
               type="button"
               onClick={() => setActiveGrowthSeries("all")}
+              className="flex-fill"
               style={{
-                padding: "6px 12px",
+                minHeight: "38px",
+                padding: "6px 14px",
                 borderRadius: "8px",
                 border: "none",
                 background: activeGrowthSeries === "all" ? "var(--card-bg)" : "transparent",
                 color: activeGrowthSeries === "all" ? "var(--primary)" : "var(--text-muted)",
                 fontWeight: 700,
-                fontSize: "0.78rem",
+                fontSize: "0.82rem",
                 cursor: "pointer",
-                boxShadow: activeGrowthSeries === "all" ? "2px 2px 6px var(--neu-shadow-dark)" : "none"
+                boxShadow: activeGrowthSeries === "all" ? "2px 2px 6px var(--neu-shadow-dark)" : "none",
+                transition: "all 0.2s"
               }}
             >
               Tất Cả
@@ -276,42 +278,49 @@ export const AdminChartsAnalytics = ({ stats, loading }) => {
             <button
               type="button"
               onClick={() => setActiveGrowthSeries("users")}
+              className="flex-fill"
               style={{
-                padding: "6px 12px",
+                minHeight: "38px",
+                padding: "6px 14px",
                 borderRadius: "8px",
                 border: "none",
                 background: activeGrowthSeries === "users" ? "var(--card-bg)" : "transparent",
                 color: activeGrowthSeries === "users" ? "#3b82f6" : "var(--text-muted)",
                 fontWeight: 700,
-                fontSize: "0.78rem",
+                fontSize: "0.82rem",
                 cursor: "pointer",
-                boxShadow: activeGrowthSeries === "users" ? "2px 2px 6px var(--neu-shadow-dark)" : "none"
+                boxShadow: activeGrowthSeries === "users" ? "2px 2px 6px var(--neu-shadow-dark)" : "none",
+                transition: "all 0.2s"
               }}
             >
-              👤 Người Dùng Mới
+              👤 Người Dùng
             </button>
             <button
               type="button"
               onClick={() => setActiveGrowthSeries("applications")}
+              className="flex-fill"
               style={{
-                padding: "6px 12px",
+                minHeight: "38px",
+                padding: "6px 14px",
                 borderRadius: "8px",
                 border: "none",
                 background: activeGrowthSeries === "applications" ? "var(--card-bg)" : "transparent",
                 color: activeGrowthSeries === "applications" ? "#10b981" : "var(--text-muted)",
                 fontWeight: 700,
-                fontSize: "0.78rem",
+                fontSize: "0.82rem",
                 cursor: "pointer",
-                boxShadow: activeGrowthSeries === "applications" ? "2px 2px 6px var(--neu-shadow-dark)" : "none"
+                boxShadow: activeGrowthSeries === "applications" ? "2px 2px 6px var(--neu-shadow-dark)" : "none",
+                transition: "all 0.2s"
               }}
             >
-              📑 Hồ Sơ Đăng Ký
+              📑 Hồ Sơ
             </button>
           </div>
         </div>
 
-        {/* Khung vẽ cột biểu đồ */}
-        <div style={{ height: "240px", display: "flex", alignItems: "flex-end", gap: "1rem", padding: "1rem 0 0 0", borderBottom: "1px dashed var(--border-color)", position: "relative" }}>
+        {/* Khung vẽ cột biểu đồ (Cuộn ngang an toàn trên màn hình nhỏ) */}
+        <div style={{ overflowX: "auto", paddingBottom: "0.5rem" }}>
+          <div style={{ height: "240px", minWidth: "320px", display: "flex", alignItems: "flex-end", gap: "1rem", padding: "1rem 0 0 0", borderBottom: "1px dashed var(--border-color)", position: "relative" }}>
           {dailyGrowth.map((day, idx) => {
             const userHeight = Math.max((day.users / maxBarValue) * 180, 8);
             const appHeight = Math.max((day.applications / maxBarValue) * 180, 8);
@@ -443,6 +452,7 @@ export const AdminChartsAnalytics = ({ stats, loading }) => {
             );
           })}
         </div>
+      </div>
 
         {/* Chú giải biểu đồ (Legend) */}
         <div style={{ display: "flex", justifyContent: "center", gap: "2rem", marginTop: "1rem", flexWrap: "wrap" }}>
@@ -629,28 +639,46 @@ export const AdminChartsAnalytics = ({ stats, loading }) => {
             {/* Đánh giá hiệu suất duyệt */}
             <div
               style={{
-                marginTop: "0.4rem",
-                padding: "0.8rem 1rem",
-                borderRadius: "12px",
+                marginTop: "0.6rem",
+                padding: "0.85rem 1rem",
+                borderRadius: "14px",
                 background: "rgba(16, 185, 129, 0.08)",
                 border: "1px solid rgba(16, 185, 129, 0.25)",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between"
+                justifyContent: "space-between",
+                gap: "0.75rem"
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <span style={{ fontSize: "1.3rem" }}>⚡</span>
-                <div>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#10b981" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", minWidth: 0, flex: 1 }}>
+                <span style={{ fontSize: "1.35rem", flexShrink: 0 }}>⚡</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#10b981", lineHeight: 1.3 }}>
                     TỶ LỆ PHÊ DUYỆT ĐẠT CHUẨN: {approvalRate}%
                   </div>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "2px", lineHeight: 1.35 }}>
                     Hồ sơ được thẩm định chứng chỉ và cấp quyền nhanh chóng
                   </div>
                 </div>
               </div>
-              <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#10b981", background: "#fff", padding: "4px 8px", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }}>
+              <span
+                style={{
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  color: "#059669",
+                  background: "#ffffff",
+                  padding: "0.35rem 0.8rem",
+                  borderRadius: "20px",
+                  boxShadow: "0 2px 8px rgba(16, 185, 129, 0.15)",
+                  border: "1px solid rgba(16, 185, 129, 0.25)",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  letterSpacing: "0.2px"
+                }}
+              >
                 Rất Tốt
               </span>
             </div>

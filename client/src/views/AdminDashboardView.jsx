@@ -3,6 +3,7 @@ import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { AdminChartsAnalytics } from "../components/AdminChartsAnalytics";
 import { AdminNotificationManager } from "../components/AdminNotificationManager";
+import "../styles/admin.css";
 
 export const AdminDashboardView = ({ onBackToApp }) => {
   const { user, refreshUser } = useAuth();
@@ -206,51 +207,37 @@ export const AdminDashboardView = ({ onBackToApp }) => {
   };
 
   return (
-    <div className="admin-portal-view" style={{ padding: "1.5rem", maxWidth: "1350px", margin: "0 auto" }}>
+    <div className="admin-portal-view">
       {/* Toast Alert */}
       {toastMsg.text && (
         <div
+          className="admin-toast-banner"
           style={{
-            position: "fixed",
-            top: "20px",
-            right: "20px",
-            zIndex: 99999,
-            padding: "0.85rem 1.4rem",
-            borderRadius: "12px",
-            background: toastMsg.type === "success" ? "#10b981" : toastMsg.type === "error" ? "#ef4444" : "#f59e0b",
-            color: "#fff",
-            fontWeight: 600,
-            boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
-            animation: "fadeIn 0.25s ease"
+            background: toastMsg.type === "success" ? "#10b981" : toastMsg.type === "error" ? "#ef4444" : "#f59e0b"
           }}
         >
-          {toastMsg.text}
+          <span>{toastMsg.text}</span>
+          <button
+            type="button"
+            className="btn-close btn-close-white btn-sm ms-2"
+            onClick={() => setToastMsg({ type: "", text: "" })}
+            aria-label="Close"
+          />
         </div>
       )}
 
       {/* Top Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "1rem",
-          marginBottom: "1.8rem",
-          paddingBottom: "1.2rem",
-          borderBottom: "1px solid var(--border-color, rgba(255,255,255,0.1))"
-        }}
-      >
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 pb-3 mb-4 border-bottom">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <span style={{ fontSize: "1.8rem" }}>👑</span>
-            <h1 style={{ margin: 0, fontSize: "1.65rem", fontWeight: 800, color: "var(--text-main)" }}>
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            <span style={{ fontSize: "1.75rem" }}>👑</span>
+            <h1 className="admin-header-title m-0">
               TRUNG TÂM QUẢN TRỊ ADMIN
             </h1>
             <span
               style={{
                 fontSize: "0.75rem",
-                padding: "0.25rem 0.6rem",
+                padding: "0.25rem 0.65rem",
                 borderRadius: "20px",
                 background: "linear-gradient(135deg, #f59e0b, #d97706)",
                 color: "#fff",
@@ -260,337 +247,181 @@ export const AdminDashboardView = ({ onBackToApp }) => {
               RBAC PORTAL
             </span>
           </div>
-          <p style={{ margin: "0.3rem 0 0 0", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+          <p className="mt-1 mb-0 text-muted" style={{ fontSize: "0.88rem" }}>
             Kiểm duyệt hồ sơ Gia Sư & PT Thể Hình, phân quyền và quản trị toàn bộ người dùng hệ thống.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "0.8rem" }}>
+        {/* Action Buttons in Header */}
+        <div className="d-flex flex-wrap gap-2 w-100 w-md-auto">
           {onBackToApp && (
             <button
               onClick={onBackToApp}
-              className="neu-btn"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.6rem 1.2rem",
-                borderRadius: "10px",
-                fontWeight: 600,
-                cursor: "pointer"
-              }}
+              className="btn btn-outline-secondary admin-header-btn flex-grow-1 flex-md-grow-0"
+              type="button"
+              title="Quay trở lại ứng dụng Life Planner"
             >
-              ⬅️ Quay lại ứng dụng
+              <span>⬅️</span>
+              <span>Quay lại ứng dụng</span>
             </button>
           )}
           <button
             onClick={() => {
               fetchStats();
               if (currentTab === "applications") fetchApplications();
-              else fetchUsers();
+              else if (currentTab === "users") fetchUsers();
               showToast("info", "Đã làm mới dữ liệu!");
             }}
-            className="neu-btn"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.4rem",
-              padding: "0.6rem 1.2rem",
-              borderRadius: "10px",
-              fontWeight: 600,
-              cursor: "pointer"
-            }}
+            className="btn btn-primary admin-header-btn flex-grow-1 flex-md-grow-0"
+            type="button"
+            title="Làm mới dữ liệu thống kê & danh sách"
           >
-            🔄 Làm mới
+            <span>🔄</span>
+            <span>Làm mới</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Stats Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-          gap: "1.2rem",
-          marginBottom: "2rem"
-        }}
-      >
+      {/* KPI Stats Cards (Bootstrap Responsive Grid) */}
+      <div className="row g-3 mb-4">
         {/* Card 1: Users */}
-        <div
-          style={{
-            background: "var(--card-bg, #ffffff)",
-            borderRadius: "16px",
-            padding: "1.2rem 1.4rem",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-            display: "flex",
-            alignItems: "center",
-            gap: "1rem"
-          }}
-        >
-          <div
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "12px",
-              background: "rgba(59, 130, 246, 0.15)",
-              color: "#3b82f6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.4rem"
-            }}
-          >
-            👥
-          </div>
-          <div>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
-              Tổng Người Dùng
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="admin-stat-card">
+            <div
+              className="admin-stat-icon"
+              style={{ background: "rgba(59, 130, 246, 0.15)", color: "#3b82f6" }}
+            >
+              👥
             </div>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-main)" }}>
-              {stats?.users?.total || 0}
-            </div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-              {stats?.users?.students || 0} Học viên / Sinh viên
+            <div>
+              <div className="admin-stat-label">Tổng Người Dùng</div>
+              <div className="admin-stat-value">{stats?.users?.total || 0}</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                {stats?.users?.students || 0} Học viên / Sinh viên
+              </div>
             </div>
           </div>
         </div>
 
         {/* Card 2: Pending Applications */}
-        <div
-          style={{
-            background: "var(--card-bg, #ffffff)",
-            borderRadius: "16px",
-            padding: "1.2rem 1.4rem",
-            border: "2px solid #f59e0b",
-            boxShadow: "0 0 15px rgba(245, 158, 11, 0.2)",
-            display: "flex",
-            alignItems: "center",
-            gap: "1rem"
-          }}
-        >
+        <div className="col-12 col-sm-6 col-xl-3">
           <div
+            className="admin-stat-card"
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "12px",
-              background: "rgba(245, 158, 11, 0.15)",
-              color: "#f59e0b",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.4rem"
+              border: "2px solid #f59e0b",
+              boxShadow: "0 0 15px rgba(245, 158, 11, 0.2)"
             }}
           >
-            ⏳
-          </div>
-          <div>
-            <div style={{ fontSize: "0.8rem", color: "#f59e0b", textTransform: "uppercase", fontWeight: 700 }}>
-              Đơn Chờ Thẩm Định
+            <div
+              className="admin-stat-icon"
+              style={{ background: "rgba(245, 158, 11, 0.15)", color: "#f59e0b" }}
+            >
+              ⏳
             </div>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#f59e0b" }}>
-              {stats?.applications?.pending || 0}
-            </div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-              Cần Admin xem xét bằng cấp
+            <div>
+              <div className="admin-stat-label" style={{ color: "#f59e0b" }}>Đơn Chờ Thẩm Định</div>
+              <div className="admin-stat-value" style={{ color: "#f59e0b" }}>
+                {stats?.applications?.pending || 0}
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                Cần Admin xem xét bằng cấp
+              </div>
             </div>
           </div>
         </div>
 
         {/* Card 3: Tutors */}
-        <div
-          style={{
-            background: "var(--card-bg, #ffffff)",
-            borderRadius: "16px",
-            padding: "1.2rem 1.4rem",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-            display: "flex",
-            alignItems: "center",
-            gap: "1rem"
-          }}
-        >
-          <div
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "12px",
-              background: "rgba(16, 185, 129, 0.15)",
-              color: "#10b981",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.4rem"
-            }}
-          >
-            🎓
-          </div>
-          <div>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
-              Gia Sư Đã Xác Thực
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="admin-stat-card">
+            <div
+              className="admin-stat-icon"
+              style={{ background: "rgba(16, 185, 129, 0.15)", color: "#10b981" }}
+            >
+              🎓
             </div>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-main)" }}>
-              {stats?.users?.tutors || 0}
-            </div>
-            <div style={{ fontSize: "0.75rem", color: "#10b981", fontWeight: 600 }}>
-              Đủ điều kiện giảng dạy
+            <div>
+              <div className="admin-stat-label">Gia Sư Đã Xác Thực</div>
+              <div className="admin-stat-value">{stats?.users?.tutors || 0}</div>
+              <div style={{ fontSize: "0.75rem", color: "#10b981", fontWeight: 600 }}>
+                Đủ điều kiện giảng dạy
+              </div>
             </div>
           </div>
         </div>
 
         {/* Card 4: PTs */}
-        <div
-          style={{
-            background: "var(--card-bg, #ffffff)",
-            borderRadius: "16px",
-            padding: "1.2rem 1.4rem",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-            display: "flex",
-            alignItems: "center",
-            gap: "1rem"
-          }}
-        >
-          <div
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "12px",
-              background: "rgba(139, 92, 246, 0.15)",
-              color: "#8b5cf6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.4rem"
-            }}
-          >
-            🏋️
-          </div>
-          <div>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
-              Huấn Luyện Viên PT
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="admin-stat-card">
+            <div
+              className="admin-stat-icon"
+              style={{ background: "rgba(139, 92, 246, 0.15)", color: "#8b5cf6" }}
+            >
+              🏋️
             </div>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text-main)" }}>
-              {stats?.users?.pts || 0}
-            </div>
-            <div style={{ fontSize: "0.75rem", color: "#8b5cf6", fontWeight: 600 }}>
-              Được cấp chứng chỉ thể hình
+            <div>
+              <div className="admin-stat-label">Huấn Luyện Viên PT</div>
+              <div className="admin-stat-value">{stats?.users?.pts || 0}</div>
+              <div style={{ fontSize: "0.75rem", color: "#8b5cf6", fontWeight: 600 }}>
+                Được cấp chứng chỉ thể hình
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Tab Controls */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0.8rem",
-          marginBottom: "1.5rem",
-          borderBottom: "2px solid var(--border-color, rgba(255,255,255,0.1))",
-          paddingBottom: "0.5rem",
-          flexWrap: "wrap"
-        }}
-      >
-        <button
-          onClick={() => setCurrentTab("analytics")}
-          style={{
-            background: currentTab === "analytics" ? "linear-gradient(135deg, #3b82f6, #2563eb)" : "transparent",
-            color: currentTab === "analytics" ? "#fff" : "var(--text-muted)",
-            border: "none",
-            borderRadius: "12px",
-            padding: "0.75rem 1.4rem",
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            transition: "all 0.2s",
-            boxShadow: currentTab === "analytics" ? "0 4px 12px rgba(37, 99, 235, 0.3)" : "none"
-          }}
-        >
-          📊 Biểu Đồ & Thống Kê Trực Quan
-        </button>
+      {/* Main Tab Controls (Scrollable on Mobile, Thumb-friendly) */}
+      <div className="admin-tabs-nav-wrapper">
+        <div className="admin-tabs-scroll">
+          <button
+            onClick={() => setCurrentTab("analytics")}
+            className={`admin-tab-btn ${currentTab === "analytics" ? "active" : ""}`}
+            type="button"
+          >
+            <span>📊</span>
+            <span>Biểu Đồ & Thống Kê</span>
+          </button>
 
-        <button
-          onClick={() => setCurrentTab("applications")}
-          style={{
-            background: currentTab === "applications" ? "linear-gradient(135deg, #3b82f6, #2563eb)" : "transparent",
-            color: currentTab === "applications" ? "#fff" : "var(--text-muted)",
-            border: "none",
-            borderRadius: "12px",
-            padding: "0.75rem 1.4rem",
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            transition: "all 0.2s",
-            boxShadow: currentTab === "applications" ? "0 4px 12px rgba(37, 99, 235, 0.3)" : "none"
-          }}
-        >
-          📑 Phê Duyệt Hồ Sơ Gia Sư / PT
-          {stats?.applications?.pending > 0 && (
-            <span
-              style={{
-                background: currentTab === "applications" ? "#ef4444" : "#f59e0b",
-                color: "#fff",
-                borderRadius: "50%",
-                padding: "0.1rem 0.5rem",
-                fontSize: "0.75rem",
-                fontWeight: 800
-              }}
-            >
-              {stats.applications.pending}
-            </span>
-          )}
-        </button>
+          <button
+            onClick={() => setCurrentTab("applications")}
+            className={`admin-tab-btn ${currentTab === "applications" ? "active" : ""}`}
+            type="button"
+          >
+            <span>📑</span>
+            <span>Phê Duyệt Hồ Sơ</span>
+            {stats?.applications?.pending > 0 && (
+              <span
+                className="admin-tab-badge"
+                style={{
+                  background: currentTab === "applications" ? "#ef4444" : "#f59e0b",
+                  color: "#fff"
+                }}
+              >
+                {stats.applications.pending}
+              </span>
+            )}
+          </button>
 
-        <button
-          onClick={() => setCurrentTab("users")}
-          style={{
-            background: currentTab === "users" ? "linear-gradient(135deg, #3b82f6, #2563eb)" : "transparent",
-            color: currentTab === "users" ? "#fff" : "var(--text-muted)",
-            border: "none",
-            borderRadius: "12px",
-            padding: "0.75rem 1.4rem",
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            transition: "all 0.2s",
-            boxShadow: currentTab === "users" ? "0 4px 12px rgba(37, 99, 235, 0.3)" : "none"
-          }}
-        >
-          👥 Quản Lý Người Dùng & Phân Quyền
-        </button>
+          <button
+            onClick={() => setCurrentTab("users")}
+            className={`admin-tab-btn ${currentTab === "users" ? "active" : ""}`}
+            type="button"
+          >
+            <span>👥</span>
+            <span>Quản Lý Người Dùng & Phân Quyền</span>
+          </button>
 
-        <button
-          onClick={() => {
-            setPreselectedNotificationUser(null);
-            setCurrentTab("notifications");
-          }}
-          style={{
-            background: currentTab === "notifications" ? "linear-gradient(135deg, #3b82f6, #2563eb)" : "transparent",
-            color: currentTab === "notifications" ? "#fff" : "var(--text-muted)",
-            border: "none",
-            borderRadius: "12px",
-            padding: "0.75rem 1.4rem",
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            transition: "all 0.2s",
-            boxShadow: currentTab === "notifications" ? "0 4px 12px rgba(37, 99, 235, 0.3)" : "none"
-          }}
-        >
-          📢 Phát Thông Báo Hệ Thống
-        </button>
+          <button
+            onClick={() => {
+              setPreselectedNotificationUser(null);
+              setCurrentTab("notifications");
+            }}
+            className={`admin-tab-btn ${currentTab === "notifications" ? "active" : ""}`}
+            type="button"
+          >
+            <span>📢</span>
+            <span>Phát Thông Báo</span>
+          </button>
+        </div>
       </div>
 
       {/* TAB 0: BIỂU ĐỒ & THỐNG KÊ TRỰC QUAN (CHARTS & ANALYTICS) */}
@@ -602,79 +433,64 @@ export const AdminDashboardView = ({ onBackToApp }) => {
       {currentTab === "applications" && (
         <div>
           {/* Sub-filters for Applications */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1rem",
-              background: "var(--card-bg, #ffffff)",
-              border: "1px solid var(--border-color)",
-              padding: "1rem 1.2rem",
-              borderRadius: "14px",
-              marginBottom: "1.5rem"
-            }}
-          >
-            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>Trạng thái:</span>
-                <select
-                  value={filterAppStatus}
-                  onChange={(e) => setFilterAppStatus(e.target.value)}
-                  style={{
-                    padding: "0.5rem 0.8rem",
-                    borderRadius: "8px",
-                    background: "var(--input-bg, #f8fafc)",
-                    color: "var(--text-main)",
-                    border: "1px solid var(--input-border, #cbd5e1)",
-                    fontWeight: 600
-                  }}
-                >
-                  <option value="pending">⏳ Chờ duyệt (Pending)</option>
-                  <option value="approved">✅ Đã phê duyệt (Approved)</option>
-                  <option value="rejected">❌ Bị từ chối (Rejected)</option>
-                  <option value="all">Tất cả trạng thái</option>
-                </select>
+          <div className="admin-filter-bar">
+            <div className="row g-2 align-items-center">
+              <div className="col-12 col-sm-6 col-md-auto">
+                <div className="admin-filter-item">
+                  <label className="admin-filter-label">
+                    Trạng thái:
+                  </label>
+                  <select
+                    value={filterAppStatus}
+                    onChange={(e) => setFilterAppStatus(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="pending">⏳ Chờ duyệt (Pending)</option>
+                    <option value="approved">✅ Đã phê duyệt (Approved)</option>
+                    <option value="rejected">❌ Bị từ chối (Rejected)</option>
+                    <option value="all">Tất cả trạng thái</option>
+                  </select>
+                </div>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>Loại đơn:</span>
-                <select
-                  value={filterAppType}
-                  onChange={(e) => setFilterAppType(e.target.value)}
-                  style={{
-                    padding: "0.5rem 0.8rem",
-                    borderRadius: "8px",
-                    background: "var(--input-bg, #f8fafc)",
-                    color: "var(--text-main)",
-                    border: "1px solid var(--input-border, #cbd5e1)",
-                    fontWeight: 600
-                  }}
-                >
-                  <option value="all">Tất cả (Gia sư & PT)</option>
-                  <option value="gia_su">🎓 Gia sư học tập</option>
-                  <option value="pt">🏋️ Huấn luyện viên PT</option>
-                </select>
+              <div className="col-12 col-sm-6 col-md-auto">
+                <div className="admin-filter-item">
+                  <label className="admin-filter-label">
+                    Loại đơn:
+                  </label>
+                  <select
+                    value={filterAppType}
+                    onChange={(e) => setFilterAppType(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="all">Tất cả (Gia sư & PT)</option>
+                    <option value="gia_su">🎓 Gia sư học tập</option>
+                    <option value="pt">🏋️ Huấn luyện viên PT</option>
+                  </select>
+                </div>
               </div>
-            </div>
 
-            <div style={{ minWidth: "260px" }}>
-              <input
-                type="text"
-                placeholder="🔍 Tìm tên, email, chuyên môn..."
-                value={searchApp}
-                onChange={(e) => setSearchApp(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && fetchApplications()}
-                style={{
-                  width: "100%",
-                  padding: "0.5rem 0.9rem",
-                  borderRadius: "8px",
-                  background: "var(--input-bg, #f8fafc)",
-                  color: "var(--text-main)",
-                  border: "1px solid var(--input-border, #cbd5e1)"
-                }}
-              />
+              <div className="col-12 col-md ms-md-auto">
+                <div className="admin-search-box">
+                  <span className="admin-search-icon">🔍</span>
+                  <input
+                    type="text"
+                    className="admin-search-input"
+                    placeholder="Tìm tên, email, chuyên môn..."
+                    value={searchApp}
+                    onChange={(e) => setSearchApp(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && fetchApplications()}
+                  />
+                  <button
+                    className="admin-search-btn"
+                    type="button"
+                    onClick={fetchApplications}
+                    title="Tìm kiếm hồ sơ"
+                  >
+                    Tìm
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -712,18 +528,7 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                 return (
                   <div
                     key={appItem._id}
-                    style={{
-                      background: "var(--card-bg, #ffffff)",
-                      borderRadius: "16px",
-                      padding: "1.5rem",
-                      border: isPending
-                        ? "1.5px solid rgba(245, 158, 11, 0.5)"
-                        : "1px solid var(--border-color)",
-                      boxShadow: "0 6px 25px rgba(0,0,0,0.08)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "1.2rem"
-                    }}
+                    className={`admin-app-card ${isPending ? "pending-border" : ""}`}
                   >
                     {/* Header Row of Application */}
                     <div
@@ -846,33 +651,22 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                       </div>
                     </div>
 
-                    {/* Middle Info Details */}
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "0.8rem",
-                        background: "var(--input-bg, #f8fafc)",
-                        border: "1px solid var(--input-border, #cbd5e1)",
-                        padding: "1rem",
-                        borderRadius: "12px",
-                        fontSize: "0.9rem"
-                      }}
-                    >
+                    {/* Middle Info Details (Responsive Grid) */}
+                    <div className="admin-app-details-grid">
                       <div>
-                        <strong style={{ color: "var(--text-muted)", fontSize: "0.8rem", display: "block" }}>
+                        <strong style={{ color: "var(--text-muted)", fontSize: "0.78rem", display: "block" }}>
                           CHUYÊN MÔN CHÍNH:
                         </strong>
                         <span style={{ color: "var(--text-main)", fontWeight: 700 }}>{appItem.chuyen_mon}</span>
                       </div>
                       <div>
-                        <strong style={{ color: "var(--text-muted)", fontSize: "0.8rem", display: "block" }}>
+                        <strong style={{ color: "var(--text-muted)", fontSize: "0.78rem", display: "block" }}>
                           KINH NGHIỆM:
                         </strong>
                         <span style={{ color: "var(--text-main)" }}>{appItem.kinh_nghiem}</span>
                       </div>
                       <div>
-                        <strong style={{ color: "var(--text-muted)", fontSize: "0.8rem", display: "block" }}>
+                        <strong style={{ color: "var(--text-muted)", fontSize: "0.78rem", display: "block" }}>
                           MỨC GIÁ DỰ KIẾN:
                         </strong>
                         <span style={{ color: "#10b981", fontWeight: 700 }}>
@@ -880,7 +674,7 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                         </span>
                       </div>
                       <div>
-                        <strong style={{ color: "var(--text-muted)", fontSize: "0.8rem", display: "block" }}>
+                        <strong style={{ color: "var(--text-muted)", fontSize: "0.78rem", display: "block" }}>
                           BẰNG CẤP / CHỨNG CHỈ:
                         </strong>
                         <span style={{ color: "var(--text-main)" }}>
@@ -908,17 +702,7 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                             <div
                               key={cIdx}
                               onClick={() => setPreviewCert(cert)}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.6rem",
-                                padding: "0.5rem 0.8rem",
-                                borderRadius: "8px",
-                                background: "var(--input-bg, #f8fafc)",
-                                border: "1px solid var(--input-border, #cbd5e1)",
-                                cursor: "pointer",
-                                transition: "all 0.2s"
-                              }}
+                              className="admin-cert-chip"
                               title="Click để phóng to xem chứng chỉ"
                             >
                               {cert.hinh_anh ? (
@@ -971,54 +755,27 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                       </div>
                     )}
 
-                    {/* Action Buttons for Pending Application */}
+                    {/* Action Buttons for Pending Application (Touch-friendly & Stacked on Mobile) */}
                     {isPending && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          gap: "0.8rem",
-                          borderTop: "1px solid var(--border-color)",
-                          paddingTop: "1rem"
-                        }}
-                      >
+                      <div className="d-flex flex-column-reverse flex-sm-row justify-content-sm-end gap-2 pt-3 border-top w-100">
                         <button
                           onClick={() => openRejectModal(appItem)}
                           disabled={submittingAction}
-                          style={{
-                            padding: "0.65rem 1.2rem",
-                            borderRadius: "10px",
-                            border: "1px solid #ef4444",
-                            background: "transparent",
-                            color: "#ef4444",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.4rem"
-                          }}
+                          className="btn btn-outline-danger admin-app-action-btn w-100 w-sm-auto"
+                          type="button"
                         >
-                          ❌ Từ Chối Hồ Sơ
+                          <span>❌</span>
+                          <span>Từ Chối Hồ Sơ</span>
                         </button>
 
                         <button
                           onClick={() => handleApprove(appItem)}
                           disabled={submittingAction}
-                          style={{
-                            padding: "0.65rem 1.4rem",
-                            borderRadius: "10px",
-                            border: "none",
-                            background: "linear-gradient(135deg, #10b981, #059669)",
-                            color: "#fff",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.4rem",
-                            boxShadow: "0 4px 15px rgba(16, 185, 129, 0.3)"
-                          }}
+                          className="btn btn-success admin-app-action-btn w-100 w-sm-auto shadow-sm"
+                          type="button"
                         >
-                          ✅ Phê Duyệt & Nâng Cấp Quyền
+                          <span>✅</span>
+                          <span>Phê Duyệt & Nâng Cấp Quyền</span>
                         </button>
                       </div>
                     )}
@@ -1034,79 +791,65 @@ export const AdminDashboardView = ({ onBackToApp }) => {
       {currentTab === "users" && (
         <div>
           {/* Filters for Users */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1rem",
-              background: "var(--card-bg, rgba(30, 41, 59, 0.5))",
-              padding: "1rem 1.2rem",
-              borderRadius: "14px",
-              marginBottom: "1.5rem"
-            }}
-          >
-            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>Quyền hạn:</span>
-                <select
-                  value={filterUserRole}
-                  onChange={(e) => setFilterUserRole(e.target.value)}
-                  style={{
-                    padding: "0.5rem 0.8rem",
-                    borderRadius: "8px",
-                    background: "var(--input-bg)",
-                    color: "var(--text-main)",
-                    border: "1px solid var(--border-color, rgba(255,255,255,0.1))",
-                    fontWeight: 600
-                  }}
-                >
-                  <option value="all">Tất cả vai trò</option>
-                  <option value="user">👤 Sinh viên / Học viên</option>
-                  <option value="tutor">🎓 Gia Sư (Tutor)</option>
-                  <option value="pt">🏋️ Huấn Luyện Viên PT</option>
-                  <option value="admin">👑 Quản Trị Viên (Admin)</option>
-                </select>
+          <div className="admin-filter-bar">
+            <div className="row g-2 align-items-center">
+              <div className="col-12 col-sm-6 col-md-auto">
+                <div className="admin-filter-item">
+                  <label className="admin-filter-label">
+                    Quyền hạn:
+                  </label>
+                  <select
+                    value={filterUserRole}
+                    onChange={(e) => setFilterUserRole(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="all">Tất cả vai trò</option>
+                    <option value="user">👤 Sinh viên / Học viên</option>
+                    <option value="tutor">🎓 Gia Sư (Tutor)</option>
+                    <option value="pt">🏋️ Huấn Luyện Viên PT</option>
+                    <option value="admin">👑 Quản Trị Viên (Admin)</option>
+                  </select>
+                </div>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>Trạng thái:</span>
-                <select
-                  value={filterUserStatus}
-                  onChange={(e) => setFilterUserStatus(e.target.value)}
-                  style={{
-                    padding: "0.5rem 0.8rem",
-                    borderRadius: "8px",
-                    background: "var(--input-bg)",
-                    color: "var(--text-main)",
-                    border: "1px solid var(--border-color, rgba(255,255,255,0.1))",
-                    fontWeight: 600
-                  }}
-                >
-                  <option value="all">Tất cả trạng thái</option>
-                  <option value="active">🟢 Đang hoạt động</option>
-                  <option value="banned">🔴 Đã bị khóa</option>
-                </select>
+              <div className="col-12 col-sm-6 col-md-auto">
+                <div className="admin-filter-item">
+                  <label className="admin-filter-label">
+                    Trạng thái:
+                  </label>
+                  <select
+                    value={filterUserStatus}
+                    onChange={(e) => setFilterUserStatus(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="active">🟢 Đang hoạt động</option>
+                    <option value="banned">🔴 Đã bị khóa</option>
+                  </select>
+                </div>
               </div>
-            </div>
 
-            <div style={{ minWidth: "260px" }}>
-              <input
-                type="text"
-                placeholder="🔍 Tìm theo Họ tên, Email..."
-                value={searchUser}
-                onChange={(e) => setSearchUser(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && fetchUsers()}
-                style={{
-                  width: "100%",
-                  padding: "0.5rem 0.9rem",
-                  borderRadius: "8px",
-                  background: "var(--input-bg)",
-                  color: "var(--text-main)",
-                  border: "1px solid var(--border-color, rgba(255,255,255,0.1))"
-                }}
-              />
+              <div className="col-12 col-md ms-md-auto">
+                <div className="admin-search-box">
+                  <span className="admin-search-icon">🔍</span>
+                  <input
+                    type="text"
+                    className="admin-search-input"
+                    placeholder="Tìm theo Họ tên, Email..."
+                    value={searchUser}
+                    onChange={(e) => setSearchUser(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && fetchUsers()}
+                  />
+                  <button
+                    className="admin-search-btn"
+                    type="button"
+                    onClick={fetchUsers}
+                    title="Tìm kiếm người dùng"
+                  >
+                    Tìm
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1131,35 +874,163 @@ export const AdminDashboardView = ({ onBackToApp }) => {
               </p>
             </div>
           ) : (
-            <div
-              style={{
-                background: "var(--card-bg, rgba(30, 41, 59, 0.8))",
-                borderRadius: "16px",
-                border: "1px solid var(--border-color, rgba(255,255,255,0.08))",
-                overflow: "hidden"
-              }}
-            >
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                  <thead>
-                    <tr
-                      style={{
-                        background: "rgba(0,0,0,0.2)",
-                        borderBottom: "1px solid rgba(255,255,255,0.1)",
-                        color: "var(--text-muted)",
-                        fontSize: "0.8rem",
-                        textTransform: "uppercase"
-                      }}
-                    >
-                      <th style={{ padding: "1rem 1.2rem", minWidth: "180px" }}>Thành viên</th>
-                      <th style={{ padding: "1rem 1.2rem", minWidth: "180px" }}>Email & SĐT</th>
-                      <th style={{ padding: "1rem 1.2rem", minWidth: "160px" }}>Vai trò (Role)</th>
-                      <th style={{ padding: "1rem 1.2rem", minWidth: "135px", whiteSpace: "nowrap" }}>Trạng thái</th>
-                      <th style={{ padding: "1rem 1.2rem", minWidth: "125px", whiteSpace: "nowrap" }}>Ngày tham gia</th>
-                      <th style={{ padding: "1rem 1.2rem", minWidth: "130px", textAlign: "right", whiteSpace: "nowrap" }}>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+            <div>
+              {/* 1. MOBILE CARDS VIEW (< 768px): Thumb-friendly & No Horizontal Table Squish */}
+              <div className="d-block d-md-none">
+                {usersList.map((uItem) => {
+                  const isSelf = uItem._id === user?._id;
+                  const isBanned = uItem.status === "banned";
+
+                  return (
+                    <div key={uItem._id} className="admin-user-card-mobile">
+                      {/* Top Header of Card */}
+                      <div className="d-flex justify-content-between align-items-center gap-2">
+                        <div className="d-flex align-items-center gap-2 min-w-0 flex-grow-1" style={{ minWidth: 0 }}>
+                          <div
+                            style={{
+                              width: "42px",
+                              height: "42px",
+                              borderRadius: "50%",
+                              background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                              color: "#fff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: 800,
+                              fontSize: "1rem",
+                              flexShrink: 0
+                            }}
+                          >
+                            {uItem.name ? uItem.name.charAt(0).toUpperCase() : "U"}
+                          </div>
+                          <div className="min-w-0 flex-grow-1" style={{ minWidth: 0, overflow: "hidden" }}>
+                            <div
+                              className="fw-bold text-truncate"
+                              style={{ color: "var(--text-main)", fontSize: "0.95rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                              title={uItem.name}
+                            >
+                              {uItem.name} {isSelf && <span className="badge bg-primary-subtle text-primary ms-1">Bạn</span>}
+                            </div>
+                            <div
+                              className="text-muted text-truncate"
+                              style={{ fontSize: "0.8rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                              title={uItem.email}
+                            >
+                              {uItem.email}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status badge */}
+                        <span
+                          className={`badge rounded-pill flex-shrink-0 text-nowrap ${isBanned ? "bg-danger-subtle text-danger border border-danger-subtle" : "bg-success-subtle text-success border border-success-subtle"}`}
+                          style={{ fontSize: "0.75rem", padding: "0.35rem 0.65rem", flexShrink: 0, whiteSpace: "nowrap" }}
+                        >
+                          {isBanned ? "🔴 Bị Khóa" : "🟢 Hoạt Động"}
+                        </span>
+                      </div>
+
+                      {/* Contact & Date Info */}
+                      <div className="p-2 rounded-2 border" style={{ background: "var(--input-bg, #f8fafc)", fontSize: "0.82rem" }}>
+                        <div className="d-flex justify-content-between mb-1">
+                          <span className="text-muted">Điện thoại:</span>
+                          <span className="fw-semibold">{uItem.phone || "Chưa có"}</span>
+                        </div>
+                        <div className="d-flex justify-content-between">
+                          <span className="text-muted">Ngày tham gia:</span>
+                          <span>{new Date(uItem.createdAt).toLocaleDateString("vi-VN")}</span>
+                        </div>
+                        {uItem.is_expert_verified && (
+                          <div className="text-success fw-bold mt-1" style={{ fontSize: "0.75rem" }}>
+                            ✓ Verified Expert
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Role Selector on mobile */}
+                      <div>
+                        <label className="text-muted fw-bold mb-1" style={{ fontSize: "0.75rem" }}>
+                          VAI TRÒ (ROLE):
+                        </label>
+                        <select
+                          value={uItem.role || "user"}
+                          disabled={isSelf}
+                          onChange={(e) => handleChangeRole(uItem._id, e.target.value, uItem.name)}
+                          className="form-select form-select-sm fw-bold"
+                          style={{
+                            background:
+                              uItem.role === "admin"
+                                ? "rgba(245, 158, 11, 0.15)"
+                                : uItem.role === "tutor"
+                                ? "rgba(16, 185, 129, 0.15)"
+                                : uItem.role === "pt"
+                                ? "rgba(139, 92, 246, 0.15)"
+                                : "rgba(59, 130, 246, 0.15)",
+                            color:
+                              uItem.role === "admin"
+                                ? "#d97706"
+                                : uItem.role === "tutor"
+                                ? "#059669"
+                                : uItem.role === "pt"
+                                ? "#7c3aed"
+                                : "#2563eb",
+                            minHeight: "42px"
+                          }}
+                        >
+                          <option value="user">👤 Sinh viên / User</option>
+                          <option value="tutor">🎓 Gia Sư (Tutor)</option>
+                          <option value="pt">🏋️ Huấn Luyện Viên PT</option>
+                          <option value="admin">👑 Quản Trị Viên (Admin)</option>
+                        </select>
+                      </div>
+
+                      {/* Action buttons on mobile card (Full-width Touch Target, Separated) */}
+                      {!isSelf && (
+                        <div className="d-flex gap-2 pt-2 border-top">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreselectedNotificationUser(uItem);
+                              setCurrentTab("notifications");
+                            }}
+                            className="btn btn-outline-primary admin-user-card-btn flex-fill"
+                            title={`Soạn thông báo gửi riêng cho ${uItem.name}`}
+                          >
+                            <span>✉️</span>
+                            <span>Gửi Tin</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleToggleBan(uItem)}
+                            className={`btn ${isBanned ? "btn-outline-success" : "btn-outline-danger"} admin-user-card-btn flex-fill`}
+                            title={isBanned ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+                          >
+                            <span>{isBanned ? "🔓" : "🔒"}</span>
+                            <span>{isBanned ? "Mở Khóa" : "Khóa TK"}</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 2. DESKTOP TABLE VIEW (>= 768px) */}
+              <div className="d-none d-md-block admin-table-container">
+                <div className="table-responsive">
+                  <table className="admin-desktop-table">
+                    <thead>
+                      <tr>
+                        <th style={{ minWidth: "180px" }}>Thành viên</th>
+                        <th style={{ minWidth: "180px" }}>Email & SĐT</th>
+                        <th style={{ minWidth: "160px" }}>Vai trò (Role)</th>
+                        <th style={{ minWidth: "135px", whiteSpace: "nowrap" }}>Trạng thái</th>
+                        <th style={{ minWidth: "125px", whiteSpace: "nowrap" }}>Ngày tham gia</th>
+                        <th style={{ minWidth: "160px", textAlign: "right", whiteSpace: "nowrap" }}>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
                     {usersList.map((uItem) => {
                       const isSelf = uItem._id === user?._id;
                       const isBanned = uItem.status === "banned";
@@ -1390,6 +1261,7 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                 </table>
               </div>
             </div>
+          </div>
           )}
         </div>
       )}
@@ -1404,36 +1276,12 @@ export const AdminDashboardView = ({ onBackToApp }) => {
 
       {/* MODAL 1: TỪ CHỐI HỒ SƠ & NHẬP LÝ DO */}
       {rejectModal.open && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(0,0,0,0.6)",
-            backdropFilter: "blur(5px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 99999
-          }}
-        >
-          <div
-            style={{
-              background: "var(--modal-bg)",
-              borderRadius: "18px",
-              padding: "1.8rem",
-              width: "90%",
-              maxWidth: "500px",
-              border: "1px solid var(--border-color, rgba(0,0,0,0.1))",
-              boxShadow: "0 20px 40px rgba(0,0,0,0.25)"
-            }}
-          >
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-content">
             <h3 style={{ margin: "0 0 0.8rem 0", color: "#ef4444", fontSize: "1.25rem", fontWeight: 800 }}>
               ❌ Từ Chối Hồ Sơ Của {rejectModal.app?.ho_ten}
             </h3>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
+            <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
               Vui lòng nhập lý do từ chối để hệ thống gửi thông báo phản hồi giúp ứng viên nắm được lý do và bổ sung bằng cấp nếu cần:
             </p>
             <textarea
@@ -1441,45 +1289,24 @@ export const AdminDashboardView = ({ onBackToApp }) => {
               value={rejectModal.reason}
               onChange={(e) => setRejectModal({ ...rejectModal, reason: e.target.value })}
               placeholder="Nhập lý do từ chối..."
-              style={{
-                width: "100%",
-                padding: "0.8rem",
-                borderRadius: "10px",
-                background: "var(--input-bg)",
-                color: "var(--text-main)",
-                border: "1px solid var(--input-border, rgba(0,0,0,0.15))",
-                fontSize: "0.9rem",
-                marginBottom: "1.2rem",
-                resize: "vertical"
-              }}
+              className="form-control mb-3"
+              style={{ fontSize: "0.9rem", resize: "vertical" }}
             />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.8rem" }}>
+            <div className="d-flex flex-column-reverse flex-sm-row justify-content-end gap-2">
               <button
+                type="button"
                 onClick={() => setRejectModal({ open: false, app: null, reason: "" })}
-                className="neu-btn"
-                style={{
-                  padding: "0.6rem 1.2rem",
-                  borderRadius: "8px",
-                  fontWeight: 600,
-                  cursor: "pointer"
-                }}
+                className="btn btn-secondary admin-modal-btn w-100 w-sm-auto"
               >
                 Hủy bỏ
               </button>
               <button
+                type="button"
                 onClick={handleConfirmReject}
                 disabled={submittingAction}
-                style={{
-                  padding: "0.6rem 1.4rem",
-                  borderRadius: "8px",
-                  background: "#ef4444",
-                  color: "#fff",
-                  border: "none",
-                  fontWeight: 700,
-                  cursor: "pointer"
-                }}
+                className="btn btn-danger admin-modal-btn w-100 w-sm-auto"
               >
-                Xác nhận Từ Chối
+                {submittingAction ? "Đang xử lý..." : "Xác nhận Từ Chối"}
               </button>
             </div>
           </div>
@@ -1489,36 +1316,18 @@ export const AdminDashboardView = ({ onBackToApp }) => {
       {/* MODAL 2: LIGHTBOX XEM PHÓNG TO CHỨNG CHỈ */}
       {previewCert && (
         <div
+          className="admin-modal-overlay"
           onClick={() => setPreviewCert(null)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(0,0,0,0.7)",
-            backdropFilter: "blur(8px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 999999,
-            cursor: "zoom-out"
-          }}
+          style={{ cursor: "zoom-out" }}
         >
           <div
+            className="admin-modal-content text-center"
+            style={{ maxWidth: "680px", cursor: "default" }}
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "var(--modal-bg)",
-              borderRadius: "16px",
-              padding: "1.5rem",
-              maxWidth: "600px",
-              width: "90%",
-              border: "1px solid var(--border-color, rgba(0,0,0,0.15))",
-              textAlign: "center",
-              boxShadow: "0 25px 50px rgba(0,0,0,0.25)"
-            }}
           >
-            <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--text-main)" }}>{previewCert.ten_chung_chi}</h3>
+            <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--text-main)", fontSize: "1.2rem", fontWeight: 800 }}>
+              {previewCert.ten_chung_chi}
+            </h3>
             <p style={{ margin: "0 0 1rem 0", color: "var(--text-muted)", fontSize: "0.85rem" }}>
               Nơi cấp: {previewCert.noi_cap || "Đại học / Tổ chức Thể thao"} • Năm: {previewCert.nam_cap || "2025"}
             </p>
@@ -1537,10 +1346,11 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                 <img
                   src={previewCert.hinh_anh}
                   alt={previewCert.ten_chung_chi}
+                  className="img-fluid"
                   style={{
-                    width: "100%",
-                    height: "auto",
+                    maxHeight: "60vh",
                     display: "block",
+                    margin: "0 auto",
                     objectFit: "contain"
                   }}
                 />
@@ -1549,8 +1359,8 @@ export const AdminDashboardView = ({ onBackToApp }) => {
               <div
                 style={{
                   width: "100%",
-                  height: "260px",
-                  background: "var(--card-bg, rgba(59, 130, 246, 0.05))",
+                  height: "240px",
+                  background: "rgba(59, 130, 246, 0.05)",
                   borderRadius: "12px",
                   display: "flex",
                   flexDirection: "column",
@@ -1570,14 +1380,9 @@ export const AdminDashboardView = ({ onBackToApp }) => {
               </div>
             )}
             <button
+              type="button"
               onClick={() => setPreviewCert(null)}
-              className="btn-secondary"
-              style={{
-                padding: "0.6rem 1.6rem",
-                borderRadius: "12px",
-                fontWeight: 700,
-                cursor: "pointer"
-              }}
+              className="btn btn-secondary admin-modal-btn w-100 w-sm-auto px-4"
             >
               Đóng xem trước
             </button>

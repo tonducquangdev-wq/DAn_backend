@@ -3080,6 +3080,56 @@ tbody td {
 }
 
 /* Profile Modal Tabs & Card */
+.profile-modal-card {
+  padding: 28px 24px !important;
+}
+
+@media (max-width: 768px) {
+  .profile-modal-card {
+    padding: 24px 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-modal-card {
+    padding: 22px 18px !important;
+  }
+}
+
+.modal-close-icon-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.modal-close-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-main);
+  transform: scale(1.05);
+}
+
+[data-theme='dark'] .modal-close-icon-btn,
+[data-bs-theme='dark'] .modal-close-icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .modal-close-icon-btn:hover,
+[data-bs-theme='dark'] .modal-close-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
 .profile-modal-tab-btn {
   white-space: nowrap !important;
 }

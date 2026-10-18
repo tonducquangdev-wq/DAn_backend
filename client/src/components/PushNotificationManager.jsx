@@ -143,13 +143,13 @@ export const PushNotificationManager = () => {
       <div
         style={{
           display: "flex",
-          alignItems: "flex-start",
+          alignItems: "center",
           justifyContent: "space-between",
-          gap: "14px",
+          gap: "12px",
           marginBottom: "12px"
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
           <div
             style={{
               width: "44px",
@@ -161,22 +161,23 @@ export const PushNotificationManager = () => {
               alignItems: "center",
               justifyContent: "center",
               fontSize: "1.45rem",
-              boxShadow: "0 4px 10px rgba(37, 99, 235, 0.3)"
+              boxShadow: "0 4px 10px rgba(37, 99, 235, 0.3)",
+              flexShrink: 0
             }}
           >
             📲
           </div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: "0.96rem", color: "var(--text-main)" }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: "0.96rem", color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis" }}>
               Thông Báo Đẩy Điện Thoại (Native Web Push)
             </div>
-            <div style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+            <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis" }}>
               Rung chuông và hiện ngoài màn hình khóa ngay cả khi tắt app
             </div>
           </div>
         </div>
 
-        <div>
+        <div style={{ flexShrink: 0 }}>
           {isSubscribed ? (
             <span
               style={{
@@ -189,10 +190,12 @@ export const PushNotificationManager = () => {
                 border: "1px solid rgba(16, 185, 129, 0.3)",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "6px"
+                gap: "6px",
+                whiteSpace: "nowrap",
+                flexShrink: 0
               }}
             >
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981" }} />
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", flexShrink: 0 }} />
               Đã Kích Hoạt
             </span>
           ) : (
@@ -203,7 +206,11 @@ export const PushNotificationManager = () => {
                 color: "var(--text-muted)",
                 background: "rgba(0,0,0,0.06)",
                 padding: "5px 12px",
-                borderRadius: "12px"
+                borderRadius: "12px",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                flexShrink: 0
               }}
             >
               Chưa Kích Hoạt

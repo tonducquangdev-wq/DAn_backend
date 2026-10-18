@@ -311,12 +311,12 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
         }}
       >
         {/* Header Modal */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "18px" }}>
-          <div>
-            <h3 style={{ fontSize: "1.25rem", fontWeight: "800", color: "var(--text-main)", margin: "0 0 4px 0" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "20px" }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: "800", color: "var(--text-main)", margin: "0 0 6px 0", lineHeight: 1.35 }}>
               ⚙️ Cài Đặt Cá Nhân & Tài Khoản
             </h3>
-            <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: 0 }}>
+            <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
               Quản lý hồ sơ cá nhân, cài đặt thông báo sự kiện và bảo mật tài khoản
             </p>
           </div>
@@ -324,18 +324,9 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
             type="button"
             onClick={onClose}
             title="Đóng hộp thoại"
-            style={{
-              background: "transparent",
-              border: "none",
-              fontSize: "1.2rem",
-              cursor: "pointer",
-              color: "var(--text-muted)",
-              padding: "4px 8px",
-              borderRadius: "8px",
-              lineHeight: 1
-            }}
+            className="modal-close-icon-btn"
           >
-            ✖
+            ✕
           </button>
         </div>
 
@@ -654,11 +645,22 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
               </button>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button type="button" className="btn-secondary" onClick={onClose} disabled={updatingInfo}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={onClose}
+                disabled={updatingInfo}
+                style={{ padding: "8px 22px", fontSize: "0.84rem", borderRadius: "20px", minHeight: "36px", fontWeight: "600" }}
+              >
                 Đóng
               </button>
-              <button type="submit" className="btn-primary" disabled={updatingInfo}>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={updatingInfo}
+                style={{ padding: "8px 22px", fontSize: "0.84rem", borderRadius: "20px", minHeight: "36px", fontWeight: "600" }}
+              >
                 {updatingInfo ? "⏳ Đang lưu..." : "💾 Lưu Thay Đổi"}
               </button>
             </div>
@@ -1115,7 +1117,12 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
-              <button type="button" className="btn-secondary" onClick={onClose}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={onClose}
+                style={{ padding: "8px 22px", fontSize: "0.84rem", borderRadius: "20px", minHeight: "36px", fontWeight: "600" }}
+              >
                 Đóng
               </button>
             </div>
@@ -1207,12 +1214,13 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
               />
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
               <button
                 type="button"
                 className="btn-secondary"
                 onClick={onClose}
                 disabled={updatingPassword}
+                style={{ padding: "8px 22px", fontSize: "0.84rem", borderRadius: "20px", minHeight: "36px", fontWeight: "600" }}
               >
                 Đóng
               </button>
@@ -1220,6 +1228,7 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
                 type="submit"
                 className="btn-primary"
                 disabled={updatingPassword}
+                style={{ padding: "8px 22px", fontSize: "0.84rem", borderRadius: "20px", minHeight: "36px", fontWeight: "600" }}
               >
                 {updatingPassword ? "⏳ Đang đổi..." : "🔑 Cập Nhật Mật Khẩu"}
               </button>

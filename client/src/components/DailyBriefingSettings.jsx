@@ -134,13 +134,13 @@ export const DailyBriefingSettings = () => {
       <div
         style={{
           display: "flex",
-          alignItems: "flex-start",
+          alignItems: "center",
           justifyContent: "space-between",
-          gap: "14px",
+          gap: "12px",
           marginBottom: "14px"
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
           <div
             style={{
               width: "44px",
@@ -152,16 +152,17 @@ export const DailyBriefingSettings = () => {
               alignItems: "center",
               justifyContent: "center",
               fontSize: "1.45rem",
-              boxShadow: "0 4px 10px rgba(16, 185, 129, 0.3)"
+              boxShadow: "0 4px 10px rgba(16, 185, 129, 0.3)",
+              flexShrink: 0
             }}
           >
             🌅
           </div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: "0.96rem", color: "var(--text-main)" }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: "0.96rem", color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis" }}>
               Thông Báo Tổng Hợp Sự Kiện Trong Ngày (Daily Digest)
             </div>
-            <div style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+            <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis" }}>
               Tự động gửi tóm tắt toàn bộ lịch trình học tập, tập luyện ra màn hình khóa theo giờ bạn chọn
             </div>
           </div>
@@ -174,8 +175,10 @@ export const DailyBriefingSettings = () => {
             position: "relative",
             display: "inline-block",
             width: "48px",
+            minWidth: "48px",
             height: "26px",
-            margin: 0
+            margin: 0,
+            flexShrink: 0
           }}
           title={enabled ? "Đang bật thông báo hàng ngày" : "Đang tắt thông báo hàng ngày"}
         >
@@ -345,7 +348,9 @@ export const DailyBriefingSettings = () => {
             justifyContent: "space-between"
           }}
         >
-          <span>📋 Xem Trước Lịch Trình Hôm Nay ({todayEvents.length} sự kiện)</span>
+          <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            📋 Xem Trước Lịch Trình Hôm Nay ({todayEvents.length} sự kiện)
+          </span>
           <button
             type="button"
             onClick={fetchSettings}
@@ -355,7 +360,10 @@ export const DailyBriefingSettings = () => {
               fontSize: "0.75rem",
               color: "var(--primary)",
               cursor: "pointer",
-              fontWeight: 600
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              padding: "2px 6px"
             }}
           >
             🔄 Cập nhật

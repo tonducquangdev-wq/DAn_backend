@@ -160,15 +160,30 @@ function MainApp() {
                 fontWeight: 700,
                 fontSize: "0.8rem",
                 cursor: "pointer",
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: "0.35rem",
-                transition: "all 0.2s"
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                minHeight: "36px",
+                boxShadow: activeTab === "admin" ? "0 2px 8px rgba(245, 158, 11, 0.4)" : "none",
+                transition: "all 0.2s ease"
               }}
               title="Mở Bảng điều khiển Quản trị viên Admin"
             >
-              <span>👑</span>
-              <span>{activeTab === "admin" ? "Về Ứng Dụng" : "Admin Portal"}</span>
+              <span style={{ fontSize: "0.9rem", lineHeight: 1 }}>👑</span>
+              {activeTab === "admin" ? (
+                <>
+                  <span className="d-none d-sm-inline">Về Ứng Dụng</span>
+                  <span className="d-inline d-sm-none">Về App</span>
+                </>
+              ) : (
+                <>
+                  <span className="d-none d-sm-inline">Admin Portal</span>
+                  <span className="d-inline d-sm-none">Admin</span>
+                </>
+              )}
             </button>
           )}
 
