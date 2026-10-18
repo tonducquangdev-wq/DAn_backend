@@ -182,8 +182,8 @@ export const NotificationWatcher = () => {
     <div
       style={{
         position: "fixed",
-        top: "24px",
-        right: "24px",
+        top: "calc(16px + env(safe-area-inset-top, 0px))",
+        right: "calc(16px + env(safe-area-inset-right, 0px))",
         zIndex: 10090,
         display: "flex",
         flexDirection: "column",

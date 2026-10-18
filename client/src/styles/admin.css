@@ -527,9 +527,9 @@
    -------------------------------------------------------------------------- */
 .admin-toast-banner {
   position: fixed;
-  top: 15px;
-  left: 15px;
-  right: 15px;
+  top: calc(15px + env(safe-area-inset-top, 0px));
+  left: calc(15px + env(safe-area-inset-left, 0px));
+  right: calc(15px + env(safe-area-inset-right, 0px));
   z-index: 999999;
   padding: 0.85rem 1.25rem;
   border-radius: 12px;
@@ -546,7 +546,7 @@
 @media (min-width: 576px) {
   .admin-toast-banner {
     left: auto;
-    right: 20px;
+    right: calc(20px + env(safe-area-inset-right, 0px));
     max-width: 420px;
   }
 }

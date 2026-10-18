@@ -23,7 +23,7 @@
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at center, #f1f5f9 0%, #dbeafe 50%, #bfdbfe 100%);
-  padding: 20px;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) calc(20px + env(safe-area-inset-left, 0px));
   box-sizing: border-box;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }

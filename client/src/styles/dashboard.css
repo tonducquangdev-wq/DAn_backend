@@ -362,9 +362,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 /* HEADER CỐ ĐỊNH PHÍA TRÊN (COMPACT 58PX STICKY TOPBAR) */
 .top-header {
-    height: var(--header-height);
+    height: calc(var(--header-height) + env(safe-area-inset-top, 0px));
+    min-height: calc(var(--header-height) + env(safe-area-inset-top, 0px));
     background-color: #ffffff;
-    padding: 0 1.25rem;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: 0;
+    padding-left: calc(1.25rem + env(safe-area-inset-left, 0px));
+    padding-right: calc(1.25rem + env(safe-area-inset-right, 0px));
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1624,10 +1628,14 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         overflow-y: visible !important;
     }
 
-    /* 2. AppBar trên cùng gọn gàng kiểu Flutter Scaffold AppBar */
+    /* 2. AppBar trên cùng gọn gàng kiểu Flutter Scaffold AppBar (Tối ưu Tai thỏ / Dynamic Island) */
     .top-header {
-        height: 56px !important;
-        padding: 0 14px !important;
+        height: calc(56px + env(safe-area-inset-top, 0px)) !important;
+        min-height: calc(56px + env(safe-area-inset-top, 0px)) !important;
+        padding-top: env(safe-area-inset-top, 0px) !important;
+        padding-bottom: 0 !important;
+        padding-left: calc(14px + env(safe-area-inset-left, 0px)) !important;
+        padding-right: calc(14px + env(safe-area-inset-right, 0px)) !important;
         position: sticky;
         top: 0;
         z-index: 1030;

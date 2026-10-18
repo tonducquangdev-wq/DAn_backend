@@ -7,6 +7,10 @@
    ============================================================ */
 
 :root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
   --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 
   /* Neumorphic Light Mode Palette (Exact Match to Reference Image) */
@@ -142,7 +146,7 @@ body {
 /* Top Header Bar */
 .neu-top-header {
   width: 100%;
-  padding: 12px 28px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) calc(28px + env(safe-area-inset-right, 0px)) 12px calc(28px + env(safe-area-inset-left, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -206,7 +210,7 @@ body {
 
 @media (max-width: 576px) {
   .neu-top-header {
-    padding: 10px 12px !important;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) 10px calc(12px + env(safe-area-inset-left, 0px)) !important;
   }
   .brand-logo-inline {
     gap: 8px;
@@ -227,7 +231,7 @@ body {
 
 @media (max-width: 390px) {
   .neu-top-header {
-    padding: 8px 10px !important;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) calc(10px + env(safe-area-inset-right, 0px)) 8px calc(10px + env(safe-area-inset-left, 0px)) !important;
   }
   .brand-logo-inline {
     gap: 6px;
@@ -717,7 +721,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 25000 !important;
-  padding: 20px;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) calc(20px + env(safe-area-inset-left, 0px));
   box-sizing: border-box;
 }
 
@@ -3019,7 +3023,10 @@ tbody td {
 
 @media (max-width: 576px) {
   .neu-top-header {
-    padding: 14px 18px;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: 12px !important;
+    padding-left: calc(14px + env(safe-area-inset-left, 0px)) !important;
+    padding-right: calc(14px + env(safe-area-inset-right, 0px)) !important;
   }
   .page-title {
     font-size: 1.45rem;
@@ -3065,12 +3072,12 @@ tbody td {
   }
   .modal-overlay {
     z-index: 25000 !important;
-    padding: 12px 10px calc(20px + env(safe-area-inset-bottom, 0px)) 10px !important;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) calc(10px + env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) calc(10px + env(safe-area-inset-left, 0px)) !important;
   }
   .modal-content {
     padding: 20px 14px 24px 14px !important;
     border-radius: 18px !important;
-    max-height: calc(100dvh - 28px - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100dvh - 34px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
   }
@@ -3313,10 +3320,10 @@ tbody td {
     display: none !important;
   }
 
-  /* Tối ưu Modal trên màn hình Mobile để không bị dính đáy hay che khuất */
+  /* Tối ưu Modal trên màn hình Mobile để không bị dính đáy hay che khuất tai thỏ / Dynamic Island */
   .modal-overlay {
     z-index: 25000 !important;
-    padding: 14px 12px calc(24px + env(safe-area-inset-bottom, 0px)) 12px !important;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px)) !important;
     align-items: center !important;
     justify-content: center !important;
   }
@@ -3324,7 +3331,7 @@ tbody td {
   .modal-content {
     width: 100% !important;
     max-width: 540px !important;
-    max-height: calc(100dvh - 36px - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100dvh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
     border-radius: 20px !important;
@@ -3339,15 +3346,15 @@ tbody td {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(64px + env(safe-area-inset-bottom, 0px));
     background: #ffffff;
     border-top: 1px solid rgba(0, 0, 0, 0.07);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
     z-index: 10000;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-around;
-    padding: 0 4px;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding: 6px calc(4px + env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) calc(4px + env(safe-area-inset-left, 0px));
     user-select: none;
   }
 
@@ -3638,7 +3645,7 @@ tbody td {
 
   /* Padding bottom cho content chính không bị che bởi Bottom Nav */
   .main-wrapper.full-width {
-    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
   }
   /* Ẩn hoàn toàn Floating menu trên mobile để tránh chồng đè lên bottom nav hoặc modal */
   .neu-floating-container {
@@ -3708,7 +3715,7 @@ tbody td {
 /* PWA Install Banner */
 .pwa-install-banner {
   position: fixed;
-  bottom: 80px;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   left: 20px;
   right: 20px;
   max-width: 500px;
