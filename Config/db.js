@@ -9,7 +9,7 @@ const connectDB = async () => {
         }
 
         const conn = await mongoose.connect(mongoUri);
-        console.log(`✅ MongoDB Connected thành công: ${conn.connection.host}/${conn.connection.name}`);
+        console.log(` MongoDB Connected thành công: ${conn.connection.host}/${conn.connection.name}`);
 
         // Khởi tạo tài khoản Admin mặc định
         const seedAdmin = require("./seedAdmin");

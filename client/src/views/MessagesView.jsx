@@ -119,15 +119,23 @@ export const MessagesView = ({ initialPartnerId = null }) => {
       if (isInitial) setLoadingMessages(true);
       const res = await api.getTinNhanVoiNguoiDung(partnerId);
       if (res.success && res.data) {
-        setMessages(res.data.messages || []);
+        const incoming = res.data.messages || [];
+        setMessages((prevMsgs) => {
+          const hasNewMsg = incoming.length > prevMsgs.length;
+          // Chỉ cuộn trong hộp chat nếu là lần đầu chọn đối tác hoặc có tin mới đến
+          if (isInitial) {
+            setTimeout(() => scrollToBottom("auto"), 50);
+          } else if (hasNewMsg && isNearBottomRef.current) {
+            setTimeout(() => scrollToBottom("smooth"), 50);
+          }
+          return incoming;
+        });
+
         if (res.data.partner) {
           setSelectedPartner((prev) => ({
             ...(prev || {}),
             ...res.data.partner
           }));
-        }
-        if (isInitial || isNearBottomRef.current) {
-          setTimeout(scrollToBottom, 60);
         }
       }
     } catch (err) {
@@ -137,8 +145,13 @@ export const MessagesView = ({ initialPartnerId = null }) => {
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior = "smooth") => {
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTo({
+        top: chatBodyRef.current.scrollHeight,
+        behavior: behavior
+      });
+    }
   };
 
   const handleChatScroll = () => {

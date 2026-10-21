@@ -93,6 +93,27 @@ const updateDuAn = async (req, res) => {
         if (req.body.ngay_ket_thuc) duAn.ngay_ket_thuc = new Date(req.body.ngay_ket_thuc);
         await duAn.save();
 
+        // Tự động đồng bộ lại tiền lương của tất cả các Ca làm việc nếu có cập nhật lương theo giờ
+        if (req.body.luong_theo_gio !== undefined) {
+            const newHourlyRate = Number(req.body.luong_theo_gio) || 0;
+            const caLams = await CaLamViec.find({ du_an_id: duAn._id, user_id: req.user._id });
+            for (const ca of caLams) {
+                ca.luong_theo_gio = newHourlyRate;
+                ca.tien_luong_ca = Math.round((Number(ca.so_gio_lam) || 0) * newHourlyRate);
+                await ca.save();
+
+                try {
+                    const desc = `🏪 Nơi làm: ${duAn.ten_du_an}\n⏱️ Thời gian: ${ca.gio_bat_dau} - ${ca.gio_ket_thuc} (${ca.so_gio_lam} giờ)\n💰 Lương ca: ${ca.tien_luong_ca.toLocaleString("vi-VN")}đ${ca.dia_diem || duAn.dia_chi ? `\n📍 Địa chỉ: ${ca.dia_diem || duAn.dia_chi}` : ""}`;
+                    await SuKien.updateOne(
+                        { ca_lam_viec_id: ca._id, user_id: req.user._id },
+                        { $set: { mo_ta: desc } }
+                    );
+                } catch (e) {
+                    // Ignore calendar update error
+                }
+            }
+        }
+
         // Đồng bộ cập nhật sự kiện lịch của Dự án
         try {
             const suKien = await SuKien.findOne({ du_an_id: duAn._id, cong_viec_id: null, ca_lam_viec_id: null, is_deleted: false });
@@ -336,6 +357,33 @@ const getCaLamViec = async (req, res) => {
             .populate("du_an_id", "ten_du_an mau_sac luong_theo_gio dia_chi loai_du_an")
             .sort({ thoi_gian_bat_dau: 1 });
 
+        // Tự động kiểm tra và đồng bộ lại tiền lương nếu ca làm có lương = 0 nhưng nơi làm việc có thiết lập lương theo giờ
+        for (const ca of caLamViecs) {
+            const projectRate = Number(ca.du_an_id?.luong_theo_gio) || 0;
+            const currentRate = Number(ca.luong_theo_gio) || 0;
+            const rate = currentRate > 0 ? currentRate : projectRate;
+            const gio = Number(ca.so_gio_lam) || 0;
+            const expectedTien = Math.round(gio * rate);
+
+            if ((!ca.luong_theo_gio || ca.luong_theo_gio === 0 || !ca.tien_luong_ca || ca.tien_luong_ca === 0) && rate > 0) {
+                ca.luong_theo_gio = rate;
+                ca.tien_luong_ca = expectedTien;
+                await CaLamViec.updateOne(
+                    { _id: ca._id },
+                    { $set: { luong_theo_gio: rate, tien_luong_ca: expectedTien } }
+                );
+                try {
+                    const desc = `🏪 Nơi làm: ${ca.du_an_id?.ten_du_an || "Part-time"}\n⏱️ Thời gian: ${ca.gio_bat_dau} - ${ca.gio_ket_thuc} (${ca.so_gio_lam} giờ)\n💰 Lương ca: ${expectedTien.toLocaleString("vi-VN")}đ${ca.dia_diem ? `\n📍 Địa chỉ: ${ca.dia_diem}` : ""}`;
+                    await SuKien.updateOne(
+                        { ca_lam_viec_id: ca._id, user_id: req.user._id },
+                        { $set: { mo_ta: desc } }
+                    );
+                } catch (e) {
+                    // Ignore calendar update error
+                }
+            }
+        }
+
         // Thống kê giờ làm và tiền lương tích lũy
         let tong_gio_da_lam = 0;
         let luong_tich_luy = 0;
@@ -347,10 +395,17 @@ const getCaLamViec = async (req, res) => {
 
         caLamViecs.forEach((ca) => {
             const gio = Number(ca.so_gio_lam) || 0;
-            const tien = Number(ca.tien_luong_ca) || 0;
+            const projectRate = Number(ca.du_an_id?.luong_theo_gio) || 0;
+            const effectiveRate = Number(ca.luong_theo_gio) > 0 ? Number(ca.luong_theo_gio) : projectRate;
+            const tien = Number(ca.tien_luong_ca) > 0 ? Number(ca.tien_luong_ca) : Math.round(gio * effectiveRate);
 
-            tong_gio_toan_bo += gio;
-            luong_du_kien_toan_bo += tien;
+            ca.tien_luong_ca = tien;
+            ca.luong_theo_gio = effectiveRate;
+
+            if (ca.trang_thai !== "nghi_phep") {
+                tong_gio_toan_bo += gio;
+                luong_du_kien_toan_bo += tien;
+            }
 
             if (ca.trang_thai === "da_hoan_thanh") {
                 tong_gio_da_lam += gio;
@@ -384,7 +439,7 @@ const getCaLamViec = async (req, res) => {
 
 const createCaLamViec = async (req, res) => {
     try {
-        const { du_an_id, tieu_de, ngay_lam, gio_bat_dau, gio_ket_thuc, dia_diem, ghi_chu } = req.body;
+        const { du_an_id, tieu_de, ngay_lam, gio_bat_dau, gio_ket_thuc, dia_diem, ghi_chu, luong_theo_gio: customRate } = req.body;
         if (!du_an_id) {
             return res.status(400).json({ success: false, message: "Vui lòng chọn Nơi làm việc / Dự án" });
         }
@@ -406,8 +461,10 @@ const createCaLamViec = async (req, res) => {
 
         const diffHours = (endISO.getTime() - startISO.getTime()) / (1000 * 60 * 60);
         const so_gio_lam = Math.round(diffHours * 10) / 10;
-        const luong_theo_gio = Number(duAn.luong_theo_gio) || 0;
-        const tien_luong_ca = Math.round(so_gio_lam * luong_theo_gio);
+        const rate = (customRate !== undefined && customRate !== "" && !isNaN(Number(customRate)) && Number(customRate) > 0)
+            ? Number(customRate)
+            : (Number(duAn.luong_theo_gio) || 0);
+        const tien_luong_ca = Math.round(so_gio_lam * rate);
 
         const now = new Date();
         const trang_thai = endISO <= now ? "da_hoan_thanh" : "chua_den";
@@ -422,7 +479,7 @@ const createCaLamViec = async (req, res) => {
             thoi_gian_bat_dau: startISO,
             thoi_gian_ket_thuc: endISO,
             so_gio_lam,
-            luong_theo_gio,
+            luong_theo_gio: rate,
             tien_luong_ca,
             dia_diem: dia_diem ? dia_diem.trim() : duAn.dia_chi || null,
             ghi_chu: ghi_chu ? ghi_chu.trim() : null,
@@ -465,7 +522,7 @@ const createCaLamViec = async (req, res) => {
 
 const bulkCreateCaLamViec = async (req, res) => {
     try {
-        const { du_an_id, tieu_de, days_of_week, gio_bat_dau, gio_ket_thuc, tu_ngay, den_ngay, dia_diem, ghi_chu } = req.body;
+        const { du_an_id, tieu_de, days_of_week, gio_bat_dau, gio_ket_thuc, tu_ngay, den_ngay, dia_diem, ghi_chu, luong_theo_gio: customRate } = req.body;
 
         if (!du_an_id) {
             return res.status(400).json({ success: false, message: "Vui lòng chọn Nơi làm việc / Dự án" });
@@ -488,7 +545,9 @@ const bulkCreateCaLamViec = async (req, res) => {
             return res.status(400).json({ success: false, message: "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu" });
         }
 
-        const luong_theo_gio = Number(duAn.luong_theo_gio) || 0;
+        const rate = (customRate !== undefined && customRate !== "" && !isNaN(Number(customRate)) && Number(customRate) > 0)
+            ? Number(customRate)
+            : (Number(duAn.luong_theo_gio) || 0);
         const now = new Date();
 
         const createdShifts = [];
@@ -507,7 +566,7 @@ const bulkCreateCaLamViec = async (req, res) => {
 
                 const diffHours = (endISO.getTime() - startISO.getTime()) / (1000 * 60 * 60);
                 const so_gio_lam = Math.round(diffHours * 10) / 10;
-                const tien_luong_ca = Math.round(so_gio_lam * luong_theo_gio);
+                const tien_luong_ca = Math.round(so_gio_lam * rate);
                 const trang_thai = endISO <= now ? "da_hoan_thanh" : "chua_den";
 
                 createdShifts.push({
@@ -520,7 +579,7 @@ const bulkCreateCaLamViec = async (req, res) => {
                     thoi_gian_bat_dau: startISO,
                     thoi_gian_ket_thuc: endISO,
                     so_gio_lam,
-                    luong_theo_gio,
+                    luong_theo_gio: rate,
                     tien_luong_ca,
                     dia_diem: dia_diem ? dia_diem.trim() : duAn.dia_chi || null,
                     ghi_chu: ghi_chu ? ghi_chu.trim() : null,
@@ -571,7 +630,7 @@ const updateCaLamViec = async (req, res) => {
         const caLamViec = await CaLamViec.findOne({ _id: id, user_id: req.user._id });
         if (!caLamViec) return res.status(404).json({ success: false, message: "Không tìm thấy ca làm việc" });
 
-        Object.assign(caLamViec, req.body);
+        const duAn = await DuAn.findById(caLamViec.du_an_id);
 
         if (req.body.ngay_lam || req.body.gio_bat_dau || req.body.gio_ket_thuc) {
             const dateStr = (req.body.ngay_lam ? new Date(req.body.ngay_lam) : caLamViec.ngay_lam).toISOString().split("T")[0];
@@ -588,8 +647,21 @@ const updateCaLamViec = async (req, res) => {
             caLamViec.thoi_gian_bat_dau = startISO;
             caLamViec.thoi_gian_ket_thuc = endISO;
             caLamViec.so_gio_lam = Math.round(diffHours * 10) / 10;
-            caLamViec.tien_luong_ca = Math.round(caLamViec.so_gio_lam * (caLamViec.luong_theo_gio || 0));
         }
+
+        const projectRate = Number(duAn?.luong_theo_gio) || 0;
+        if (req.body.luong_theo_gio !== undefined && req.body.luong_theo_gio !== "") {
+            caLamViec.luong_theo_gio = Number(req.body.luong_theo_gio) || 0;
+        } else if (!caLamViec.luong_theo_gio || caLamViec.luong_theo_gio === 0) {
+            caLamViec.luong_theo_gio = projectRate;
+        }
+
+        caLamViec.tien_luong_ca = Math.round((Number(caLamViec.so_gio_lam) || 0) * (Number(caLamViec.luong_theo_gio) || 0));
+
+        if (req.body.tieu_de !== undefined) caLamViec.tieu_de = req.body.tieu_de;
+        if (req.body.dia_diem !== undefined) caLamViec.dia_diem = req.body.dia_diem;
+        if (req.body.ghi_chu !== undefined) caLamViec.ghi_chu = req.body.ghi_chu;
+        if (req.body.trang_thai !== undefined) caLamViec.trang_thai = req.body.trang_thai;
 
         await caLamViec.save();
 
@@ -602,7 +674,15 @@ const updateCaLamViec = async (req, res) => {
                 if (caLamViec.trang_thai === "nghi_phep") {
                     suKien.tieu_de = `[Nghỉ phép] ${caLamViec.tieu_de}`;
                     suKien.mau_sac = "#94a3b8";
+                } else if (caLamViec.trang_thai === "da_hoan_thanh") {
+                    suKien.tieu_de = `[✓ Đã làm] ${caLamViec.tieu_de}`;
+                    suKien.mau_sac = "#10b981";
+                } else {
+                    suKien.tieu_de = `[Ca làm - ${duAn?.ten_du_an || ""}] ${caLamViec.tieu_de}`;
+                    suKien.mau_sac = duAn?.mau_sac || "#6366F1";
                 }
+                const desc = `🏪 Nơi làm: ${duAn?.ten_du_an || "Part-time"}\n⏱️ Thời gian: ${caLamViec.gio_bat_dau} - ${caLamViec.gio_ket_thuc} (${caLamViec.so_gio_lam} giờ)\n💰 Lương ca: ${caLamViec.tien_luong_ca.toLocaleString("vi-VN")}đ${caLamViec.dia_diem ? `\n📍 Địa chỉ: ${caLamViec.dia_diem}` : ""}`;
+                suKien.mo_ta = desc;
                 await suKien.save();
             }
         } catch (evErr) {

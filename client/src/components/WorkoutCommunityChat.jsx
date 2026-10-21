@@ -42,8 +42,13 @@ export const WorkoutCommunityChat = ({ isOpen, onClose }) => {
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior = "smooth") => {
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTo({
+        top: chatBodyRef.current.scrollHeight,
+        behavior: behavior
+      });
+    }
   };
 
   // Khởi động vòng lặp polling khi mở cửa sổ chat

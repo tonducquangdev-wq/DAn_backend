@@ -23,7 +23,23 @@ const register = async (req, res) => {
             });
         }
 
-        const existingUser = await User.findOne({ email });
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(String(email).trim())) {
+            return res.status(400).json({
+                success: false,
+                message: "Email không đúng định dạng hợp lệ (Ví dụ: name@gmail.com)"
+            });
+        }
+
+        if (String(password).length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Mật khẩu phải có độ dài tối thiểu 6 ký tự"
+            });
+        }
+
+        const cleanEmail = String(email).trim().toLowerCase();
+        const existingUser = await User.findOne({ email: cleanEmail });
         if (existingUser) {
             return res.status(400).json({
                 success: false,

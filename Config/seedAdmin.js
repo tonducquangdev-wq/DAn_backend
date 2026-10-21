@@ -17,17 +17,17 @@ const seedAdmin = async () => {
                 status: "active",
                 bio: "Quản trị viên cấp cao của hệ thống Life Planner"
             });
-            console.log(`👑 [ADMIN] Đã khởi tạo tài khoản Quản trị viên mặc định: ${adminEmail} | Mật khẩu: ${adminPassword}`);
+            console.log(`[ADMIN] Đã khởi tạo tài khoản Quản trị viên mặc định: ${adminEmail} | Mật khẩu: ${adminPassword}`);
         } else if (adminUser.role !== "admin") {
             adminUser.role = "admin";
             await adminUser.save();
-            console.log(`👑 [ADMIN] Đã đồng bộ quyền Admin cho tài khoản: ${adminEmail}`);
+            console.log(`[ADMIN] Đã đồng bộ quyền Admin cho tài khoản: ${adminEmail}`);
         }
 
         // Cập nhật các user cũ chưa có role về 'user'
         await User.updateMany({ role: { $exists: false } }, { $set: { role: "user", status: "active" } });
     } catch (error) {
-        console.error("⚠️ Lỗi khởi tạo tài khoản Admin mặc định:", error.message);
+        console.error("Lỗi khởi tạo tài khoản Admin mặc định:", error.message);
     }
 };
 

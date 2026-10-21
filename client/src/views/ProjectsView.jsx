@@ -70,6 +70,7 @@ export const ProjectsView = () => {
     ngay_lam: new Date().toISOString().split("T")[0],
     gio_bat_dau: "08:00",
     gio_ket_thuc: "12:00",
+    luong_theo_gio: "",
     dia_diem: "",
     ghi_chu: ""
   });
@@ -81,11 +82,43 @@ export const ProjectsView = () => {
     days_of_week: [1, 3, 5], // Mặc định T2, T4, T6
     gio_bat_dau: "08:00",
     gio_ket_thuc: "12:00",
+    luong_theo_gio: "",
     tu_ngay: new Date().toISOString().split("T")[0],
     den_ngay: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
     dia_diem: "",
     ghi_chu: ""
   });
+
+  // Tính số giờ giữa 2 khung giờ HH:mm
+  const calculateShiftHours = (start, end) => {
+    if (!start || !end) return 0;
+    const [h1, m1] = start.split(":").map(Number);
+    const [h2, m2] = end.split(":").map(Number);
+    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff <= 0) diff += 24 * 60;
+    return Math.round((diff / 60) * 10) / 10;
+  };
+
+  const singleShiftPreview = useMemo(() => {
+    const hours = calculateShiftHours(singleShiftForm.gio_bat_dau, singleShiftForm.gio_ket_thuc);
+    const rate = Number(singleShiftForm.luong_theo_gio) || 0;
+    return {
+      hours,
+      totalSalary: Math.round(hours * rate)
+    };
+  }, [singleShiftForm.gio_bat_dau, singleShiftForm.gio_ket_thuc, singleShiftForm.luong_theo_gio]);
+
+  const bulkShiftPreview = useMemo(() => {
+    const hoursPerShift = calculateShiftHours(bulkShiftForm.gio_bat_dau, bulkShiftForm.gio_ket_thuc);
+    const rate = Number(bulkShiftForm.luong_theo_gio) || 0;
+    const salaryPerShift = Math.round(hoursPerShift * rate);
+    const numDays = bulkShiftForm.days_of_week?.length || 0;
+    return {
+      hoursPerShift,
+      salaryPerShift,
+      weeklySalary: salaryPerShift * numDays
+    };
+  }, [bulkShiftForm.gio_bat_dau, bulkShiftForm.gio_ket_thuc, bulkShiftForm.luong_theo_gio, bulkShiftForm.days_of_week]);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -186,6 +219,7 @@ export const ProjectsView = () => {
       ngay_lam: new Date().toISOString().split("T")[0],
       gio_bat_dau: "08:00",
       gio_ket_thuc: "12:00",
+      luong_theo_gio: selectedProj?.luong_theo_gio !== undefined ? selectedProj.luong_theo_gio : "",
       dia_diem: selectedProj?.dia_chi || "",
       ghi_chu: ""
     });
@@ -202,6 +236,7 @@ export const ProjectsView = () => {
       days_of_week: [1, 3, 5],
       gio_bat_dau: "08:00",
       gio_ket_thuc: "12:00",
+      luong_theo_gio: selectedProj?.luong_theo_gio !== undefined ? selectedProj.luong_theo_gio : "",
       tu_ngay: new Date().toISOString().split("T")[0],
       den_ngay: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       dia_diem: selectedProj?.dia_chi || "",
@@ -347,14 +382,26 @@ export const ProjectsView = () => {
     }
   };
 
-  // Đổi trạng thái ca làm (Nghỉ phép / Hoàn thành)
+  // Đổi trạng thái ca làm (da_hoan_thanh, chua_den, nghi_phep)
+  const handleChangeShiftStatus = async (shift, targetStatus) => {
+    const res = await api.updateCaLamViec(shift._id, { trang_thai: targetStatus });
+    if (res.success) {
+      if (targetStatus === "da_hoan_thanh") {
+        showToast(`Đã hoàn thành ca và cộng ${Number(shift.tien_luong_ca || 0).toLocaleString("vi-VN")}đ vào lương! 💰`, "success");
+      } else if (targetStatus === "nghi_phep") {
+        showToast("Đã đánh dấu nghỉ phép ca này 🛌 (Không tính lương)", "warning");
+      } else {
+        showToast("Đã chuyển ca sang trạng thái sắp tới ⏳", "success");
+      }
+      loadShifts();
+    } else {
+      showToast(res.message || "Lỗi cập nhật ca làm", "danger");
+    }
+  };
+
   const handleToggleShiftStatus = async (shift) => {
     const nextStatus = shift.trang_thai === "nghi_phep" ? "chua_den" : "nghi_phep";
-    const res = await api.updateCaLamViec(shift._id, { trang_thai: nextStatus });
-    if (res.success) {
-      showToast(nextStatus === "nghi_phep" ? "Đã đánh dấu nghỉ phép ca này 🛌" : "Đã kích hoạt lại ca làm", "success");
-      loadShifts();
-    }
+    handleChangeShiftStatus(shift, nextStatus);
   };
 
 
@@ -845,6 +892,18 @@ export const ProjectsView = () => {
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ fontSize: "0.82rem", padding: "6px 14px", borderRadius: "8px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                  onClick={() => {
+                    loadShifts();
+                    showToast("Đã đồng bộ và tính toán lại lương thành công! 💰", "success");
+                  }}
+                  title="Kiểm tra và tự động tính toán lại lương tích lũy"
+                >
+                  🔄 Đồng bộ & Tính lại lương
+                </button>
               </div>
             </div>
           </div>
@@ -1019,16 +1078,69 @@ export const ProjectsView = () => {
                             )}
                           </td>
                           <td style={{ textAlign: "right" }}>
-                            <div style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>
-                              <button
-                                type="button"
-                                className="btn-secondary"
-                                style={{ fontSize: "0.72rem", padding: "4px 8px", height: "auto" }}
-                                title={isAbsent ? "Hủy đánh dấu nghỉ phép" : "Đánh dấu nghỉ phép ca này"}
-                                onClick={() => handleToggleShiftStatus(sh)}
-                              >
-                                {isAbsent ? "Mở lại" : "🛌 Nghỉ"}
-                              </button>
+                            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                              {sh.trang_thai === "chua_den" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="btn-primary"
+                                    style={{
+                                      fontSize: "0.72rem",
+                                      padding: "4px 9px",
+                                      height: "auto",
+                                      background: "#10b981",
+                                      borderColor: "#10b981",
+                                      fontWeight: 700
+                                    }}
+                                    title="Xác nhận đã làm ca này để tự động cộng lương ngay"
+                                    onClick={() => handleChangeShiftStatus(sh, "da_hoan_thanh")}
+                                  >
+                                    ✓ Đã làm
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    style={{ fontSize: "0.72rem", padding: "4px 8px", height: "auto" }}
+                                    title="Đánh dấu nghỉ phép ca này (không tính lương)"
+                                    onClick={() => handleChangeShiftStatus(sh, "nghi_phep")}
+                                  >
+                                    🛌 Nghỉ
+                                  </button>
+                                </>
+                              )}
+                              {sh.trang_thai === "da_hoan_thanh" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    style={{ fontSize: "0.72rem", padding: "4px 8px", height: "auto" }}
+                                    title="Hoàn tác ca về trạng thái sắp tới"
+                                    onClick={() => handleChangeShiftStatus(sh, "chua_den")}
+                                  >
+                                    ⏳ Chưa làm
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    style={{ fontSize: "0.72rem", padding: "4px 8px", height: "auto" }}
+                                    title="Đánh dấu nghỉ phép ca này"
+                                    onClick={() => handleChangeShiftStatus(sh, "nghi_phep")}
+                                  >
+                                    🛌 Nghỉ
+                                  </button>
+                                </>
+                              )}
+                              {sh.trang_thai === "nghi_phep" && (
+                                <button
+                                  type="button"
+                                  className="btn-secondary"
+                                  style={{ fontSize: "0.72rem", padding: "4px 8px", height: "auto", color: "#10b981", fontWeight: 700 }}
+                                  title="Kích hoạt lại ca làm"
+                                  onClick={() => handleChangeShiftStatus(sh, "chua_den")}
+                                >
+                                  ↩️ Đi làm lại
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 title="Xóa ca làm"
@@ -1420,7 +1532,8 @@ export const ProjectsView = () => {
                     setSingleShiftForm({
                       ...singleShiftForm,
                       du_an_id: pId,
-                      dia_diem: proj?.dia_chi || ""
+                      dia_diem: proj?.dia_chi || "",
+                      luong_theo_gio: proj?.luong_theo_gio !== undefined ? proj.luong_theo_gio : ""
                     });
                   }}
                 >
@@ -1445,8 +1558,6 @@ export const ProjectsView = () => {
                   onChange={(e) => setSingleShiftForm({ ...singleShiftForm, ngay_lam: e.target.value })}
                 />
               </div>
-
-
 
               {/* Khung Giờ Bắt Đầu - Kết Thúc */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "14px" }}>
@@ -1473,6 +1584,41 @@ export const ProjectsView = () => {
                     onChange={(e) => setSingleShiftForm({ ...singleShiftForm, gio_ket_thuc: e.target.value })}
                   />
                 </div>
+              </div>
+
+              {/* Lương Theo Giờ & Xem trước tiền lương */}
+              <div className="form-group mb-3">
+                <label style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "6px", display: "flex", justifyContent: "space-between" }}>
+                  <span>💰 Lương theo giờ (VNĐ/h)</span>
+                  <span style={{ fontSize: "0.76rem", color: "var(--text-muted)", fontWeight: 400 }}>Mặc định theo nơi làm việc</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={singleShiftForm.luong_theo_gio}
+                  onChange={(e) => setSingleShiftForm({ ...singleShiftForm, luong_theo_gio: e.target.value })}
+                  placeholder="Ví dụ: 25000"
+                />
+                {singleShiftPreview && (
+                  <div
+                    style={{
+                      marginTop: "8px",
+                      padding: "8px 12px",
+                      background: "rgba(16, 185, 129, 0.08)",
+                      border: "1px dashed rgba(16, 185, 129, 0.3)",
+                      borderRadius: "8px",
+                      fontSize: "0.82rem",
+                      color: "#10b981",
+                      fontWeight: 600,
+                      display: "flex",
+                      justifyContent: "space-between"
+                    }}
+                  >
+                    <span>⏱️ Tổng: {singleShiftPreview.hours} giờ</span>
+                    <span>💰 Dự tính: {singleShiftPreview.totalSalary.toLocaleString("vi-VN")} đ</span>
+                  </div>
+                )}
               </div>
 
               {/* Tên Ca & Ghi Chú */}
@@ -1541,7 +1687,8 @@ export const ProjectsView = () => {
                     setBulkShiftForm({
                       ...bulkShiftForm,
                       du_an_id: pId,
-                      dia_diem: proj?.dia_chi || ""
+                      dia_diem: proj?.dia_chi || "",
+                      luong_theo_gio: proj?.luong_theo_gio !== undefined ? proj.luong_theo_gio : ""
                     });
                   }}
                 >
@@ -1616,6 +1763,48 @@ export const ProjectsView = () => {
                     onChange={(e) => setBulkShiftForm({ ...bulkShiftForm, gio_ket_thuc: e.target.value })}
                   />
                 </div>
+              </div>
+
+              {/* Lương Theo Giờ & Dự tính */}
+              <div className="form-group mb-3">
+                <label style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "6px", display: "flex", justifyContent: "space-between" }}>
+                  <span>💰 Lương theo giờ (VNĐ/h)</span>
+                  <span style={{ fontSize: "0.76rem", color: "var(--text-muted)", fontWeight: 400 }}>Mặc định theo nơi làm việc</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={bulkShiftForm.luong_theo_gio}
+                  onChange={(e) => setBulkShiftForm({ ...bulkShiftForm, luong_theo_gio: e.target.value })}
+                  placeholder="Ví dụ: 25000"
+                />
+                {bulkShiftPreview && (
+                  <div
+                    style={{
+                      marginTop: "8px",
+                      padding: "8px 12px",
+                      background: "rgba(16, 185, 129, 0.08)",
+                      border: "1px dashed rgba(16, 185, 129, 0.3)",
+                      borderRadius: "8px",
+                      fontSize: "0.82rem",
+                      color: "#10b981",
+                      fontWeight: 600,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "4px"
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>⏱️ Mỗi ca: {bulkShiftPreview.hoursPerShift} giờ</span>
+                      <span>💰 Mỗi ca: {bulkShiftPreview.salaryPerShift.toLocaleString("vi-VN")} đ</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px dashed rgba(16, 185, 129, 0.2)", paddingTop: "4px" }}>
+                      <span>📅 {bulkShiftForm.days_of_week.length} ca / tuần</span>
+                      <span>💵 Thu nhập tuần: {bulkShiftPreview.weeklySalary.toLocaleString("vi-VN")} đ</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Khoảng Thời Gian Áp Dụng (Từ Ngày... Đến Ngày...) */}
