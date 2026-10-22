@@ -9,7 +9,7 @@
     "host": "npm run build && node server.js",
     "prod": "npm run build && node server.js",
     "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT,MOBILE\" -c \"cyan,magenta,yellow\" \"npm run server\" \"npm run client\" \"npm run tunnel\"",
-    "tunnel": "npx localtunnel --port 5000 --subdomain lifeplanner",
+    "tunnel": "ngrok http --url=spent-problem-relocate.ngrok-free.dev 5000",
     "server": "nodemon server.js",
     "client": "npm --prefix client run dev",
     "build": "npm --prefix client run build",
