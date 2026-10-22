@@ -334,6 +334,17 @@ body {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.header-logout-btn {
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+.header-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  transform: scale(1.08);
+}
+
 @media (max-width: 900px) {
   .header-nav-pills {
     display: none;
@@ -579,15 +590,90 @@ body {
   white-space: nowrap;
 }
 
-@media (max-width: 576px) {
-  .modal-content .btn-primary,
-  .modal-content .btn-secondary,
-  .btn-modal-action {
-    min-height: 44px;
-    font-size: 0.9rem !important;
-    white-space: normal;
-  }
+/* Nút thao tác bảng ca làm việc (Compact Action Buttons) */
+.shift-action-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 5px 11px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  height: auto !important;
+  min-height: unset !important;
+  box-shadow: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  text-decoration: none !important;
 }
+
+.shift-action-btn.btn-done {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+.shift-action-btn.btn-done:hover {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.shift-action-btn.btn-undo {
+  background: rgba(245, 158, 11, 0.14) !important;
+  color: #f59e0b !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+.shift-action-btn.btn-undo:hover {
+  background: #f59e0b !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.shift-action-btn.btn-leave {
+  background: rgba(100, 116, 139, 0.12) !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(100, 116, 139, 0.25) !important;
+}
+.shift-action-btn.btn-leave:hover {
+  background: rgba(100, 116, 139, 0.25) !important;
+  color: var(--text-main) !important;
+  transform: translateY(-1px) !important;
+}
+
+.shift-action-btn.btn-rework {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #3b82f6 !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+}
+.shift-action-btn.btn-rework:hover {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.shift-action-btn.btn-delete {
+  width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  border-radius: 8px !important;
+  font-size: 0.85rem !important;
+}
+.shift-action-btn.btn-delete:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
 
 /* Neumorphic Circular Icon Button (like plus btn in image) */
 .neu-circle-btn {
@@ -947,6 +1033,10 @@ body {
 }
 
 /* Override Bootstrap's table cell background and borders */
+.glass-card .table,
+.glass-card table,
+.neu-card .table,
+.neu-card table,
 .neu-table-wrapper .table,
 .neu-table-wrapper table {
   width: 100%;
@@ -960,12 +1050,18 @@ body {
   --bs-table-hover-bg: transparent !important;
 }
 
+.glass-card .table > :not(caption) > * > *,
+.glass-card table > :not(caption) > * > *,
+.neu-card .table > :not(caption) > * > *,
+.neu-card table > :not(caption) > * > *,
 .neu-table-wrapper .table > :not(caption) > * > * {
   background-color: transparent !important;
   box-shadow: none !important;
   border-bottom: 1px solid var(--border-color);
 }
 
+.glass-card thead,
+.glass-card thead tr,
 .neu-table-wrapper thead,
 .neu-table-wrapper thead tr {
   background: rgba(0, 0, 0, 0.02) !important;
@@ -3483,7 +3579,8 @@ tbody td {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .mobile-bar-icon-box i {
+  .mobile-bar-icon-box i,
+  .mobile-bar-icon-box svg {
     font-size: 1.22rem;
     line-height: 1;
     transition: transform 0.2s ease;
@@ -3517,7 +3614,8 @@ tbody td {
     box-shadow: 0 2px 8px rgba(79, 70, 229, 0.18);
   }
 
-  .mobile-bar-item.active .mobile-bar-icon-box i {
+  .mobile-bar-item.active .mobile-bar-icon-box i,
+  .mobile-bar-item.active .mobile-bar-icon-box svg {
     transform: scale(1.08);
   }
 
@@ -3564,7 +3662,8 @@ tbody td {
     -webkit-tap-highlight-color: transparent;
   }
 
-  .mobile-bar-fab-btn i {
+  .mobile-bar-fab-btn i,
+  .mobile-bar-fab-btn svg {
     font-size: 1.55rem;
     font-weight: 900;
     line-height: 1;
@@ -3575,7 +3674,8 @@ tbody td {
     transform: scale(0.92);
   }
 
-  .mobile-bar-fab-btn.fab-open i {
+  .mobile-bar-fab-btn.fab-open i,
+  .mobile-bar-fab-btn.fab-open svg {
     transform: rotate(45deg);
   }
 

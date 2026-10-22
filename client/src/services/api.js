@@ -146,6 +146,7 @@ export const api = {
   duyetHoSo: (id) => request(`/admin/duyet-ho-so/${id}`, { method: "POST" }),
   tuChoiHoSo: (id, data) => request(`/admin/tu-choi-ho-so/${id}`, { method: "POST", body: JSON.stringify(data) }),
   getAdminUsers: (params = "") => request(`/admin/users${params}`),
+  getAdminUserFullData: (id) => request(`/admin/users/${id}/full-data`),
   updateAdminUser: (id, data) => request(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   sendAdminNotification: (data) => request("/admin/notifications/broadcast", { method: "POST", body: JSON.stringify(data) }),
   getAdminNotificationHistory: () => request("/admin/notifications/history"),

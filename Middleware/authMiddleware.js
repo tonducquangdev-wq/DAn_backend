@@ -39,4 +39,23 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
+const optionalAuth = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+            const token = authHeader.split(" ")[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || "life_planner_secret_key_2026");
+            const user = await User.findById(decoded.id).select("-password");
+            if (user && user.status !== "banned") {
+                req.user = user;
+            }
+        }
+    } catch (e) {
+        // Silently continue without user for optional auth
+    }
+    next();
+};
+
 module.exports = authMiddleware;
+module.exports.authMiddleware = authMiddleware;
+module.exports.optionalAuth = optionalAuth;

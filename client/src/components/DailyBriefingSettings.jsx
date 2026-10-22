@@ -162,9 +162,6 @@ export const DailyBriefingSettings = () => {
             <div style={{ fontWeight: 800, fontSize: "0.96rem", color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis" }}>
               Thông Báo Tổng Hợp Sự Kiện Trong Ngày (Daily Digest)
             </div>
-            <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis" }}>
-              Tự động gửi tóm tắt toàn bộ lịch trình học tập, tập luyện ra màn hình khóa theo giờ bạn chọn
-            </div>
           </div>
         </div>
 
@@ -267,9 +264,6 @@ export const DailyBriefingSettings = () => {
           <div>
             <div style={{ fontWeight: 700, fontSize: "0.86rem", color: "var(--text-main)" }}>
               ⏰ Chọn Khung Giờ Gửi Thông Báo Hàng Ngày
-            </div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-              Hệ thống sẽ điểm danh sự kiện và gửi thông báo đúng vào giờ này mỗi ngày
             </div>
           </div>
 

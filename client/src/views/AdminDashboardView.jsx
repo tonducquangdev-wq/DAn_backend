@@ -37,6 +37,42 @@ export const AdminDashboardView = ({ onBackToApp }) => {
   // Modal Phóng to Chứng chỉ
   const [previewCert, setPreviewCert] = useState(null);
 
+  // Modal Chi tiết toàn bộ dữ liệu của User (Chỉ Admin xem)
+  const [userDataModal, setUserDataModal] = useState({
+    open: false,
+    loading: false,
+    data: null,
+    user: null,
+    activeTab: "tong_quan"
+  });
+
+  const handleOpenUserData = async (targetUser) => {
+    setUserDataModal({
+      open: true,
+      loading: true,
+      data: null,
+      user: targetUser,
+      activeTab: "tong_quan"
+    });
+    try {
+      const res = await api.getAdminUserFullData(targetUser._id);
+      if (res.success) {
+        setUserDataModal((prev) => ({
+          ...prev,
+          loading: false,
+          data: res.data
+        }));
+      } else {
+        showToast("error", res.message || "Không thể tải dữ liệu người dùng.");
+        setUserDataModal((prev) => ({ ...prev, loading: false }));
+      }
+    } catch (err) {
+      console.error("Lỗi xem dữ liệu người dùng:", err);
+      showToast("error", "Lỗi tải dữ liệu người dùng");
+      setUserDataModal((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
   // Thông báo Toast nhanh
   const [toastMsg, setToastMsg] = useState({ type: "", text: "" });
 
@@ -198,6 +234,16 @@ export const AdminDashboardView = ({ onBackToApp }) => {
         showToast(nextStatus === "banned" ? "warning" : "success", `Đã ${actionText.toLowerCase()} tài khoản thành công!`);
         fetchUsers();
         fetchStats();
+        setUserDataModal((prev) => {
+          if (prev.open && prev.user?._id === targetUser._id) {
+            return {
+              ...prev,
+              user: { ...prev.user, status: nextStatus },
+              data: prev.data ? { ...prev.data, user: { ...prev.data.user, status: nextStatus } } : null
+            };
+          }
+          return prev;
+        });
       } else {
         showToast("error", res.message);
       }
@@ -545,6 +591,10 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                           style={{
                             width: "52px",
                             height: "52px",
+                            minWidth: "52px",
+                            minHeight: "52px",
+                            flexShrink: 0,
+                            aspectRatio: "1/1",
                             borderRadius: "50%",
                             background: isGiaSu
                               ? "linear-gradient(135deg, #10b981, #059669)"
@@ -890,6 +940,9 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                             style={{
                               width: "42px",
                               height: "42px",
+                              minWidth: "42px",
+                              minHeight: "42px",
+                              aspectRatio: "1/1",
                               borderRadius: "50%",
                               background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
                               color: "#fff",
@@ -985,32 +1038,44 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                       </div>
 
                       {/* Action buttons on mobile card (Full-width Touch Target, Separated) */}
-                      {!isSelf && (
-                        <div className="d-flex gap-2 pt-2 border-top">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPreselectedNotificationUser(uItem);
-                              setCurrentTab("notifications");
-                            }}
-                            className="btn btn-outline-primary admin-user-card-btn flex-fill"
-                            title={`Soạn thông báo gửi riêng cho ${uItem.name}`}
-                          >
-                            <span>✉️</span>
-                            <span>Gửi Tin</span>
-                          </button>
+                      <div className="d-flex gap-2 pt-2 border-top flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenUserData(uItem)}
+                          className="btn btn-outline-info admin-user-card-btn flex-fill"
+                          title={`Xem toàn bộ dữ liệu của ${uItem.name}`}
+                        >
+                          <span>👁️</span>
+                          <span>Dữ Liệu</span>
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleToggleBan(uItem)}
-                            className={`btn ${isBanned ? "btn-outline-success" : "btn-outline-danger"} admin-user-card-btn flex-fill`}
-                            title={isBanned ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-                          >
-                            <span>{isBanned ? "🔓" : "🔒"}</span>
-                            <span>{isBanned ? "Mở Khóa" : "Khóa TK"}</span>
-                          </button>
-                        </div>
-                      )}
+                        {!isSelf && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPreselectedNotificationUser(uItem);
+                                setCurrentTab("notifications");
+                              }}
+                              className="btn btn-outline-primary admin-user-card-btn flex-fill"
+                              title={`Soạn thông báo gửi riêng cho ${uItem.name}`}
+                            >
+                              <span>✉️</span>
+                              <span>Gửi Tin</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleBan(uItem)}
+                              className={`btn ${isBanned ? "btn-outline-success" : "btn-outline-danger"} admin-user-card-btn flex-fill`}
+                              title={isBanned ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+                            >
+                              <span>{isBanned ? "🔓" : "🔒"}</span>
+                              <span>{isBanned ? "Mở Khóa" : "Khóa TK"}</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -1050,6 +1115,10 @@ export const AdminDashboardView = ({ onBackToApp }) => {
                                 style={{
                                   width: "40px",
                                   height: "40px",
+                                  minWidth: "40px",
+                                  minHeight: "40px",
+                                  flexShrink: 0,
+                                  aspectRatio: "1/1",
                                   borderRadius: "50%",
                                   background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
                                   color: "#fff",
@@ -1160,6 +1229,43 @@ export const AdminDashboardView = ({ onBackToApp }) => {
 
                           {/* Actions */}
                           <td style={{ padding: "1rem 1.2rem", textAlign: "right", whiteSpace: "nowrap" }}>
+                            {/* Nút Xem dữ liệu (Dành riêng cho Admin) */}
+                            <button
+                              onClick={() => handleOpenUserData(uItem)}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "0.4rem",
+                                padding: "0.42rem 0.85rem",
+                                borderRadius: "20px",
+                                border: "1px solid rgba(6, 182, 212, 0.4)",
+                                background: "rgba(6, 182, 212, 0.08)",
+                                color: "#06b6d4",
+                                fontWeight: 700,
+                                fontSize: "0.8rem",
+                                cursor: "pointer",
+                                whiteSpace: "nowrap",
+                                boxShadow: "0 2px 6px rgba(6, 182, 212, 0.12)",
+                                transition: "all 0.25s ease",
+                                marginRight: "6px"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-1px)";
+                                e.currentTarget.style.background = "linear-gradient(135deg, #06b6d4, #0891b2)";
+                                e.currentTarget.style.color = "#ffffff";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.background = "rgba(6, 182, 212, 0.08)";
+                                e.currentTarget.style.color = "#06b6d4";
+                              }}
+                              title={`Xem toàn bộ dữ liệu & thông tin của ${uItem.name}`}
+                            >
+                              <span>👁️</span>
+                              <span>Dữ Liệu</span>
+                            </button>
+
                             {!isSelf && (
                               <button
                                 onClick={() => {
@@ -1386,6 +1492,379 @@ export const AdminDashboardView = ({ onBackToApp }) => {
             >
               Đóng xem trước
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Modal Xem toàn bộ dữ liệu & thông tin người dùng (Dành riêng cho Admin) */}
+      {userDataModal.open && (
+        <div
+          className="admin-modal-backdrop"
+          onClick={() => setUserDataModal({ open: false, loading: false, data: null, user: null, activeTab: "tong_quan" })}
+          style={{ zIndex: 1100 }}
+        >
+          <div
+            className="admin-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "880px",
+              width: "95%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              padding: "1.5rem"
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid var(--border-color)", paddingBottom: "1rem", marginBottom: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                <div
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    minWidth: "48px",
+                    minHeight: "48px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: "1.2rem",
+                    flexShrink: 0,
+                    aspectRatio: "1/1"
+                  }}
+                >
+                  {userDataModal.user?.name ? userDataModal.user.name.charAt(0).toUpperCase() : "U"}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: "var(--text-main)", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                    <span>{userDataModal.user?.name}</span>
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        padding: "2px 8px",
+                        borderRadius: "12px",
+                        fontWeight: 700,
+                        background: userDataModal.user?.status === "banned" ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.15)",
+                        color: userDataModal.user?.status === "banned" ? "#ef4444" : "#10b981",
+                        border: userDataModal.user?.status === "banned" ? "1px solid rgba(239, 68, 68, 0.3)" : "1px solid rgba(16, 185, 129, 0.3)"
+                      }}
+                    >
+                      {userDataModal.user?.status === "banned" ? "🔴 BỊ KHÓA" : "🟢 HOẠT ĐỘNG"}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        padding: "2px 8px",
+                        borderRadius: "12px",
+                        fontWeight: 700,
+                        background: "rgba(99, 102, 241, 0.15)",
+                        color: "#6366f1",
+                        border: "1px solid rgba(99, 102, 241, 0.3)"
+                      }}
+                    >
+                      Vai trò: {userDataModal.user?.role?.toUpperCase()}
+                    </span>
+                  </h3>
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "2px" }}>
+                    {userDataModal.user?.email} {userDataModal.user?.phone ? `• ${userDataModal.user.phone}` : ""}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setUserDataModal({ open: false, loading: false, data: null, user: null, activeTab: "tong_quan" })}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "1.4rem",
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  lineHeight: 1
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* BANNED NOTICE BANNER */}
+            {userDataModal.user?.status === "banned" && (
+              <div
+                style={{
+                  background: "rgba(239, 68, 68, 0.08)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  borderRadius: "10px",
+                  padding: "0.75rem 1rem",
+                  marginBottom: "1rem",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.6rem"
+                }}
+              >
+                <span style={{ fontSize: "1.2rem" }}>🔒</span>
+                <div style={{ fontSize: "0.85rem", color: "#ef4444" }}>
+                  <strong>Tài khoản này đang bị khóa:</strong> Toàn bộ thông tin, hồ sơ gia sư/PT, bài tập, lịch trình, dự án và tin nhắn của người dùng này đã được hệ thống <strong>ẩn hoàn toàn</strong> với tất cả người dùng khác. <strong>Chỉ có Quản Trị Viên (Admin)</strong> mới có quyền xem thông tin và dữ liệu này.
+                </div>
+              </div>
+            )}
+
+            {userDataModal.loading ? (
+              <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
+                ⏳ Đang tải toàn bộ dữ liệu người dùng từ máy chủ...
+              </div>
+            ) : !userDataModal.data ? (
+              <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
+                Không thể tải dữ liệu chi tiết.
+              </div>
+            ) : (
+              <div>
+                {/* Statistics Highlights */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+                    gap: "8px",
+                    marginBottom: "1.2rem"
+                  }}
+                >
+                  <div style={{ background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)", borderRadius: "8px", padding: "8px", textAlign: "center" }}>
+                    <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#3b82f6" }}>{userDataModal.data.thong_ke.so_mon_hoc}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>📚 Môn học</div>
+                  </div>
+                  <div style={{ background: "rgba(139, 92, 246, 0.08)", border: "1px solid rgba(139, 92, 246, 0.2)", borderRadius: "8px", padding: "8px", textAlign: "center" }}>
+                    <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#8b5cf6" }}>{userDataModal.data.thong_ke.so_bai_tap}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>📝 Bài tập</div>
+                  </div>
+                  <div style={{ background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: "8px", padding: "8px", textAlign: "center" }}>
+                    <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#f59e0b" }}>{userDataModal.data.thong_ke.so_du_an}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>💼 Dự án</div>
+                  </div>
+                  <div style={{ background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.2)", borderRadius: "8px", padding: "8px", textAlign: "center" }}>
+                    <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#10b981" }}>{userDataModal.data.thong_ke.so_ca_lam}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>⏱️ Ca làm</div>
+                  </div>
+                  <div style={{ background: "rgba(236, 72, 153, 0.08)", border: "1px solid rgba(236, 72, 153, 0.2)", borderRadius: "8px", padding: "8px", textAlign: "center" }}>
+                    <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#ec4899" }}>{userDataModal.data.thong_ke.so_giao_an}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>🏋️ Lịch tập</div>
+                  </div>
+                  <div style={{ background: "rgba(6, 182, 212, 0.08)", border: "1px solid rgba(6, 182, 212, 0.2)", borderRadius: "8px", padding: "8px", textAlign: "center" }}>
+                    <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#06b6d4" }}>{userDataModal.data.thong_ke.so_su_kien}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>🗓️ Sự kiện</div>
+                  </div>
+                </div>
+
+                {/* Sub-nav Tabs */}
+                <div style={{ display: "flex", gap: "6px", overflowX: "auto", borderBottom: "1px solid var(--border-color)", paddingBottom: "8px", marginBottom: "1rem" }}>
+                  {[
+                    { id: "tong_quan", label: "📊 Thông tin chung" },
+                    { id: "hoc_tap", label: `📚 Học tập (${userDataModal.data.thong_ke.so_mon_hoc})` },
+                    { id: "viec_lam", label: `💼 Việc làm (${userDataModal.data.thong_ke.so_du_an})` },
+                    { id: "tap_luyen", label: `🏋️ Thể chất (${userDataModal.data.thong_ke.so_giao_an})` },
+                    { id: "chuyen_gia", label: "🎓 Hồ sơ Chuyên gia" }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setUserDataModal((prev) => ({ ...prev, activeTab: tab.id }))}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        border: "none",
+                        fontSize: "0.85rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        background: userDataModal.activeTab === tab.id ? "var(--btn-primary-bg, #3b82f6)" : "rgba(255,255,255,0.06)",
+                        color: userDataModal.activeTab === tab.id ? "#ffffff" : "var(--text-muted)",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Tab 1: Thông tin chung */}
+                {userDataModal.activeTab === "tong_quan" && (
+                  <div style={{ fontSize: "0.9rem", color: "var(--text-main)" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px", marginBottom: "1rem" }}>
+                      <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Họ và tên:</div>
+                        <div style={{ fontWeight: 700 }}>{userDataModal.data.user.name}</div>
+                      </div>
+                      <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Email:</div>
+                        <div style={{ fontWeight: 700 }}>{userDataModal.data.user.email}</div>
+                      </div>
+                      <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Số điện thoại:</div>
+                        <div style={{ fontWeight: 700 }}>{userDataModal.data.user.phone || "Chưa cập nhật"}</div>
+                      </div>
+                      <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Ngày tham gia:</div>
+                        <div style={{ fontWeight: 700 }}>{new Date(userDataModal.data.user.createdAt).toLocaleDateString("vi-VN")}</div>
+                      </div>
+                    </div>
+                    {userDataModal.data.user.bio && (
+                      <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Tiểu sử (Bio):</div>
+                        <div style={{ marginTop: "4px" }}>{userDataModal.data.user.bio}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 2: Học tập */}
+                {userDataModal.activeTab === "hoc_tap" && (
+                  <div>
+                    <h5 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "8px" }}>Danh sách môn học ({userDataModal.data.hoc_tap.mon_hocs.length}):</h5>
+                    {userDataModal.data.hoc_tap.mon_hocs.length === 0 ? (
+                      <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Chưa có môn học nào.</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "1rem" }}>
+                        {userDataModal.data.hoc_tap.mon_hocs.map((mh) => (
+                          <div key={mh._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.03)", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                            <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>📖 {mh.ten_mon} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 400 }}>({mh.so_tin_chi} tín chỉ)</span></div>
+                            <span style={{ fontSize: "0.75rem", color: mh.mau_sac || "#6366f1" }}>● {mh.giang_vien || "Chưa có GV"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <h5 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "8px" }}>Bài tập / Deadline ({userDataModal.data.hoc_tap.bai_taps.length}):</h5>
+                    {userDataModal.data.hoc_tap.bai_taps.length === 0 ? (
+                      <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Chưa có bài tập nào.</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        {userDataModal.data.hoc_tap.bai_taps.map((bt) => (
+                          <div key={bt._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.03)", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: "0.88rem" }}>📝 {bt.ten_bai_tap}</div>
+                              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Hạn: {bt.han_nop ? new Date(bt.han_nop).toLocaleString("vi-VN") : "Không có"}</div>
+                            </div>
+                            <span style={{ fontSize: "0.75rem", padding: "2px 8px", borderRadius: "10px", background: bt.trang_thai === "da_hoan_thanh" ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)", color: bt.trang_thai === "da_hoan_thanh" ? "#10b981" : "#f59e0b" }}>
+                              {bt.trang_thai === "da_hoan_thanh" ? "✓ Hoàn thành" : "⏳ Chưa xong"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 3: Việc làm */}
+                {userDataModal.activeTab === "viec_lam" && (
+                  <div>
+                    <h5 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "8px" }}>Dự án & Nơi làm việc ({userDataModal.data.viec_lam.du_ans.length}):</h5>
+                    {userDataModal.data.viec_lam.du_ans.length === 0 ? (
+                      <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Chưa có dự án/việc làm nào.</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "1rem" }}>
+                        {userDataModal.data.viec_lam.du_ans.map((da) => (
+                          <div key={da._id} style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>🏢 {da.ten_du_an}</span>
+                              <span style={{ fontSize: "0.8rem", color: "#10b981", fontWeight: 700 }}>
+                                {da.luong_theo_gio ? `${Number(da.luong_theo_gio).toLocaleString("vi-VN")} đ/h` : "Không có lương giờ"}
+                              </span>
+                            </div>
+                            {da.dia_diem && <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "2px" }}>📍 {da.dia_diem}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <h5 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "8px" }}>Ca làm việc gần đây ({userDataModal.data.viec_lam.ca_lam_viecs.length}):</h5>
+                    {userDataModal.data.viec_lam.ca_lam_viecs.length === 0 ? (
+                      <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Chưa có ca làm việc nào.</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "200px", overflowY: "auto" }}>
+                        {userDataModal.data.viec_lam.ca_lam_viecs.slice(0, 10).map((ca) => (
+                          <div key={ca._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.03)", padding: "6px 10px", borderRadius: "6px", fontSize: "0.85rem" }}>
+                            <span>📅 {new Date(ca.ngay_lam).toLocaleDateString("vi-VN")} ({ca.gio_bat_dau} - {ca.gio_ket_thuc})</span>
+                            <span style={{ fontWeight: 700, color: ca.trang_thai === "da_hoan_thanh" ? "#10b981" : "#f59e0b" }}>
+                              {ca.trang_thai === "da_hoan_thanh" ? "✓ Đã làm" : "⏳ Sắp tới"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 4: Thể chất & Tập luyện */}
+                {userDataModal.activeTab === "tap_luyen" && (
+                  <div>
+                    <h5 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "8px" }}>Giáo án tập luyện ({userDataModal.data.tap_luyen.ke_hoachs.length}):</h5>
+                    {userDataModal.data.tap_luyen.ke_hoachs.length === 0 ? (
+                      <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Chưa có giáo án tập luyện nào.</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        {userDataModal.data.tap_luyen.ke_hoachs.map((kh) => (
+                          <div key={kh._id} style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                            <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>🏋️ {kh.ten_ke_hoach}</div>
+                            {kh.mo_ta && <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "2px" }}>{kh.mo_ta}</div>}
+                            {kh.share_code && <div style={{ fontSize: "0.75rem", color: "#6366f1", marginTop: "4px" }}>Mã chia sẻ: <strong>{kh.share_code}</strong></div>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 5: Chuyên gia */}
+                {userDataModal.activeTab === "chuyen_gia" && (
+                  <div>
+                    {userDataModal.data.chuyen_gia.gia_su && (
+                      <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-color)", marginBottom: "10px" }}>
+                        <div style={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem", marginBottom: "4px" }}>👨‍🏫 Hồ sơ Gia sư</div>
+                        <div><strong>Môn dạy:</strong> {userDataModal.data.chuyen_gia.gia_su.mon_hoc_chuyen_mon}</div>
+                        <div><strong>Học phí:</strong> {Number(userDataModal.data.chuyen_gia.gia_su.gia_theo_gio || 0).toLocaleString("vi-VN")} đ/h</div>
+                        <div><strong>Học vị:</strong> {userDataModal.data.chuyen_gia.gia_su.hoc_vi} - {userDataModal.data.chuyen_gia.gia_su.truong_tot_nghiep}</div>
+                        {userDataModal.data.chuyen_gia.gia_su.mo_ta && <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>{userDataModal.data.chuyen_gia.gia_su.mo_ta}</div>}
+                      </div>
+                    )}
+
+                    {userDataModal.data.chuyen_gia.hlv && (
+                      <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-color)", marginBottom: "10px" }}>
+                        <div style={{ fontWeight: 800, color: "#10b981", fontSize: "0.95rem", marginBottom: "4px" }}>🏋️‍♂️ Hồ sơ Huấn luyện viên (PT)</div>
+                        <div><strong>Chuyên môn:</strong> {userDataModal.data.chuyen_gia.hlv.chuyen_mon}</div>
+                        <div><strong>Giá thuê:</strong> {Number(userDataModal.data.chuyen_gia.hlv.gia_theo_gio || 0).toLocaleString("vi-VN")} đ/h</div>
+                        <div><strong>Phòng tập / Khu vực:</strong> {userDataModal.data.chuyen_gia.hlv.phong_tap} - {userDataModal.data.chuyen_gia.hlv.khu_vuc}</div>
+                        {userDataModal.data.chuyen_gia.hlv.mo_ta && <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>{userDataModal.data.chuyen_gia.hlv.mo_ta}</div>}
+                      </div>
+                    )}
+
+                    {!userDataModal.data.chuyen_gia.gia_su && !userDataModal.data.chuyen_gia.hlv && (
+                      <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Người dùng này chưa có hồ sơ Gia sư hay PT được xác thực.</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "1.2rem", paddingTop: "1rem", borderTop: "1px solid var(--border-color)" }}>
+              {userDataModal.user && userDataModal.user._id !== user?._id && (
+                <button
+                  type="button"
+                  onClick={() => handleToggleBan(userDataModal.user)}
+                  className={`btn ${userDataModal.user?.status === "banned" ? "btn-outline-success" : "btn-outline-danger"}`}
+                  style={{ fontSize: "0.85rem", fontWeight: 700 }}
+                >
+                  {userDataModal.user?.status === "banned" ? "🔓 Mở Khóa Tài Khoản Này" : "🔒 Khóa Tài Khoản Này"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setUserDataModal({ open: false, loading: false, data: null, user: null, activeTab: "tong_quan" })}
+                className="btn btn-secondary"
+                style={{ fontSize: "0.85rem" }}
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}

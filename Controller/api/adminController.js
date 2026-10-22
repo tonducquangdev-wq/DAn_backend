@@ -8,6 +8,9 @@ const MonHoc = require("../../Model/MonHoc");
 const SuKien = require("../../Model/SuKien");
 const DuAn = require("../../Model/DuAn");
 const KeHoachTapLuyen = require("../../Model/KeHoachTapLuyen");
+const BaiTap = require("../../Model/BaiTap");
+const CaLamViec = require("../../Model/CaLamViec");
+const LichHoc = require("../../Model/LichHoc");
 const { sendPushBroadcast } = require("../../Utils/pushService");
 
 /**
@@ -615,6 +618,79 @@ const getLichSuThongBaoAdmin = async (req, res) => {
     }
 };
 
+/**
+ * 9. Lấy toàn bộ dữ liệu & thông tin cá nhân của một người dùng (Dành riêng cho Admin)
+ * Cho phép Admin kiểm tra chi tiết thông tin, lịch học, dự án, ca làm, lịch tập, sự kiện của user (kể cả khi đã bị khóa)
+ */
+const getChiTietDuLieuUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "ID người dùng không hợp lệ" });
+        }
+
+        const user = await User.findById(id).select("-password").lean();
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
+        }
+
+        const [
+            giaSu,
+            hlv,
+            dangKyList,
+            monHocs,
+            baiTaps,
+            duAns,
+            caLams,
+            keHoachs,
+            soSuKien
+        ] = await Promise.all([
+            GiaSu.findOne({ user_id: id }).lean(),
+            HuanLuyenVien.findOne({ user_id: id }).lean(),
+            DangKyChuyenGia.find({ user_id: id }).sort({ createdAt: -1 }).lean(),
+            MonHoc.find({ user_id: id }).lean(),
+            BaiTap.find({ user_id: id }).lean(),
+            DuAn.find({ user_id: id }).lean(),
+            CaLamViec.find({ user_id: id }).sort({ ngay_lam: -1 }).lean(),
+            KeHoachTapLuyen.find({ user_id: id }).lean(),
+            SuKien.countDocuments({ user_id: id })
+        ]);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                user,
+                chuyen_gia: {
+                    gia_su: giaSu,
+                    hlv: hlv,
+                    dang_ky: dangKyList
+                },
+                hoc_tap: {
+                    mon_hocs: monHocs,
+                    bai_taps: baiTaps
+                },
+                viec_lam: {
+                    du_ans: duAns,
+                    ca_lam_viecs: caLams
+                },
+                tap_luyen: {
+                    ke_hoachs: keHoachs
+                },
+                thong_ke: {
+                    so_su_kien: soSuKien,
+                    so_mon_hoc: monHocs.length,
+                    so_bai_tap: baiTaps.length,
+                    so_du_an: duAns.length,
+                    so_ca_lam: caLams.length,
+                    so_giao_an: keHoachs.length
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi nạp dữ liệu chi tiết người dùng: " + error.message });
+    }
+};
+
 module.exports = {
     getThongKeAdmin,
     getDanhSachHoSo,
@@ -623,5 +699,6 @@ module.exports = {
     getDanhSachUsers,
     capNhatUser,
     guiThongBaoAdmin,
-    getLichSuThongBaoAdmin
+    getLichSuThongBaoAdmin,
+    getChiTietDuLieuUser
 };

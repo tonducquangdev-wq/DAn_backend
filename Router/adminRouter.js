@@ -16,8 +16,9 @@ router.get("/ho-so", adminController.getDanhSachHoSo);
 router.post("/duyet-ho-so/:id", adminController.duyetHoSo);
 router.post("/tu-choi-ho-so/:id", adminController.tuChoiHoSo);
 
-// Quản lý người dùng trong hệ thống (Đổi role, Khóa/Mở tài khoản)
+// Quản lý người dùng trong hệ thống (Đổi role, Khóa/Mở tài khoản, Xem toàn bộ dữ liệu)
 router.get("/users", adminController.getDanhSachUsers);
+router.get("/users/:id/full-data", adminController.getChiTietDuLieuUser);
 router.put("/users/:id", adminController.capNhatUser);
 
 // Phát thông báo hệ thống (Cả server, Người dùng, Gia sư, PT, hoặc Cá nhân)

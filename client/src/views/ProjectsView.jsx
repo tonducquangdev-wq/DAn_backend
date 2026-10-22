@@ -462,10 +462,7 @@ export const ProjectsView = () => {
       {/* Header Top */}
       <div className="header-top mb-3">
         <div>
-          <h1 className="page-title">💼 Quản Lý Việc Làm, Dự Án & Tasks</h1>
-          <p className="page-subtitle">
-            Quản lý công việc chính, việc làm thêm part-time, lịch đăng ký ca và theo dõi lương theo thời gian thực
-          </p>
+          <h1 className="page-title mb-0">💼 Quản Lý Việc Làm, Dự Án & Tasks</h1>
         </div>
         <div className="action-bar">
           {activeTab === "projects" ? (
@@ -664,22 +661,11 @@ export const ProjectsView = () => {
                           borderTop: "1px solid rgba(255, 255, 255, 0.08)",
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "space-between",
+                          justifyContent: "flex-end",
                           flexWrap: "wrap",
                           gap: "8px"
                         }}
                       >
-                        <span
-                          className="badge"
-                          style={{
-                            backgroundColor: `${da.mau_sac || "#6366f1"}22`,
-                            color: da.mau_sac || "#6366f1",
-                            border: `1px solid ${da.mau_sac || "#6366f1"}44`
-                          }}
-                        >
-                          🗓️ Đã vào Lịch
-                        </span>
-
                         <div style={{ display: "flex", gap: "6px" }}>
                           {isPartTime && (
                             <button
@@ -1001,10 +987,20 @@ export const ProjectsView = () => {
                 </p>
               </div>
             ) : (
-              <div className="table-responsive">
-                <table className="table align-middle" style={{ color: "var(--text-main)" }}>
+              <div className="neu-table-wrapper table-responsive">
+                <table
+                  className="table align-middle mb-0"
+                  style={{
+                    background: "transparent",
+                    "--bs-table-bg": "transparent",
+                    "--bs-table-accent-bg": "transparent",
+                    "--bs-table-striped-bg": "transparent",
+                    "--bs-table-hover-bg": "transparent",
+                    color: "var(--text-main)"
+                  }}
+                >
                   <thead>
-                    <tr style={{ borderBottom: "2px solid rgba(255, 255, 255, 0.1)", fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                    <tr style={{ borderBottom: "2px solid var(--border-color)", fontSize: "0.82rem", color: "var(--text-muted)", background: "transparent" }}>
                       <th>Ngày Làm</th>
                       <th>Ca Làm / Tiêu Đề</th>
                       <th>Khung Giờ</th>
@@ -1012,7 +1008,7 @@ export const ProjectsView = () => {
                       <th>Nơi Làm Việc</th>
                       <th>Tiền Lương Ca</th>
                       <th>Trạng Thái</th>
-                      <th style={{ textAlign: "right" }}>Thao Tác</th>
+                      <th style={{ textAlign: "right", whiteSpace: "nowrap", minWidth: "190px" }}>Thao Tác</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1024,7 +1020,8 @@ export const ProjectsView = () => {
                         <tr
                           key={sh._id}
                           style={{
-                            borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+                            borderBottom: "1px solid var(--border-color)",
+                            background: "transparent",
                             opacity: isAbsent ? 0.6 : 1
                           }}
                         >
@@ -1077,21 +1074,13 @@ export const ProjectsView = () => {
                               </span>
                             )}
                           </td>
-                          <td style={{ textAlign: "right" }}>
-                            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                          <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                            <div style={{ display: "inline-flex", justifyContent: "flex-end", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
                               {sh.trang_thai === "chua_den" && (
                                 <>
                                   <button
                                     type="button"
-                                    className="btn-primary"
-                                    style={{
-                                      fontSize: "0.72rem",
-                                      padding: "4px 9px",
-                                      height: "auto",
-                                      background: "#10b981",
-                                      borderColor: "#10b981",
-                                      fontWeight: 700
-                                    }}
+                                    className="shift-action-btn btn-done"
                                     title="Xác nhận đã làm ca này để tự động cộng lương ngay"
                                     onClick={() => handleChangeShiftStatus(sh, "da_hoan_thanh")}
                                   >
@@ -1099,8 +1088,7 @@ export const ProjectsView = () => {
                                   </button>
                                   <button
                                     type="button"
-                                    className="btn-secondary"
-                                    style={{ fontSize: "0.72rem", padding: "4px 8px", height: "auto" }}
+                                    className="shift-action-btn btn-leave"
                                     title="Đánh dấu nghỉ phép ca này (không tính lương)"
                                     onClick={() => handleChangeShiftStatus(sh, "nghi_phep")}
                                   >
@@ -1109,32 +1097,19 @@ export const ProjectsView = () => {
                                 </>
                               )}
                               {sh.trang_thai === "da_hoan_thanh" && (
-                                <>
-                                  <button
-                                    type="button"
-                                    className="btn-secondary"
-                                    style={{ fontSize: "0.72rem", padding: "4px 8px", height: "auto" }}
-                                    title="Hoàn tác ca về trạng thái sắp tới"
-                                    onClick={() => handleChangeShiftStatus(sh, "chua_den")}
-                                  >
-                                    ⏳ Chưa làm
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn-secondary"
-                                    style={{ fontSize: "0.72rem", padding: "4px 8px", height: "auto" }}
-                                    title="Đánh dấu nghỉ phép ca này"
-                                    onClick={() => handleChangeShiftStatus(sh, "nghi_phep")}
-                                  >
-                                    🛌 Nghỉ
-                                  </button>
-                                </>
+                                <button
+                                  type="button"
+                                  className="shift-action-btn btn-leave"
+                                  title="Đánh dấu nghỉ phép ca này"
+                                  onClick={() => handleChangeShiftStatus(sh, "nghi_phep")}
+                                >
+                                  🛌 Nghỉ
+                                </button>
                               )}
                               {sh.trang_thai === "nghi_phep" && (
                                 <button
                                   type="button"
-                                  className="btn-secondary"
-                                  style={{ fontSize: "0.72rem", padding: "4px 8px", height: "auto", color: "#10b981", fontWeight: 700 }}
+                                  className="shift-action-btn btn-rework"
                                   title="Kích hoạt lại ca làm"
                                   onClick={() => handleChangeShiftStatus(sh, "chua_den")}
                                 >
@@ -1143,18 +1118,9 @@ export const ProjectsView = () => {
                               )}
                               <button
                                 type="button"
+                                className="shift-action-btn btn-delete"
                                 title="Xóa ca làm"
                                 onClick={() => handleDeleteShift(sh._id)}
-                                style={{
-                                  background: "none",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  color: "var(--text-muted)",
-                                  fontSize: "0.92rem",
-                                  padding: "4px 6px"
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
-                                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
                               >
                                 🗑️
                               </button>

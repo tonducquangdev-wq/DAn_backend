@@ -169,10 +169,7 @@ export const PushNotificationManager = () => {
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: "0.96rem", color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis" }}>
-              Thông Báo Đẩy Điện Thoại (Native Web Push)
-            </div>
-            <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis" }}>
-              Rung chuông và hiện ngoài màn hình khóa ngay cả khi tắt app
+              Thông Báo Đẩy Điện Thoại
             </div>
           </div>
         </div>

@@ -19,7 +19,7 @@ const EVENT_CATEGORIES = {
 };
 
 export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
-  const { user, setUser, theme, toggleTheme } = useAuth();
+  const { user, setUser, theme, toggleTheme, logout } = useAuth();
 
   // Tab State: "info" | "notifications" | "security"
   const [activeTab, setActiveTab] = useState("info");
@@ -302,29 +302,47 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
         className="modal-content profile-modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: activeTab === "notifications" ? "700px" : "600px",
+          maxWidth: "650px",
           width: "95%",
           maxHeight: "90vh",
           overflowY: "auto",
-          padding: "26px",
-          transition: "max-width 0.25s ease"
+          padding: "26px"
         }}
       >
         {/* Header Modal */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "20px" }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: "800", color: "var(--text-main)", margin: "0 0 6px 0", lineHeight: 1.35 }}>
-              ⚙️ Cài Đặt Cá Nhân & Tài Khoản
-            </h3>
-            <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
-              Quản lý hồ sơ cá nhân, cài đặt thông báo sự kiện và bảo mật tài khoản
-            </p>
-          </div>
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "8px 44px 18px 44px",
+            marginBottom: "16px"
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: "800",
+              color: "var(--text-main)",
+              margin: 0,
+              lineHeight: 1.35,
+              textAlign: "center"
+            }}
+          >
+            ⚙️ Cài Đặt Cá Nhân & Tài Khoản
+          </h3>
           <button
             type="button"
             onClick={onClose}
             title="Đóng hộp thoại"
             className="modal-close-icon-btn"
+            style={{
+              position: "absolute",
+              right: "0px",
+              top: "50%",
+              transform: "translateY(-50%)"
+            }}
           >
             ✕
           </button>
@@ -376,8 +394,8 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
             type="button"
             className="profile-modal-tab-btn"
             style={{
-              flex: 1.4,
-              padding: "8px 12px",
+              flex: 1,
+              padding: "8px 10px",
               borderRadius: "9999px",
               border: "none",
               background: activeTab === "notifications" ? "var(--primary)" : "transparent",
@@ -398,7 +416,8 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
             }}
           >
             <span>🔔</span>
-            <span>Thông Báo Sự Kiện</span>
+            <span>Thông Báo</span>
+            <span className="d-none d-sm-inline">Sự Kiện</span>
           </button>
 
           <button
@@ -645,6 +664,52 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
               </button>
             </div>
 
+            {/* Đăng xuất tài khoản */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "12px 16px",
+                background: "rgba(239, 68, 68, 0.05)",
+                borderRadius: "14px",
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                marginBottom: "22px"
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#ef4444" }}>
+                  Đăng Xuất Tài Khoản
+                </div>
+                <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                  Thoát phiên đăng nhập trên thiết bị này
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  logout();
+                }}
+                style={{
+                  padding: "7px 16px",
+                  fontSize: "0.82rem",
+                  fontWeight: 700,
+                  borderRadius: "10px",
+                  background: "#ef4444",
+                  color: "#ffffff",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px"
+                }}
+              >
+                <span>🚪</span>
+                <span>Đăng Xuất</span>
+              </button>
+            </div>
+
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
               <button
                 type="button"
@@ -697,9 +762,6 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-main)" }}>
                     🔔 Bật thông báo sự kiện
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                    Nhận cảnh báo trên trình duyệt khi sự kiện chuẩn bị bắt đầu
                   </div>
                 </div>
                 <label style={{ cursor: "pointer", position: "relative", display: "inline-block", width: "44px", height: "24px", margin: 0 }}>
@@ -763,9 +825,6 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
                       ▶ Thử chuông
                     </button>
                   </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                    Phát chuông nhẹ nhàng khi thông báo sự kiện xuất hiện
-                  </div>
                 </div>
                 <label style={{ cursor: "pointer", position: "relative", display: "inline-block", width: "44px", height: "24px", margin: 0 }}>
                   <input
@@ -810,9 +869,6 @@ export const ProfileModal = ({ show, onClose, onOpenDangKyExpert }) => {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-main)" }}>
                     ⏰ Thời gian nhắc trước mặc định
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                    Áp dụng khi tạo mới sự kiện trên trang lịch
                   </div>
                 </div>
                 <select

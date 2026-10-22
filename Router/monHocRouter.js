@@ -13,9 +13,10 @@ const {
     getGiaSu
 } = require("../Controller/api/monHocController");
 const authMiddleware = require("../Middleware/authMiddleware");
+const { optionalAuth } = require("../Middleware/authMiddleware");
 
-// Public Gia sư route
-router.get("/gia-su", getGiaSu);
+// Public / Semi-public Gia sư route
+router.get("/gia-su", optionalAuth, getGiaSu);
 
 // Protected Môn học routes
 router.get("/mon-hoc", authMiddleware, getMonHoc);

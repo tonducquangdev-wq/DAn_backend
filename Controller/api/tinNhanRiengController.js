@@ -17,8 +17,8 @@ const getHoiThoai = async (req, res) => {
             $or: [{ nguoi_gui: currentUserId }, { nguoi_nhan: currentUserId }]
         })
             .sort({ createdAt: -1 })
-            .populate("nguoi_gui", "name email role avatar is_expert_verified")
-            .populate("nguoi_nhan", "name email role avatar is_expert_verified")
+            .populate("nguoi_gui", "name email role avatar is_expert_verified status")
+            .populate("nguoi_nhan", "name email role avatar is_expert_verified status")
             .lean();
 
         // Gom nhóm theo đối tác chat
@@ -52,7 +52,12 @@ const getHoiThoai = async (req, res) => {
             }
         }
 
-        const conversations = Array.from(conversationMap.values());
+        let conversations = Array.from(conversationMap.values());
+
+        // Nếu người xem không phải Admin, ẩn toàn bộ hội thoại với tài khoản đã bị khóa (banned)
+        if (req.user?.role !== "admin") {
+            conversations = conversations.filter((c) => c.partner && c.partner.status !== "banned");
+        }
 
         // Bổ sung thông tin môn dạy của gia sư hoặc PT nếu có
         const partnerUserIds = conversations.map((c) => c.partner._id);
@@ -109,11 +114,11 @@ const getTinNhanVoiNguoiDung = async (req, res) => {
             });
         }
 
-        const partner = await User.findById(partnerId).select("name email role avatar bio is_expert_verified").lean();
-        if (!partner) {
+        const partner = await User.findById(partnerId).select("name email role avatar bio is_expert_verified status").lean();
+        if (!partner || (partner.status === "banned" && req.user?.role !== "admin")) {
             return res.status(404).json({
                 success: false,
-                message: "Không tìm thấy người dùng này."
+                message: "Không tìm thấy người dùng này hoặc tài khoản đã bị khóa."
             });
         }
 
@@ -197,10 +202,10 @@ const guiTinNhan = async (req, res) => {
         }
 
         const recipient = await User.findById(recipient_id);
-        if (!recipient) {
+        if (!recipient || (recipient.status === "banned" && req.user?.role !== "admin")) {
             return res.status(404).json({
                 success: false,
-                message: "Người nhận không tồn tại trong hệ thống."
+                message: "Người nhận không tồn tại hoặc tài khoản đã bị khóa."
             });
         }
 

@@ -156,30 +156,27 @@ export const TutorView = ({ onBack, onOpenDangKyGiaSu, onNavigateToChat }) => {
         </div>
       )}
 
-      {/* Header Top với Nút Quay Lại */}
       {/* Header Top với Nút Quay Lại - Bootstrap Responsive Flex */}
-      <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4">
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
           <button
             type="button"
-            className="btn-secondary d-inline-flex align-items-center gap-2 mb-2"
+            className="btn-secondary d-inline-flex align-items-center gap-2 mb-3"
             onClick={onBack}
             style={{
               padding: "7px 14px",
               fontSize: "0.85rem",
-              fontWeight: "700"
+              fontWeight: "700",
+              marginBottom: "14px"
             }}
           >
             ← Quay Lại Quản Lý Học Tập
           </button>
-          <h1 className="page-title fs-3 fw-bold mb-1 d-flex align-items-center gap-2">
+          <h1 className="page-title fs-3 fw-bold mb-0 d-flex align-items-center gap-2">
             <span>👩‍🏫</span> Tìm Kiếm Gia Sư Hỗ Trợ
           </h1>
-          <p className="page-subtitle text-muted mb-0">
-            Kết nối với các gia sư hàng đầu, hỗ trợ kèm môn học, ôn thi và làm đồ án theo lịch trình của bạn.
-          </p>
         </div>
-        <div className="d-flex flex-wrap align-items-center gap-2 w-100 w-lg-auto">
+        <div className="d-flex flex-wrap align-items-center justify-content-end gap-2 ms-auto">
           {onOpenDangKyGiaSu && (
             <button
               type="button"

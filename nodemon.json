@@ -1,0 +1,17 @@
+{
+  "watch": [
+    "server.js",
+    "Config",
+    "Controller",
+    "Middleware",
+    "Model",
+    "Router",
+    "services"
+  ],
+  "ignore": [
+    "client",
+    "node_modules",
+    ".git"
+  ],
+  "ext": "js,json"
+}

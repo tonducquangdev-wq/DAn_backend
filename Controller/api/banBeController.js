@@ -49,20 +49,26 @@ const getLoiMoiKetBan = async (req, res) => {
         const currentUserId = req.user._id;
 
         // Lời mời người khác gửi tới mình
-        const nhan = await BanBe.find({
+        let nhan = await BanBe.find({
             nguoi_nhan: currentUserId,
             trang_thai: "pending"
         })
-            .populate("nguoi_gui", "name email role avatar bio is_expert_verified")
+            .populate("nguoi_gui", "name email role avatar bio is_expert_verified status")
             .sort({ createdAt: -1 });
 
         // Lời mời mình gửi đi đang chờ đối phương chấp nhận
-        const da_gui = await BanBe.find({
+        let da_gui = await BanBe.find({
             nguoi_gui: currentUserId,
             trang_thai: "pending"
         })
-            .populate("nguoi_nhan", "name email role avatar bio is_expert_verified")
+            .populate("nguoi_nhan", "name email role avatar bio is_expert_verified status")
             .sort({ createdAt: -1 });
+
+        // Nếu người xem không phải Admin, ẩn các lời mời liên quan đến tài khoản bị khóa
+        if (req.user?.role !== "admin") {
+            nhan = nhan.filter((r) => r.nguoi_gui && r.nguoi_gui.status !== "banned");
+            da_gui = da_gui.filter((r) => r.nguoi_nhan && r.nguoi_nhan.status !== "banned");
+        }
 
         res.status(200).json({
             success: true,
@@ -102,10 +108,10 @@ const guiLoiMoiKetBan = async (req, res) => {
         }
 
         const targetUser = await User.findById(nguoi_nhan_id);
-        if (!targetUser) {
+        if (!targetUser || (targetUser.status === "banned" && req.user?.role !== "admin")) {
             return res.status(404).json({
                 success: false,
-                message: "Không tìm thấy người dùng này."
+                message: "Không tìm thấy người dùng này hoặc tài khoản đã bị khóa."
             });
         }
 
@@ -314,9 +320,12 @@ const timKiemNguoiDung = async (req, res) => {
         const { q, role } = req.query;
 
         const queryFilter = {
-            _id: { $ne: currentUserId },
-            status: { $ne: "banned" }
+            _id: { $ne: currentUserId }
         };
+
+        if (req.user?.role !== "admin") {
+            queryFilter.status = { $ne: "banned" };
+        }
 
         if (q && q.trim()) {
             const regex = new RegExp(q.trim(), "i");

@@ -12,12 +12,18 @@ const getTinNhan = async (req, res) => {
         const tinNhans = await TinNhanTapLuyen.find()
             .sort({ createdAt: -1 })
             .limit(limit)
-            .populate("user_id", "name email role is_expert_verified avatar")
+            .populate("user_id", "name email role is_expert_verified avatar status")
             .populate("reactions.user_id", "name");
+
+        let result = tinNhans.reverse();
+        // Nếu người xem không phải là Admin, ẩn toàn bộ tin nhắn của người dùng đã bị khóa (banned)
+        if (req.user?.role !== "admin") {
+            result = result.filter((msg) => !msg.user_id || msg.user_id.status !== "banned");
+        }
 
         res.status(200).json({
             success: true,
-            data: tinNhans.reverse()
+            data: result
         });
     } catch (error) {
         res.status(500).json({

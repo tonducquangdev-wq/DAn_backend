@@ -42,6 +42,10 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
     gio_bat_dau: "07:30",
     gio_ket_thuc: "09:30",
     ngay_hoc: [2, 4],
+    chi_tiet_lich_hoc: [
+      { thu_trong_tuan: 2, gio_bat_dau: "07:30", gio_ket_thuc: "09:30", phong_hoc: "" },
+      { thu_trong_tuan: 4, gio_bat_dau: "07:30", gio_ket_thuc: "09:30", phong_hoc: "" }
+    ],
     mau_sac: "#3b82f6"
   };
 
@@ -71,13 +75,84 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
     loadData();
   }, []);
 
+  const formatSubjectSchedule = (m) => {
+    if (m.chi_tiet_lich_hoc && m.chi_tiet_lich_hoc.length > 0) {
+      const firstStart = m.chi_tiet_lich_hoc[0].gio_bat_dau;
+      const firstEnd = m.chi_tiet_lich_hoc[0].gio_ket_thuc;
+      const isAllSame = m.chi_tiet_lich_hoc.every(s => s.gio_bat_dau === firstStart && s.gio_ket_thuc === firstEnd);
+
+      if (isAllSame) {
+        return {
+          timeStr: `${firstStart} – ${firstEnd}`,
+          daysStr: formatScheduleDays(m.chi_tiet_lich_hoc.map(s => s.thu_trong_tuan)),
+          isCustom: false,
+          sessions: m.chi_tiet_lich_hoc
+        };
+      }
+
+      const mapDay = { 2: "T2", 3: "T3", 4: "T4", 5: "T5", 6: "T6", 7: "T7", 8: "CN" };
+      return {
+        timeStr: m.chi_tiet_lich_hoc.map(s => `${mapDay[s.thu_trong_tuan] || s.thu_trong_tuan}: ${s.gio_bat_dau}-${s.gio_ket_thuc}`).join(" | "),
+        daysStr: formatScheduleDays(m.chi_tiet_lich_hoc.map(s => s.thu_trong_tuan)),
+        isCustom: true,
+        sessions: m.chi_tiet_lich_hoc
+      };
+    }
+
+    return {
+      timeStr: `${m.gio_bat_dau || "07:30"} – ${m.gio_ket_thuc || "09:30"}`,
+      daysStr: formatScheduleDays(m.ngay_hoc),
+      isCustom: false,
+      sessions: []
+    };
+  };
+
   const toggleDay = (dayValue) => {
     setMonForm(prev => {
       const exists = prev.ngay_hoc.includes(dayValue);
-      const newDays = exists ? prev.ngay_hoc.filter(d => d !== dayValue) : [...prev.ngay_hoc, dayValue];
-      return { ...prev, ngay_hoc: newDays.sort((a, b) => a - b) };
+      const newDays = exists ? prev.ngay_hoc.filter(d => d !== dayValue) : [...prev.ngay_hoc, dayValue].sort((a, b) => a - b);
+
+      let updatedChiTiet = [...(prev.chi_tiet_lich_hoc || [])];
+      if (exists) {
+        updatedChiTiet = updatedChiTiet.filter(item => item.thu_trong_tuan !== dayValue);
+      } else {
+        const defaultStart = updatedChiTiet[0]?.gio_bat_dau || prev.gio_bat_dau || "07:30";
+        const defaultEnd = updatedChiTiet[0]?.gio_ket_thuc || prev.gio_ket_thuc || "09:30";
+        updatedChiTiet.push({
+          thu_trong_tuan: dayValue,
+          gio_bat_dau: defaultStart,
+          gio_ket_thuc: defaultEnd,
+          phong_hoc: prev.phong_hoc || ""
+        });
+        updatedChiTiet.sort((a, b) => a.thu_trong_tuan - b.thu_trong_tuan);
+      }
+
+      return {
+        ...prev,
+        ngay_hoc: newDays,
+        chi_tiet_lich_hoc: updatedChiTiet
+      };
     });
   };
+
+  const updateSessionDetail = (thu, field, value) => {
+    setMonForm(prev => {
+      const updated = (prev.chi_tiet_lich_hoc || []).map(item => {
+        if (item.thu_trong_tuan === thu) {
+          return { ...item, [field]: value };
+        }
+        return item;
+      });
+      return {
+        ...prev,
+        chi_tiet_lich_hoc: updated,
+        ...(updated[0]?.thu_trong_tuan === thu && (field === "gio_bat_dau" || field === "gio_ket_thuc")
+          ? { [field]: value }
+          : {})
+      };
+    });
+  };
+
 
   const handleCreateMon = async (e) => {
     e.preventDefault();
@@ -176,16 +251,13 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
       )}
 
       {/* Header Top - Bootstrap Responsive Flex */}
-      <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4">
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-          <h1 className="page-title fs-3 fw-bold mb-1 d-flex align-items-center gap-2">
+          <h1 className="page-title fs-3 fw-bold mb-0 d-flex align-items-center gap-2">
             <span>🎓</span> Quản Lý Học Tập
           </h1>
-          <p className="page-subtitle text-muted mb-0">
-            Theo dõi lịch học, phòng học, giảng viên và hạn nộp bài tập tự động đồng bộ Lịch
-          </p>
         </div>
-        <div className="d-flex flex-wrap align-items-center gap-2 w-100 w-lg-auto">
+        <div className="d-flex flex-wrap align-items-center justify-content-end gap-2 ms-auto">
           {onOpenDangKyGiaSu && (
             <button
               type="button"
@@ -330,16 +402,50 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                         )}
                       </td>
                       <td>
-                        <div className="d-flex flex-column gap-1">
-                          <span className="fw-bold text-main d-inline-flex align-items-center gap-1.5" style={{ fontSize: "0.86rem" }}>
-                            <i className="bi bi-clock-fill text-primary" style={{ fontSize: "0.8rem" }}></i>
-                            <span>{m.gio_bat_dau || "07:30"} – {m.gio_ket_thuc || "09:30"}</span>
-                          </span>
-                          <span className="d-inline-flex align-items-center gap-1.5 text-secondary" style={{ fontSize: "0.8rem" }}>
-                            <i className="bi bi-calendar-week text-muted" style={{ fontSize: "0.78rem" }}></i>
-                            <span className="fw-medium">{formatScheduleDays(m.ngay_hoc)}</span>
-                          </span>
-                        </div>
+                        {(() => {
+                          const sched = formatSubjectSchedule(m);
+                          if (sched.isCustom) {
+                            const mapDay = { 2: "Thứ 2", 3: "Thứ 3", 4: "Thứ 4", 5: "Thứ 5", 6: "Thứ 6", 7: "Thứ 7", 8: "CN" };
+                            return (
+                              <div className="d-flex flex-column gap-1">
+                                {sched.sessions.map(s => (
+                                  <div key={s.thu_trong_tuan} className="d-inline-flex align-items-center gap-1.5" style={{ fontSize: "0.82rem" }}>
+                                    <span
+                                      className="badge"
+                                      style={{
+                                        background: "rgba(59, 130, 246, 0.12)",
+                                        color: "var(--primary)",
+                                        border: "1px solid rgba(59, 130, 246, 0.25)",
+                                        padding: "2px 6px",
+                                        fontSize: "0.72rem"
+                                      }}
+                                    >
+                                      {mapDay[s.thu_trong_tuan] || `T${s.thu_trong_tuan}`}
+                                    </span>
+                                    <span className="fw-bold font-numeric text-main">
+                                      {s.gio_bat_dau} – {s.gio_ket_thuc}
+                                    </span>
+                                    {s.phong_hoc && s.phong_hoc !== m.phong_hoc && (
+                                      <span className="text-muted" style={{ fontSize: "0.72rem" }}>({s.phong_hoc})</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="d-flex flex-column gap-1">
+                              <span className="fw-bold text-main d-inline-flex align-items-center gap-1.5" style={{ fontSize: "0.86rem" }}>
+                                <i className="bi bi-clock-fill text-primary" style={{ fontSize: "0.8rem" }}></i>
+                                <span>{sched.timeStr}</span>
+                              </span>
+                              <span className="d-inline-flex align-items-center gap-1.5 text-secondary" style={{ fontSize: "0.8rem" }}>
+                                <i className="bi bi-calendar-week text-muted" style={{ fontSize: "0.78rem" }}></i>
+                                <span className="fw-medium">{sched.daysStr}</span>
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td>
                         <div
@@ -473,11 +579,38 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
 
                       {/* Card Details Grid */}
                       <div className="row g-2 pt-2 border-top" style={{ fontSize: "0.82rem", borderColor: "var(--border-color)" }}>
-                        <div className="col-12 col-sm-6 text-muted">
-                          <i className="bi bi-clock me-1 text-primary"></i> Giờ: <strong className="text-main">{m.gio_bat_dau || "07:30"} - {m.gio_ket_thuc || "09:30"}</strong>
-                        </div>
-                        <div className="col-12 col-sm-6 text-muted">
-                          <i className="bi bi-calendar3 me-1 text-muted"></i> Thứ: <strong className="text-main">{formatScheduleDays(m.ngay_hoc)}</strong>
+                        <div className="col-12 text-muted">
+                          {(() => {
+                            const sched = formatSubjectSchedule(m);
+                            if (sched.isCustom) {
+                              const mapDay = { 2: "T2", 3: "T3", 4: "T4", 5: "T5", 6: "T6", 7: "T7", 8: "CN" };
+                              return (
+                                <div className="d-flex flex-wrap gap-1.5 align-items-center">
+                                  <i className="bi bi-clock text-primary me-1"></i>
+                                  {sched.sessions.map(s => (
+                                    <span
+                                      key={s.thu_trong_tuan}
+                                      className="badge"
+                                      style={{
+                                        background: "rgba(59, 130, 246, 0.12)",
+                                        color: "var(--primary)",
+                                        border: "1px solid rgba(59, 130, 246, 0.25)",
+                                        fontSize: "0.74rem"
+                                      }}
+                                    >
+                                      {mapDay[s.thu_trong_tuan]}: {s.gio_bat_dau} - {s.gio_ket_thuc}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="d-flex flex-wrap gap-3">
+                                <span><i className="bi bi-clock me-1 text-primary"></i> Giờ: <strong className="text-main">{sched.timeStr}</strong></span>
+                                <span><i className="bi bi-calendar3 me-1 text-muted"></i> Thứ: <strong className="text-main">{sched.daysStr}</strong></span>
+                              </div>
+                            );
+                          })()}
                         </div>
                         <div className="col-12 col-sm-6 text-muted">
                           <i className="bi bi-person me-1 text-muted"></i> GV: <strong className="text-main">{m.giang_vien || "Chưa cập nhật"}</strong>
@@ -498,14 +631,9 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
       {/* 2. DANH SÁCH BÀI TẬP & DEADLINE MÔN HỌC */}
       <div className="glass-card mb-4 p-3 p-sm-4">
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div>
-            <h3 className="fs-5 fw-bold d-flex align-items-center gap-2 m-0">
-              <span>📝</span> Bài Tập & Deadline Môn Học
-            </h3>
-            <span className="small text-muted d-block mt-1">
-              ⚡ Tự động đồng bộ và lưu vào trang Lịch dưới mục Deadline
-            </span>
-          </div>
+          <h3 className="fs-5 fw-bold d-flex align-items-center gap-2 m-0">
+            <span>📝</span> Bài Tập & Deadline Môn Học
+          </h3>
           <button
             className="btn-secondary d-inline-flex align-items-center gap-1"
             style={{ padding: "8px 16px", fontSize: "0.85rem", fontWeight: "700" }}
@@ -634,8 +762,8 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
             className="modal-content p-3 p-sm-4"
             style={{ maxWidth: "620px", width: "95%", maxHeight: "90vh", overflowY: "auto" }}
           >
-            <div className="d-flex justify-content-between align-items-start mb-2">
-              <h3 className="fs-5 fw-bold mb-0">➕ Thêm Môn Học & Tự Động Lên Lịch</h3>
+            <div className="d-flex justify-content-between align-items-start mb-3">
+              <h3 className="fs-5 fw-bold mb-0">➕ Thêm Môn Học</h3>
               <button
                 type="button"
                 className="btn-close"
@@ -644,9 +772,6 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                 style={{ filter: "var(--close-btn-filter, none)" }}
               />
             </div>
-            <p className="small text-muted mb-3">
-              Nhập thông tin môn học. Hệ thống sẽ tự động đồng bộ tất cả các buổi học vào <strong>trang Lịch cá nhân</strong>.
-            </p>
             <form onSubmit={handleCreateMon}>
               <div className="form-group mb-3">
                 <label className="form-label fw-semibold small mb-1">Tên môn học *</label>
@@ -696,13 +821,13 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                 }}
               >
                 <div className="fw-bold small mb-2 text-primary d-flex align-items-center gap-2">
-                  <span>📅 Cấu hình Lịch học (Tự động thêm vào Trang Lịch)</span>
+                  <span>📅 Cấu hình Lịch học</span>
                 </div>
 
                 {/* Chọn ngày học trong tuần */}
                 <div className="form-group mb-3">
                   <label className="form-label fw-semibold small mb-2 d-block">
-                    Ngày học trong tuần (chọn các thứ):
+                    Ngày học trong tuần:
                   </label>
                   <div className="d-flex flex-wrap gap-2">
                     {DAYS_OF_WEEK.map(day => {
@@ -733,33 +858,168 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                   </div>
                 </div>
 
-                {/* Giờ học */}
-                <div className="row g-2 mb-3">
-                  <div className="col-6">
-                    <div className="form-group mb-0">
-                      <label className="form-label fw-semibold small mb-1">Giờ bắt đầu *</label>
-                      <input
-                        type="time"
-                        required
-                        className="form-control"
-                        value={monForm.gio_bat_dau}
-                        onChange={e => setMonForm({ ...monForm, gio_bat_dau: e.target.value })}
-                      />
+                {/* Giờ học: 1 buổi đơn vs từ 2 buổi trở lên */}
+                {(!monForm.chi_tiet_lich_hoc || monForm.chi_tiet_lich_hoc.length <= 1) ? (
+                  <div className="row g-2 mb-3">
+                    <div className="col-6">
+                      <div className="form-group mb-0">
+                        <label className="form-label fw-semibold small mb-1">Giờ bắt đầu *</label>
+                        <input
+                          type="time"
+                          required
+                          className="form-control"
+                          value={monForm.gio_bat_dau}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setMonForm(prev => ({
+                              ...prev,
+                              gio_bat_dau: val,
+                              chi_tiet_lich_hoc: (prev.chi_tiet_lich_hoc || []).map(item => ({ ...item, gio_bat_dau: val }))
+                            }));
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-6">
+                      <div className="form-group mb-0">
+                        <label className="form-label fw-semibold small mb-1">Giờ kết thúc *</label>
+                        <input
+                          type="time"
+                          required
+                          className="form-control"
+                          value={monForm.gio_ket_thuc}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setMonForm(prev => ({
+                              ...prev,
+                              gio_ket_thuc: val,
+                              chi_tiet_lich_hoc: (prev.chi_tiet_lich_hoc || []).map(item => ({ ...item, gio_ket_thuc: val }))
+                            }));
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="col-6">
-                    <div className="form-group mb-0">
-                      <label className="form-label fw-semibold small mb-1">Giờ kết thúc *</label>
-                      <input
-                        type="time"
-                        required
-                        className="form-control"
-                        value={monForm.gio_ket_thuc}
-                        onChange={e => setMonForm({ ...monForm, gio_ket_thuc: e.target.value })}
-                      />
+                ) : (
+                  <div className="mb-3">
+
+
+                    <div className="d-flex flex-column gap-3">
+                      {monForm.chi_tiet_lich_hoc.map((session, sIdx) => {
+                        const dayInfo = DAYS_OF_WEEK.find(d => d.value === session.thu_trong_tuan) || { label: `Thứ ${session.thu_trong_tuan}` };
+                        return (
+                          <div
+                            key={session.thu_trong_tuan}
+                            style={{
+                              background: "rgba(255, 255, 255, 0.03)",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "14px",
+                              padding: "14px 16px",
+                              boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)"
+                            }}
+                          >
+                            {/* Header buổi học */}
+                            <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                              <span
+                                style={{
+                                  background: "linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(139, 92, 246, 0.18))",
+                                  color: "var(--primary)",
+                                  border: "1px solid rgba(59, 130, 246, 0.35)",
+                                  padding: "4px 12px",
+                                  borderRadius: "20px",
+                                  fontWeight: 700,
+                                  fontSize: "0.85rem",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px"
+                                }}
+                              >
+                                <span>📅</span> {dayInfo.label} <span style={{ opacity: 0.75, fontWeight: 500 }}>(Buổi {sIdx + 1})</span>
+                              </span>
+                              <span
+                                className="font-numeric"
+                                style={{
+                                  fontSize: "0.82rem",
+                                  fontWeight: 700,
+                                  color: "var(--text-main)",
+                                  background: "rgba(0, 0, 0, 0.04)",
+                                  padding: "3px 10px",
+                                  borderRadius: "8px",
+                                  border: "1px solid var(--border-color)"
+                                }}
+                              >
+                                {session.gio_bat_dau} ➜ {session.gio_ket_thuc}
+                              </span>
+                            </div>
+
+                            {/* Khung giờ 2 cột rộng rãi */}
+                            <div className="row g-3 mb-2.5">
+                              <div className="col-12 col-sm-6">
+                                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "5px", display: "block" }}>
+                                  ⏰ Giờ bắt đầu
+                                </label>
+                                <input
+                                  type="time"
+                                  required
+                                  className="form-control"
+                                  value={session.gio_bat_dau}
+                                  onChange={e => updateSessionDetail(session.thu_trong_tuan, "gio_bat_dau", e.target.value)}
+                                  style={{
+                                    height: "40px",
+                                    fontSize: "0.92rem",
+                                    fontWeight: 700,
+                                    borderRadius: "10px",
+                                    padding: "6px 12px"
+                                  }}
+                                />
+                              </div>
+                              <div className="col-12 col-sm-6">
+                                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "5px", display: "block" }}>
+                                  ⏰ Giờ kết thúc
+                                </label>
+                                <input
+                                  type="time"
+                                  required
+                                  className="form-control"
+                                  value={session.gio_ket_thuc}
+                                  onChange={e => updateSessionDetail(session.thu_trong_tuan, "gio_ket_thuc", e.target.value)}
+                                  style={{
+                                    height: "40px",
+                                    fontSize: "0.92rem",
+                                    fontWeight: 700,
+                                    borderRadius: "10px",
+                                    padding: "6px 12px"
+                                  }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Phòng học riêng cho buổi */}
+                            <div>
+                              <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "4px", display: "block" }}>
+                                📍 Phòng học riêng cho {dayInfo.label} (tùy chọn)
+                              </label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                placeholder={monForm.phong_hoc ? `Mặc định theo phòng chung: ${monForm.phong_hoc}` : "Nhập phòng học riêng nếu khác phòng chính..."}
+                                value={session.phong_hoc || ""}
+                                onChange={e => updateSessionDetail(session.thu_trong_tuan, "phong_hoc", e.target.value)}
+                                style={{
+                                  height: "36px",
+                                  fontSize: "0.82rem",
+                                  borderRadius: "10px",
+                                  padding: "6px 12px",
+                                  background: "rgba(0, 0, 0, 0.02)"
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Thời gian môn học: Ngày bắt đầu & Thời gian kết thúc môn */}
                 <div className="row g-2">
@@ -823,7 +1083,7 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
             className="modal-content p-3 p-sm-4"
             style={{ maxWidth: "560px", width: "95%", maxHeight: "90vh", overflowY: "auto" }}
           >
-            <div className="d-flex justify-content-between align-items-start mb-2">
+            <div className="d-flex justify-content-between align-items-start mb-3">
               <h3 className="fs-5 fw-bold mb-0">➕ Thêm Bài Tập & Tự Động Lưu Deadline</h3>
               <button
                 type="button"
@@ -833,9 +1093,6 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                 style={{ filter: "var(--close-btn-filter, none)" }}
               />
             </div>
-            <p className="small text-muted mb-3">
-              Tạo bài tập mới. Hệ thống sẽ <strong>tự động đồng bộ và lưu deadline vào trang Lịch</strong> để nhắc nhở bạn đúng hạn.
-            </p>
             <form onSubmit={handleCreateBt}>
               <div className="form-group mb-3">
                 <label className="form-label fw-semibold small mb-1">Tên bài tập *</label>
@@ -921,20 +1178,7 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                 </div>
               </div>
 
-              {/* Banner thông báo đồng bộ lịch */}
-              <div
-                className="p-3 rounded-3 mb-3 d-flex align-items-center gap-2 small"
-                style={{
-                  background: "rgba(245, 158, 11, 0.08)",
-                  border: "1px solid rgba(245, 158, 11, 0.25)",
-                  color: "var(--text-main)"
-                }}
-              >
-                <span className="fs-5">📅</span>
-                <div>
-                  <strong>Tự động lên Lịch:</strong> Bài tập này sẽ được hiển thị trên <strong>trang Lịch</strong> dưới dạng sự kiện <em>Deadline</em> màu cam và xuất hiện trong danh sách <em>Deadline sắp tới</em>.
-                </div>
-              </div>
+
 
               <div className="d-flex flex-column-reverse flex-sm-row justify-content-end gap-2 pt-3 border-top">
                 <button

@@ -1121,9 +1121,9 @@ const previewPlanByShareCode = async (req, res) => {
         const cleanCode = code.trim().toUpperCase();
         const plan = await KeHoachTapLuyen.findOne({
             share_code: cleanCode
-        }).populate("user_id", "name email");
+        }).populate("user_id", "name email status");
 
-        if (!plan) {
+        if (!plan || (plan.user_id && plan.user_id.status === "banned" && req.user?.role !== "admin")) {
             return res.status(404).json({ success: false, message: `Không tìm thấy giáo án với mã code "${cleanCode}". Vui lòng kiểm tra lại mã!` });
         }
 
@@ -1332,9 +1332,14 @@ const getCommunityExplorePlans = async (req, res) => {
         if (sort === "newest") sortOption = { createdAt: -1 };
 
         let plans = await KeHoachTapLuyen.find(query)
-            .populate("user_id", "name email")
+            .populate("user_id", "name email status")
             .sort(sortOption)
             .limit(30);
+
+        // Nếu người xem không phải là Admin, ẩn các giáo án của tài khoản bị khóa (banned)
+        if (req.user?.role !== "admin") {
+            plans = plans.filter((p) => !p.user_id || p.user_id.status !== "banned");
+        }
 
         // Đảm bảo luôn có ít nhất vài giáo án mẫu có share_code đẹp
         if (plans.length < 3) {

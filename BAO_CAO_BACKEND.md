@@ -508,7 +508,12 @@ const checkRole = (...allowedRoles) => {
 | **`user`** (Mặc định) | Quản lý lịch trình cá nhân, môn học, tính GPA, deadline bài tập, dự án, ca làm việc, tập gym PPL, kết bạn, nhắn tin 1-1, nộp hồ sơ xin làm Chuyên gia. |
 | **`tutor`** (Gia sư) | Toàn bộ quyền của `user` + Được hiển thị hồ sơ công khai trong Danh mục Gia sư, gắn huy hiệu xác thực `is_expert_verified`, học viên có thể tìm kiếm và liên hệ học tập. |
 | **`pt`** (HLV Thể hình) | Toàn bộ quyền của `user` + Được hiển thị hồ sơ trong Danh mục Huấn luyện viên thể hình, gắn huy hiệu xác thực, nhận học viên tư vấn tập luyện. |
-| **`admin`** (Quản trị viên) | Toàn quyền kiểm soát hệ thống: Xem dashboard thống kê KPI, duyệt/từ chối hồ sơ bằng cấp chuyên gia, đổi vai trò người dùng, khóa/mở khóa tài khoản (`banned`/`active`), phát thông báo broadcast toàn server. Được bảo vệ nghiêm ngặt qua `checkRole('admin')`. |
+| **`admin`** (Quản trị viên) | Toàn quyền kiểm soát hệ thống: Xem dashboard thống kê KPI, duyệt/từ chối hồ sơ bằng cấp chuyên gia, đổi vai trò người dùng, khóa/mở khóa tài khoản (`banned`/`active`), phát thông báo broadcast toàn server, tra cứu toàn bộ dữ liệu người dùng (`/api/admin/users/:id/full-data`). Được bảo vệ nghiêm ngặt qua `checkRole('admin')`. |
+
+* **Cơ chế cô lập & bảo vệ dữ liệu khi khóa tài khoản (Banned Account Privacy Isolation):**
+  * **Đối với người dùng khác:** Khi một tài khoản bị Admin khóa (`status: 'banned'`), toàn bộ thông tin cá nhân, hồ sơ Gia sư (`GiaSu`), hồ sơ HLV PT (`HuanLuyenVien`), tin nhắn trên kênh cộng đồng (`TinNhanTapLuyen`), lịch sử trò chuyện riêng (`TinNhanRieng`), tìm kiếm và lời mời kết bạn (`BanBe`), cùng các giáo án tập gym chia sẻ (`KeHoachTapLuyen`) của người đó sẽ **lập tức bị ẩn hoàn toàn khỏi tất cả người dùng khác**. Mọi hành vi gửi tin nhắn hoặc kết bạn tới người dùng bị khóa đều bị từ chối.
+  * **Đối với chính tài khoản bị khóa:** Không thể thực hiện bất kỳ thao tác nào trên hệ thống (bị `authMiddleware` chặn lại với mã lỗi `403 Forbidden`).
+  * **Đối với Quản trị viên (Admin):** Admin là người **duy nhất** có toàn quyền xem chi tiết toàn bộ dữ liệu của người dùng bị khóa (thông tin cá nhân, môn học, bài tập, dự án, ca làm việc, lịch tập, sự kiện) thông qua nút **"👁️ Dữ Liệu"** trên Admin Dashboard và endpoint bảo mật `GET /api/admin/users/:id/full-data`.
 
 ### 7.3. Xử lý lỗi toàn cục (Global Error Handling)
 Trong [`errorMiddleware.js`](file:///d:/laragon/laragon/www/test_backend/Middleware/errorMiddleware.js), hệ thống bắt mọi lỗi từ Controller mà không làm crash máy chủ:
@@ -566,6 +571,57 @@ Trong [`errorMiddleware.js`](file:///d:/laragon/laragon/www/test_backend/Middlew
   * Triển khai mã nguồn Backend & Frontend lên nền tảng **Render.com** (hoặc **Railway.app**) liên kết trực tiếp với kho mã nguồn **GitHub**.
   * Thiết lập quy trình tự động hóa **CI/CD**: Mỗi khi cập nhật code lên nhánh `main`, nền tảng tự động build và deploy phiên bản mới không gián đoạn dịch vụ (Zero-Downtime Deployment).
   * **HTTPS & PWA:** Render tự động cấp chứng chỉ bảo mật SSL/TLS (Let's Encrypt) chính quy và tên miền cố định vĩnh viễn (ví dụ: `https://lifeplanner-backend.onrender.com`), đáp ứng hoàn hảo tiêu chuẩn bảo mật khắt khe của **PWA Mobile** và **Web Push Notification** trên cả Android và iOS.
+
+##### 📋 Quy trình triển khai thực tế từng bước (Step-by-Step Execution):
+
+* **Bước 1: Khởi tạo Cơ sở dữ liệu đám mây (MongoDB Atlas):**
+  1. Đăng ký tài khoản miễn phí tại [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas/register).
+  2. Tạo cụm dữ liệu mới (Cluster): Chọn gói **M0 Free**, chọn Region **Singapore (ap-southeast-1)** để đạt tốc độ tối ưu về Việt Nam.
+  3. Tạo tài khoản Database User (đặt username & password, ví dụ: `admin` / mật khẩu bảo mật).
+  4. Mở quyền mạng: Vào menu **Network Access** ➜ **Add IP Address** ➜ Chọn **Allow Access from Anywhere (`0.0.0.0/0`)** để máy chủ Render có thể truy xuất cơ sở dữ liệu.
+  5. Lấy chuỗi kết nối URI tại mục **Connect** ➜ **Drivers**:
+     ```
+     mongodb+srv://<username>:<password>@cluster0.xxxx.mongodb.net/life_planner?retryWrites=true&w=majority
+     ```
+
+* **Bước 2: Cấu hình lệnh Build tự động cho Cloud:**
+  1. Trong file `package.json`, đảm bảo script build tự động cài và dựng Frontend PWA:
+     ```json
+     "build": "npm --prefix client install && npm --prefix client run build"
+     ```
+  2. Đẩy toàn bộ mã nguồn lên kho lưu trữ GitHub:
+     ```bash
+     git add .
+     git commit -m "prepare for cloud deployment"
+     git push origin main
+     ```
+
+* **Bước 3: Tạo và kích hoạt Web Service trên Render.com:**
+  1. Đăng nhập [render.com](https://render.com/) bằng tài khoản GitHub chứa repository `tonducquangdev-wq/DAn_backend`.
+  2. Bấm **New +** ➜ **Web Service** ➜ Chọn kết nối với kho mã nguồn `DAn_backend`.
+  3. Điền thông tin cấu hình dịch vụ:
+     * **Name:** `lifeplanner-backend` (hoặc tên tùy chọn).
+     * **Region:** `Singapore`.
+     * **Branch:** `main`.
+     * **Runtime:** `Node`.
+     * **Build Command:** `npm install && npm run build`
+     * **Start Command:** `node server.js`
+     * **Instance Type:** `Free ($0/month)`.
+  4. Khai báo Biến môi trường (**Environment Variables**):
+     * `MONGO_URI`: `(Dán chuỗi kết nối MongoDB Atlas đã tạo ở Bước 1)`
+     * `JWT_SECRET`: `life_planner_secret_key_2026`
+     * `VAPID_PUBLIC_KEY`: `BPzDQMMjP6YHh_C1jnypACZdF3PqWVb5qlwobOK0dnY-aFieR-g5bfeZpZvHXY6iu7tfV1Xy3znfo7tEsz2Gzwg`
+     * `VAPID_PRIVATE_KEY`: `sjRrETYsNAw928TrHvCsIYAvCxZokevwxojeMu2DPOE`
+     * `VAPID_EMAIL`: `mailto:support@lifeplanner.com`
+  5. Bấm **Deploy Web Service**. Sau khi quá trình build hoàn tất, hệ thống được cấp tên miền HTTPS cố định vĩnh viễn (ví dụ: `https://lifeplanner-backend.onrender.com`).
+
+* **Bước 4: Thiết lập giữ hệ thống online 24/24 (Keep-Alive Cron-job):**
+  1. Đăng ký tài khoản miễn phí tại [cron-job.org](https://cron-job.org/) (hoặc [uptimerobot.com](https://uptimerobot.com/)).
+  2. Tạo 1 cron-job ping HTTP định kỳ:
+     * **URL:** `https://lifeplanner-backend.onrender.com/`
+     * **Tần suất (Schedule):** Mỗi 10 phút một lần (`*/10 * * * *`).
+  3. **Mục đích:** Ngăn chặn cơ chế tạm ngủ (Sleep Mode sau 15 phút không hoạt động) của gói Render Free, đảm bảo tiến trình ngầm `dailyBriefingScheduler` hoạt động liên tục, quét và phát thông báo lịch trình mỗi sáng đúng giờ hẹn 100% dù người dùng tắt máy tính cá nhân.
+
 
 #### Hướng 2: Triển khai Máy chủ ảo riêng biệt (Production VPS Deployment)
 * **Hạ tầng máy chủ:**

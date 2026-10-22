@@ -19,7 +19,7 @@ import { MobileBottomNav } from "./components/MobileBottomNav";
 import { PwaInstallPrompt } from "./components/PwaInstallPrompt";
 
 function MainApp() {
-  const { user, loading, theme, toggleTheme, isAdmin } = useAuth();
+  const { user, loading, theme, toggleTheme, isAdmin, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("calendar"); // Trang đầu tiên sau khi đăng nhập là trang lịch
   const [chatPartnerId, setChatPartnerId] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -298,6 +298,17 @@ function MainApp() {
             aria-label="Toggle theme"
           >
             {theme === "dark" ? "☀️" : "🌙"}
+          </button>
+
+          {/* Nút Đăng xuất tiện lợi trên Mobile & Header */}
+          <button
+            id="header-logout-btn"
+            className="header-theme-toggle header-logout-btn"
+            onClick={logout}
+            title="Đăng xuất tài khoản"
+            aria-label="Đăng xuất"
+          >
+            <span style={{ fontSize: "1.05rem", lineHeight: 1 }}>🚪</span>
           </button>
           <div
             className="d-none d-md-flex align-items-center gap-2"
