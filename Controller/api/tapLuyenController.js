@@ -210,12 +210,31 @@ const getWorkoutSchedule = async (req, res) => {
             });
         }
 
-        const buoiTaps = await BuoiTap.find({
+        let buoiTaps = await BuoiTap.find({
             $or: [
                 { ke_hoach_tap_luyen_id: activePlan._id },
                 { keHoachId: activePlan._id }
             ]
         }).sort({ ngay_trong_tuan: 1 });
+
+        // Đảm bảo đủ cả 7 ngày trong tuần cho kế hoạch active (ngày trống mặc định là ngày nghỉ phục hồi)
+        const existingDays = new Set(buoiTaps.map(b => b.ngay_trong_tuan));
+        for (let d = 2; d <= 8; d++) {
+            if (!existingDays.has(d)) {
+                const restSession = await BuoiTap.create({
+                    ke_hoach_tap_luyen_id: activePlan._id,
+                    ten_buoi_tap: "Nghỉ ngơi phục hồi (Rest Day)",
+                    ngay_trong_tuan: d,
+                    thu_tu: d - 1,
+                    is_rest_day: true,
+                    gio_bat_dau: "06:00",
+                    gio_ket_thuc: "07:00"
+                });
+                buoiTaps.push(restSession);
+            }
+        }
+        buoiTaps.sort((a, b) => a.ngay_trong_tuan - b.ngay_trong_tuan);
+
 
         // Lấy chi tiết bài tập cho từng buổi
         const buoiTapWithDetails = await Promise.all(
@@ -699,6 +718,68 @@ const updateBuoiTap = async (req, res) => {
     }
 };
 
+// 7.0 Tạo hoặc cập nhật Buổi tập cho một ngày trong kế hoạch
+const createOrGetBuoiTap = async (req, res) => {
+    try {
+        const { ke_hoach_id, ngay_trong_tuan, ten_buoi_tap, is_rest_day, gio_bat_dau, gio_ket_thuc } = req.body;
+
+        if (!ke_hoach_id) {
+            return res.status(400).json({ success: false, message: "Thiếu mã kế hoạch tập luyện" });
+        }
+
+        const plan = await KeHoachTapLuyen.findOne({
+            _id: ke_hoach_id,
+            $or: [{ user_id: req.user._id }, { userId: req.user._id }]
+        });
+
+        if (!plan) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy kế hoạch tập luyện" });
+        }
+
+        const dayNum = Number(ngay_trong_tuan) || 2;
+        let buoi = await BuoiTap.findOne({
+            $or: [
+                { ke_hoach_tap_luyen_id: plan._id },
+                { keHoachId: plan._id }
+            ],
+            ngay_trong_tuan: dayNum
+        });
+
+        if (buoi) {
+            if (is_rest_day !== undefined) buoi.is_rest_day = Boolean(is_rest_day);
+            if (ten_buoi_tap !== undefined) buoi.ten_buoi_tap = ten_buoi_tap.trim();
+            if (gio_bat_dau !== undefined) buoi.gio_bat_dau = gio_bat_dau;
+            if (gio_ket_thuc !== undefined) buoi.gio_ket_thuc = gio_ket_thuc;
+            await buoi.save();
+        } else {
+            buoi = await BuoiTap.create({
+                ke_hoach_tap_luyen_id: plan._id,
+                ten_buoi_tap: ten_buoi_tap ? ten_buoi_tap.trim() : (is_rest_day ? "Nghỉ ngơi phục hồi (Rest Day)" : "Buổi tập chính"),
+                ngay_trong_tuan: dayNum,
+                thu_tu: dayNum - 1,
+                is_rest_day: is_rest_day !== undefined ? Boolean(is_rest_day) : false,
+                gio_bat_dau: gio_bat_dau || "06:00",
+                gio_ket_thuc: gio_ket_thuc || "07:15"
+            });
+        }
+
+        const details = await ChiTietBuoiTap.find({ buoi_tap_id: buoi._id })
+            .populate("bai_tap_the_chat_id")
+            .sort({ thu_tu: 1 });
+
+        res.status(200).json({
+            success: true,
+            message: "Cập nhật buổi tập thành công!",
+            data: {
+                ...buoi.toObject(),
+                chi_tiet: details
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi xử lý buổi tập: " + error.message });
+    }
+};
+
 // 7.1. Đồng bộ thủ công giáo án sang trang Lịch
 const syncWorkoutPlanEndpoint = async (req, res) => {
     try {
@@ -757,6 +838,15 @@ const addExerciseToBuoiTap = async (req, res) => {
 
         if (!plan) {
             return res.status(403).json({ success: false, message: "Bạn không có quyền thêm bài tập vào buổi này" });
+        }
+
+        // Nếu buổi này trước đó là ngày nghỉ, tự động chuyển thành ngày tập
+        if (buoi.is_rest_day) {
+            buoi.is_rest_day = false;
+            if (!buoi.ten_buoi_tap || buoi.ten_buoi_tap.includes("Nghỉ ngơi")) {
+                buoi.ten_buoi_tap = "Buổi tập chính";
+            }
+            await buoi.save();
         }
 
         let exerciseId = bai_tap_the_chat_id;
@@ -1449,6 +1539,7 @@ module.exports = {
     activateWorkoutPlan,
     deleteWorkoutPlan,
     updateBuoiTap,
+    createOrGetBuoiTap,
     addExerciseToBuoiTap,
     updateExerciseDetail,
     deleteExerciseDetail,

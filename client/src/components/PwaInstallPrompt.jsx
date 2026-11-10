@@ -1,3 +1,4 @@
+//Banner nhắc người dùng bấm "Cài đặt ứng dụng" lên điện thoại
 import React, { useState, useEffect } from "react";
 
 export const PwaInstallPrompt = () => {

@@ -1,3 +1,4 @@
+//Tầng giao tiếp RESTful API tập trung, gắn Bearer Token
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
 const request = async (endpoint, options = {}) => {
@@ -98,6 +99,7 @@ export const api = {
   activateWorkoutPlan: (id) => request(`/tap-luyen/plans/${id}/activate`, { method: "PATCH" }),
   syncWorkoutPlanToCalendar: (id) => request(`/tap-luyen/plans/${id}/dong-bo-lich`, { method: "POST" }),
   deleteWorkoutPlan: (id) => request(`/tap-luyen/plans/${id}`, { method: "DELETE" }),
+  createOrUpdateBuoiTap: (data) => request("/tap-luyen/buoi-tap", { method: "POST", body: JSON.stringify(data) }),
   updateBuoiTap: (id, data) => request(`/tap-luyen/buoi-tap/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   addExerciseToBuoi: (buoiId, data) => request(`/tap-luyen/buoi-tap/${buoiId}/exercises`, { method: "POST", body: JSON.stringify(data) }),
   updateExerciseDetail: (id, data) => request(`/tap-luyen/chi-tiet/${id}`, { method: "PUT", body: JSON.stringify(data) }),

@@ -1,3 +1,4 @@
+//Menu bong bóng nổi Neumorphic góc dưới để chuyển màn hình
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { WorkoutCommunityChat } from "./WorkoutCommunityChat";

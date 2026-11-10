@@ -1,3 +1,4 @@
+//Quản lý giáo án Gym PPL, chia sẻ giáo án mã code, cộng đồng
 import React, { useEffect, useState, useRef } from "react";
 import { api } from "../services/api";
 import "../styles/tap-luyen.css";
@@ -1296,6 +1297,29 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
 
   // Chuyển đổi trạng thái ngày nghỉ / ngày tập
   const handleToggleRestDay = async (buoiId, currentRestState) => {
+    if (!scheduleData?.ke_hoach) {
+      alert("⚠️ Bạn chưa có kế hoạch tập luyện nào. Vui lòng tạo kế hoạch tập luyện trước.");
+      handleOpenPlanModal();
+      return;
+    }
+
+    if (!buoiId) {
+      const dayInfo = DAYS_OF_WEEK.find((d) => d.day === selectedDay);
+      const res = await api.createOrUpdateBuoiTap({
+        ke_hoach_id: scheduleData.ke_hoach._id,
+        ngay_trong_tuan: selectedDay,
+        ten_buoi_tap: !currentRestState ? "Nghỉ ngơi phục hồi (Rest Day)" : `Buổi tập ${dayInfo?.fullName || "chính"}`,
+        is_rest_day: !currentRestState
+      });
+      if (res.success) {
+        loadAllData();
+        if (selectedPlanForEdit) loadPlanForEdit(selectedPlanForEdit);
+      } else {
+        alert("⚠️ " + (res.message || "Không thể cập nhật ngày tập"));
+      }
+      return;
+    }
+
     const res = await api.updateBuoiTap(buoiId, {
       is_rest_day: !currentRestState,
       ten_buoi_tap: !currentRestState ? "Nghỉ ngơi phục hồi (Rest Day)" : "Buổi tập chính"
@@ -1331,8 +1355,42 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
   };
 
   // Mở modal thêm bài tập vào buổi
-  const handleOpenAddExModal = (buoi) => {
-    setCurrentBuoiForEx(buoi);
+  const handleOpenAddExModal = async (buoi) => {
+    if (!scheduleData?.ke_hoach) {
+      if (window.confirm("Bạn chưa có kế hoạch tập luyện nào được kích hoạt. Bạn có muốn tạo hoặc kích hoạt giáo án ngay không?")) {
+        handleOpenPlanModal();
+      }
+      return;
+    }
+
+    let targetBuoi = buoi || currentSession;
+    if (!targetBuoi) {
+      targetBuoi = scheduleData?.danh_sach_buoi_tap?.find(
+        (b) => b.ngay_trong_tuan === selectedDay
+      );
+    }
+
+    // Nếu ngày này chưa có buổi tập trong DB, tạo nhanh record buổi tập
+    if (!targetBuoi || !targetBuoi._id) {
+      const dayInfo = DAYS_OF_WEEK.find((d) => d.day === selectedDay);
+      const res = await api.createOrUpdateBuoiTap({
+        ke_hoach_id: scheduleData.ke_hoach._id,
+        ngay_trong_tuan: selectedDay,
+        ten_buoi_tap: `Buổi tập ${dayInfo?.fullName || "chính"}`,
+        is_rest_day: false
+      });
+      if (res.success && res.data) {
+        targetBuoi = res.data;
+        loadAllData();
+      } else {
+        targetBuoi = {
+          ngay_trong_tuan: selectedDay,
+          ten_buoi_tap: `Buổi tập ${dayInfo?.fullName || "chính"}`
+        };
+      }
+    }
+
+    setCurrentBuoiForEx(targetBuoi);
     setExForm({
       bai_tap_the_chat_id: exerciseCatalog[0]?._id || "",
       ten_bai_tap: "",
@@ -1348,7 +1406,28 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
   // Lưu bài tập mới vào buổi
   const handleSaveExercise = async (e) => {
     e.preventDefault();
-    if (!currentBuoiForEx) return;
+    if (!scheduleData?.ke_hoach) {
+      alert("⚠️ Bạn chưa có kế hoạch tập luyện nào active.");
+      return;
+    }
+
+    let targetBuoi = currentBuoiForEx;
+    if (!targetBuoi || !targetBuoi._id) {
+      const dayInfo = DAYS_OF_WEEK.find((d) => d.day === selectedDay);
+      const resBuoi = await api.createOrUpdateBuoiTap({
+        ke_hoach_id: scheduleData.ke_hoach._id,
+        ngay_trong_tuan: selectedDay,
+        ten_buoi_tap: `Buổi tập ${dayInfo?.fullName || "chính"}`,
+        is_rest_day: false
+      });
+      if (resBuoi.success && resBuoi.data) {
+        targetBuoi = resBuoi.data;
+        setCurrentBuoiForEx(targetBuoi);
+      } else {
+        alert("⚠️ " + (resBuoi.message || "Không thể khởi tạo buổi tập"));
+        return;
+      }
+    }
 
     const payload = exForm.bai_tap_the_chat_id
       ? {
@@ -1366,7 +1445,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
           thoi_luong_phut: exForm.thoi_luong_phut
         };
 
-    const res = await api.addExerciseToBuoi(currentBuoiForEx._id, payload);
+    const res = await api.addExerciseToBuoi(targetBuoi._id, payload);
     if (res.success) {
       setShowAddExModal(false);
       loadAllData();
@@ -2262,9 +2341,6 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
             <div className="workout-title-icon-badge">🏋️</div>
             <div className="workout-title-content">
               <h1 className="workout-page-title">Thể Chất & Gym Routine</h1>
-              <p className="workout-page-subtitle">
-                Quản lý giáo án rèn luyện thể chất, theo dõi chuỗi ngày tập liên tiếp (Streak) & Heatmap 30 ngày
-              </p>
             </div>
           </div>
         </div>
@@ -2401,7 +2477,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
               <div className="d-flex justify-content-center">
                 <button
                   className="btn-action-pill btn-pill-primary"
-                  onClick={() => handleToggleRestDay(currentSession._id, true)}
+                  onClick={() => handleToggleRestDay(currentSession?._id, true)}
                 >
                   ⚡ Chuyển thành ngày tập nếu bạn muốn
                 </button>
@@ -2454,7 +2530,7 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
                         </button>
                         <button
                           className="btn-action-pill btn-pill-warning"
-                          onClick={() => handleToggleRestDay(currentSession._id, false)}
+                          onClick={() => handleToggleRestDay(currentSession?._id, false)}
                           title="Đổi ngày này thành ngày nghỉ ngơi"
                         >
                           🛌 Đánh Dấu Nghỉ
@@ -3487,148 +3563,158 @@ export const WorkoutView = ({ onNavigateToCalendar }) => {
       )}
 
       {/* Modal 3: Thêm Bài Tập Vào Buổi */}
-      {showAddExModal && currentBuoiForEx && (
+      {showAddExModal && (
         <div
-          className="modal fade show d-block"
-          tabIndex="-1"
-          style={{ backgroundColor: "rgba(0,0,0,0.65)", zIndex: 1060 }}
+          className="modal-overlay"
+          onClick={() => setShowAddExModal(false)}
+          style={{ zIndex: 25000 }}
         >
-          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div className="modal-content">
-              <div className="modal-header d-flex align-items-center justify-content-between">
-                <h5 className="modal-title font-weight-bold" style={{ fontSize: "1.05rem" }}>
-                  ➕ Thêm Bài Tập Vào: {currentBuoiForEx.ten_buoi_tap}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowAddExModal(false)}
-                />
-              </div>
-              <form onSubmit={handleSaveExercise}>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
-                      Chọn Từ Danh Mục Bài Tập Mẫu
-                    </label>
-                    <select
-                      className="form-select"
-                      value={exForm.bai_tap_the_chat_id}
-                      onChange={(e) => setExForm({ ...exForm, bai_tap_the_chat_id: e.target.value })}
-                    >
-                      <option value="">-- Hoặc nhập bài tập tùy chỉnh bên dưới --</option>
-                      {exerciseCatalog.map((ex) => (
-                        <option key={ex._id} value={ex._id}>
-                          [{ex.nhom_co}] {ex.ten_bai_tap}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+          <div
+            className="modal-content glass-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "560px", width: "95%", maxHeight: "90vh", overflowY: "auto", padding: "24px" }}
+          >
+            <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+              <h5 className="modal-title font-weight-bold mb-0" style={{ fontSize: "1.08rem", color: "var(--text-main)" }}>
+                ➕ Thêm Bài Tập Vào: {currentBuoiForEx?.ten_buoi_tap || (DAYS_OF_WEEK.find(d => d.day === selectedDay)?.fullName || "Buổi tập")}
+              </h5>
+              <button
+                type="button"
+                className="modal-close-icon-btn"
+                onClick={() => setShowAddExModal(false)}
+                title="Đóng hộp thoại"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSaveExercise}>
+              <div className="modal-body p-0">
+                <div className="mb-3">
+                  <label className="form-label" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                    Chọn Từ Danh Mục Bài Tập Mẫu
+                  </label>
+                  <select
+                    className="form-select"
+                    value={exForm.bai_tap_the_chat_id}
+                    onChange={(e) => setExForm({ ...exForm, bai_tap_the_chat_id: e.target.value })}
+                  >
+                    <option value="">-- Hoặc nhập bài tập tùy chỉnh bên dưới --</option>
+                    {exerciseCatalog.map((ex) => (
+                      <option key={ex._id} value={ex._id}>
+                        [{ex.nhom_co}] {ex.ten_bai_tap}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  {!exForm.bai_tap_the_chat_id && (
-                    <div className="p-3 mb-3 rounded" style={{ background: "var(--lp-bg-surface)" }}>
-                      <div className="mb-2">
-                        <label className="form-label" style={{ fontSize: "0.82rem", fontWeight: 600 }}>
-                          Tên Bài Tập Tùy Chỉnh *
+                {!exForm.bai_tap_the_chat_id && (
+                  <div className="p-3 mb-3 rounded" style={{ background: "var(--lp-bg-surface)", border: "1px solid var(--border-color, rgba(0,0,0,0.06))" }}>
+                    <div className="mb-2">
+                      <label className="form-label" style={{ fontSize: "0.82rem", fontWeight: 600 }}>
+                        Tên Bài Tập Tùy Chỉnh *
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="VD: Hít đất, Kéo xà đơn..."
+                        value={exForm.ten_bai_tap}
+                        onChange={(e) => setExForm({ ...exForm, ten_bai_tap: e.target.value })}
+                        required={!exForm.bai_tap_the_chat_id}
+                      />
+                    </div>
+                    <div className="row g-2">
+                      <div className="col-6">
+                        <label className="form-label" style={{ fontSize: "0.82rem" }}>
+                          Nhóm Cơ
                         </label>
                         <input
                           type="text"
                           className="form-control"
-                          placeholder="VD: Hít đất, Kéo xà đơn..."
-                          value={exForm.ten_bai_tap}
-                          onChange={(e) => setExForm({ ...exForm, ten_bai_tap: e.target.value })}
+                          placeholder="Ngực, Lưng, Chân..."
+                          value={exForm.nhom_co}
+                          onChange={(e) => setExForm({ ...exForm, nhom_co: e.target.value })}
                         />
                       </div>
-                      <div className="row g-2">
-                        <div className="col-6">
-                          <label className="form-label" style={{ fontSize: "0.82rem" }}>
-                            Nhóm Cơ
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Ngực, Lưng, Chân..."
-                            value={exForm.nhom_co}
-                            onChange={(e) => setExForm({ ...exForm, nhom_co: e.target.value })}
-                          />
-                        </div>
-                        <div className="col-6">
-                          <label className="form-label" style={{ fontSize: "0.82rem" }}>
-                            Loại
-                          </label>
-                          <select
-                            className="form-select"
-                            value={exForm.loai_bai_tap}
-                            onChange={(e) => setExForm({ ...exForm, loai_bai_tap: e.target.value })}
-                          >
-                            <option value="strength">Sức mạnh (Strength)</option>
-                            <option value="cardio">Cardio</option>
-                            <option value="core">Core / Bụng</option>
-                          </select>
-                        </div>
+                      <div className="col-6">
+                        <label className="form-label" style={{ fontSize: "0.82rem" }}>
+                          Loại
+                        </label>
+                        <select
+                          className="form-select"
+                          value={exForm.loai_bai_tap}
+                          onChange={(e) => setExForm({ ...exForm, loai_bai_tap: e.target.value })}
+                        >
+                          <option value="strength">Sức mạnh (Strength)</option>
+                          <option value="cardio">Cardio</option>
+                          <option value="core">Core / Bụng</option>
+                        </select>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  <div className="row g-2">
-                    <div className="col-4">
-                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
-                        Số Sets
-                      </label>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min="1"
-                        max="20"
-                        className="form-control font-numeric"
-                        value={exForm.so_sets}
-                        onChange={(e) => setExForm({ ...exForm, so_sets: e.target.value })}
-                      />
-                    </div>
-                    <div className="col-4">
-                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
-                        Số Reps
-                      </label>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min="1"
-                        max="100"
-                        className="form-control font-numeric"
-                        value={exForm.so_reps}
-                        onChange={(e) => setExForm({ ...exForm, so_reps: e.target.value })}
-                      />
-                    </div>
-                    <div className="col-4">
-                      <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
-                        Phút (Tùy chọn)
-                      </label>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min="1"
-                        max="180"
-                        className="form-control font-numeric"
-                        value={exForm.thoi_luong_phut}
-                        onChange={(e) => setExForm({ ...exForm, thoi_luong_phut: e.target.value })}
-                      />
-                    </div>
+                <div className="row g-2">
+                  <div className="col-4">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                      Số Sets
+                    </label>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="1"
+                      max="20"
+                      className="form-control font-numeric"
+                      value={exForm.so_sets}
+                      onChange={(e) => setExForm({ ...exForm, so_sets: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-4">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                      Số Reps
+                    </label>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="1"
+                      max="100"
+                      className="form-control font-numeric"
+                      value={exForm.so_reps}
+                      onChange={(e) => setExForm({ ...exForm, so_reps: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-4">
+                    <label className="form-label" style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                      Phút (Tùy chọn)
+                    </label>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="1"
+                      max="180"
+                      className="form-control font-numeric"
+                      value={exForm.thoi_luong_phut}
+                      onChange={(e) => setExForm({ ...exForm, thoi_luong_phut: e.target.value })}
+                    />
                   </div>
                 </div>
-                <div className="modal-footer d-flex flex-column-reverse flex-sm-row gap-2 pt-3 border-top w-100 justify-content-end">
-                  <button
-                    type="button"
-                    className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
-                    onClick={() => setShowAddExModal(false)}
-                  >
-                    Hủy Bỏ
-                  </button>
-                  <button type="submit" className="btn-action-pill btn-pill-primary w-100 w-sm-auto" style={{ background: "var(--lp-primary)", color: "#fff" }}>
-                    Thêm Vào Buổi Tập
-                  </button>
-                </div>
-              </form>
-            </div>
+              </div>
+              <div className="modal-footer d-flex flex-column-reverse flex-sm-row gap-2 pt-3 border-top w-100 justify-content-end px-0 mt-3">
+                <button
+                  type="button"
+                  className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
+                  onClick={() => setShowAddExModal(false)}
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="btn-action-pill btn-pill-primary w-100 w-sm-auto"
+                  style={{ background: "var(--lp-primary)", color: "#fff" }}
+                >
+                  Thêm Vào Buổi Tập
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

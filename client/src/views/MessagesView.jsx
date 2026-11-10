@@ -1,3 +1,4 @@
+//Kênh nhắn tin riêng 1-1 và quản lý mạng lưới bạn bè
 import React, { useState, useEffect, useRef } from "react";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";

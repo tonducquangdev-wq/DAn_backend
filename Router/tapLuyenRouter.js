@@ -8,6 +8,7 @@ const {
     activateWorkoutPlan,
     deleteWorkoutPlan,
     updateBuoiTap,
+    createOrGetBuoiTap,
     addExerciseToBuoiTap,
     updateExerciseDetail,
     deleteExerciseDetail,
@@ -41,6 +42,7 @@ router.delete("/plans/:id", deleteWorkoutPlan);
 router.post("/plans/:id/share-code", generateShareCodeForPlan);
 
 // 3. Quản lý Buổi tập & Bài tập
+router.post("/buoi-tap", createOrGetBuoiTap);
 router.put("/buoi-tap/:id", updateBuoiTap);
 router.post("/buoi-tap/:id/exercises", addExerciseToBuoiTap);
 router.put("/chi-tiet/:id", updateExerciseDetail);

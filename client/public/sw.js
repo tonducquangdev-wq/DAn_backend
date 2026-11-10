@@ -1,4 +1,4 @@
-// Life Planner - Service Worker chính thức
+// Life Planner - Service Worker chính thức đăng ký cho PWA
 // Hỗ trợ cả môi trường Dev (Vite) và Production (Build)
 
 self.addEventListener("install", (event) => {

@@ -1,3 +1,4 @@
+//Component chủ quản, quản lý Tab, phân quyền và Layout
 import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AuthModal } from "./components/AuthModal";

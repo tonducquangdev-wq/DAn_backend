@@ -1,3 +1,4 @@
+//Component chạy ngầm kiểm tra sự kiện & thông báo ad
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";

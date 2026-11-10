@@ -1,6 +1,7 @@
 import { api } from "./api";
 
 /**
+ * Đăng ký VAPID Push Subscriptions với Service Worker
  * Chuyển đổi VAPID Public Key định dạng Base64 sang Uint8Array theo chuẩn Web Push RFC 8292
  */
 export function urlB64ToUint8Array(base64String) {

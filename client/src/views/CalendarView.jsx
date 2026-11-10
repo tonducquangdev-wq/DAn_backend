@@ -1,3 +1,4 @@
+//Hub Lịch: hiển thị tháng/tuần/ngày, lọc sự kiện, đồng bộ tự động
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { api } from "../services/api";
 import { LEAD_TIME_OPTIONS, formatLeadTime } from "../services/notificationService";
@@ -15,7 +16,42 @@ const REPEAT_RULE_MAP = {
   once: "Không lặp lại",
   daily: "Hàng ngày",
   weekly: "Hàng tuần",
-  monthly: "Hàng tháng"
+  monthly: "Hàng tháng",
+  yearly: "Hàng năm"
+};
+
+// Cấu hình số chu kỳ lặp mặc định cho từng loại quy tắc
+const DEFAULT_REPEAT_COUNTS = {
+  daily: 30,   // 30 ngày (~ 1 tháng)
+  weekly: 12,  // 12 tuần (~ 3 tháng)
+  monthly: 6,  // 6 tháng
+  yearly: 1    // 1 năm
+};
+
+// Cấu hình nhãn và giới hạn cho input số lần lặp
+const REPEAT_CYCLE_CONFIG = {
+  daily: { label: "Số ngày muốn lặp", unit: "ngày", min: 1, max: 365, default: 30 },
+  weekly: { label: "Số tuần muốn lặp", unit: "tuần", min: 1, max: 104, default: 12 },
+  monthly: { label: "Số tháng muốn lặp", unit: "tháng", min: 1, max: 60, default: 6 },
+  yearly: { label: "Số năm muốn lặp", unit: "năm", min: 1, max: 10, default: 1 }
+};
+
+// Helper format date sang YYYY-MM-DD cho input date
+const formatDateOnly = (dateObj) => {
+  if (!dateObj) return "";
+  const d = new Date(dateObj);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+// Helper format date sang HH:mm cho input time
+const formatTimeOnly = (dateObj) => {
+  if (!dateObj) return "09:00";
+  const d = new Date(dateObj);
+  if (isNaN(d.getTime())) return "09:00";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
 // Helper format date sang YYYY-MM-DDTHH:mm cho datetime-local input
@@ -25,6 +61,69 @@ const formatDateForInput = (dateObj) => {
   if (isNaN(d.getTime())) return "";
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+// Helper tính Ngày kết thúc (YYYY-MM-DD) từ Ngày bắt đầu, Quy tắc lặp và Số lần lặp
+const calculateEndDateFromRule = (startDateStr, rule, count = 1) => {
+  if (!startDateStr) return "";
+  const start = new Date(startDateStr);
+  if (isNaN(start.getTime())) return "";
+
+  const end = new Date(start);
+  const num = parseInt(count, 10) > 0 ? parseInt(count, 10) : 1;
+  const stepOffset = num > 1 ? num - 1 : 0;
+
+  if (rule === "daily") {
+    end.setDate(end.getDate() + stepOffset);
+  } else if (rule === "weekly") {
+    end.setDate(end.getDate() + stepOffset * 7);
+  } else if (rule === "monthly") {
+    const targetYear = end.getFullYear();
+    const targetMonth = end.getMonth() + stepOffset;
+    const origDate = end.getDate();
+    const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+    end.setFullYear(targetYear, targetMonth, Math.min(origDate, lastDay));
+  } else if (rule === "yearly") {
+    const targetYear = end.getFullYear() + stepOffset;
+    const targetMonth = end.getMonth();
+    const origDate = end.getDate();
+    const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+    end.setFullYear(targetYear, targetMonth, Math.min(origDate, lastDay));
+  } else {
+    // "once" không lặp: cùng ngày
+  }
+
+  return formatDateOnly(end);
+};
+
+// Helper tính số lần lặp từ Ngày bắt đầu và Ngày kết thúc do người dùng chọn
+const calculateCountFromEndDate = (startDateStr, endDateStr, rule) => {
+  if (!startDateStr || !endDateStr) return 1;
+  const s = new Date(startDateStr);
+  const e = new Date(endDateStr);
+  if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return 1;
+
+  const diffDays = Math.round((e.getTime() - s.getTime()) / (24 * 3600 * 1000)) + 1;
+  if (rule === "daily") return Math.max(1, diffDays);
+  if (rule === "weekly") return Math.max(1, Math.round((diffDays - 1) / 7) + 1);
+  if (rule === "monthly") {
+    const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1;
+    return Math.max(1, months);
+  }
+  if (rule === "yearly") {
+    const years = e.getFullYear() - s.getFullYear() + 1;
+    return Math.max(1, years);
+  }
+  return 1;
+};
+
+// Helper format ngày hiển thị tiếng Việt DD/MM/YYYY
+const formatDisplayDateVi = (dateObj) => {
+  if (!dateObj) return "";
+  const d = new Date(dateObj);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 
 // Helper so sánh 2 ngày trùng ngày/tháng/năm
@@ -91,12 +190,15 @@ export const CalendarView = () => {
   const [formData, setFormData] = useState({
     tieu_de: "",
     loai_su_kien: "hoc-tap",
-    thoi_gian_bat_dau: formatDateForInput(new Date()),
-    thoi_gian_ket_thuc: formatDateForInput(new Date(Date.now() + 3600000)),
+    ngay_bat_dau: formatDateOnly(new Date()),
+    gio_bat_dau: "09:00",
+    ngay_ket_thuc: formatDateOnly(new Date()),
+    gio_ket_thuc: "10:00",
     dia_diem: "",
     mo_ta: "",
     mau_sac: "#3b82f6",
     quy_tac_lap: "once",
+    so_lan_lap: DEFAULT_REPEAT_COUNTS.daily,
     bat_thong_bao: true,
     thoi_gian_nhac_truoc: 15,
     update_mode: "single"
@@ -197,6 +299,127 @@ export const CalendarView = () => {
       return matchesSearch && matchesType;
     });
   }, [events, searchTerm, filterType]);
+
+  // Phát hiện trùng lịch thời gian thực khi người dùng setup lịch (Schedule Conflict Detection)
+  const conflictingEvents = useMemo(() => {
+    if (!showModal || !formData.ngay_bat_dau || !formData.gio_bat_dau) return [];
+
+    const isDeadline = formData.loai_su_kien === "deadline";
+    const startH_M = formData.gio_bat_dau;
+    const endH_M = isDeadline ? formData.gio_bat_dau : (formData.gio_ket_thuc || formData.gio_bat_dau);
+
+    const [sH, sM] = startH_M.split(":").map(Number);
+    const [eH, eM] = endH_M.split(":").map(Number);
+
+    if (isNaN(sH) || isNaN(sM) || isNaN(eH) || isNaN(eM)) return [];
+
+    let sessionDurationMs = (eH * 60 + eM - (sH * 60 + sM)) * 60 * 1000;
+    if (sessionDurationMs <= 0) sessionDurationMs = isDeadline ? 0 : 3600000;
+
+    const rule = formData.quy_tac_lap || "once";
+    const count = parseInt(formData.so_lan_lap, 10) || 1;
+    const maxIter = rule === "once" ? 1 : Math.min(count, 365);
+
+    const [sYear, sMonth, sDate] = formData.ngay_bat_dau.split("-").map(Number);
+    if (isNaN(sYear) || isNaN(sMonth) || isNaN(sDate)) return [];
+    const baseStart = new Date(sYear, sMonth - 1, sDate, sH, sM, 0, 0);
+
+    const repeatCutoff = formData.ngay_ket_thuc ? new Date(`${formData.ngay_ket_thuc}T23:59:59.999`) : null;
+
+    const plannedSessions = [];
+    for (let i = 0; i < maxIter; i++) {
+      let curStart;
+      if (rule === "daily") {
+        curStart = new Date(baseStart);
+        curStart.setDate(curStart.getDate() + i);
+      } else if (rule === "weekly") {
+        curStart = new Date(baseStart);
+        curStart.setDate(curStart.getDate() + i * 7);
+      } else if (rule === "monthly") {
+        const targetYear = baseStart.getFullYear();
+        const targetMonth = baseStart.getMonth() + i;
+        const origDate = baseStart.getDate();
+        const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+        curStart = new Date(baseStart);
+        curStart.setFullYear(targetYear, targetMonth, Math.min(origDate, lastDay));
+      } else if (rule === "yearly") {
+        const targetYear = baseStart.getFullYear() + i;
+        const targetMonth = baseStart.getMonth();
+        const origDate = baseStart.getDate();
+        const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+        curStart = new Date(baseStart);
+        curStart.setFullYear(targetYear, targetMonth, Math.min(origDate, lastDay));
+      } else {
+        curStart = new Date(baseStart);
+      }
+
+      if (repeatCutoff && curStart.getTime() > repeatCutoff.getTime()) {
+        break;
+      }
+
+      const curEnd = isDeadline ? new Date(curStart) : new Date(curStart.getTime() + sessionDurationMs);
+      plannedSessions.push({ start: curStart, end: curEnd });
+    }
+
+    const conflicts = [];
+    const currentEditId = editingEvent ? editingEvent._id : null;
+    const currentNhomLapId = editingEvent ? editingEvent.nhom_lap_id : null;
+
+    for (const session of plannedSessions) {
+      for (const evt of events) {
+        if (evt.is_deleted) continue;
+        if (currentEditId && evt._id === currentEditId) continue;
+        if (formData.update_mode === "all" && currentNhomLapId && evt.nhom_lap_id === currentNhomLapId) continue;
+
+        const evtStart = new Date(evt.thoi_gian_bat_dau);
+        const evtEnd = evt.thoi_gian_ket_thuc ? new Date(evt.thoi_gian_ket_thuc) : new Date(evtStart.getTime() + 3600000);
+
+        if (isNaN(evtStart.getTime()) || isNaN(evtEnd.getTime())) continue;
+
+        // Kiểm tra chồng lấn thời gian (overlap)
+        let isOverlap = false;
+        if (isDeadline && evt.loai_su_kien === "deadline") {
+          isOverlap = Math.abs(session.start.getTime() - evtStart.getTime()) < 60000;
+        } else if (isDeadline) {
+          isOverlap = session.start.getTime() >= evtStart.getTime() && session.start.getTime() < evtEnd.getTime();
+        } else if (evt.loai_su_kien === "deadline") {
+          isOverlap = evtStart.getTime() >= session.start.getTime() && evtStart.getTime() < session.end.getTime();
+        } else {
+          isOverlap = session.start.getTime() < evtEnd.getTime() && session.end.getTime() > evtStart.getTime();
+        }
+
+        if (isOverlap) {
+          const alreadyAdded = conflicts.some(
+            (c) => c.event._id === evt._id && c.sessionDate === formatDateOnly(session.start)
+          );
+          if (!alreadyAdded) {
+            conflicts.push({
+              event: evt,
+              sessionDate: formatDateOnly(session.start),
+              sessionStart: session.start,
+              sessionEnd: session.end,
+              conflictStart: evtStart,
+              conflictEnd: evtEnd
+            });
+          }
+        }
+      }
+    }
+
+    return conflicts;
+  }, [
+    showModal,
+    formData.ngay_bat_dau,
+    formData.gio_bat_dau,
+    formData.gio_ket_thuc,
+    formData.quy_tac_lap,
+    formData.so_lan_lap,
+    formData.ngay_ket_thuc,
+    formData.loai_su_kien,
+    formData.update_mode,
+    editingEvent,
+    events
+  ]);
 
   // Danh sách sự kiện HÔM NAY (Cập nhật thời gian thực theo currentTime)
   const todayEvents = useMemo(() => {
@@ -311,21 +534,29 @@ export const CalendarView = () => {
     setFormError(null);
     setDetailEvent(null);
 
-    let start = presetDate ? new Date(presetDate) : new Date();
-    if (presetDate) {
-      start.setHours(presetHour, 0, 0, 0);
-    }
-    let end = new Date(start.getTime() + 3600000);
+    // Tự động nhận diện ngày được chọn (presetDate, selectedDayDate hoặc ngày hiện tại)
+    const baseDate = presetDate ? new Date(presetDate) : (selectedDayDate ? new Date(selectedDayDate) : new Date());
+    const dateStr = formatDateOnly(baseDate);
+
+    const startH = String(presetHour).padStart(2, "0");
+    const endH = String(Math.min(presetHour + 1, 23)).padStart(2, "0");
+    const startTimeStr = `${startH}:00`;
+    const endTimeStr = `${endH}:00`;
+
+    const defaultRule = "once";
 
     setFormData({
       tieu_de: "",
       loai_su_kien: "hoc-tap",
-      thoi_gian_bat_dau: formatDateForInput(start),
-      thoi_gian_ket_thuc: formatDateForInput(end),
+      ngay_bat_dau: dateStr,
+      gio_bat_dau: startTimeStr,
+      ngay_ket_thuc: dateStr,
+      gio_ket_thuc: endTimeStr,
       dia_diem: "",
       mo_ta: "",
       mau_sac: "#3b82f6",
-      quy_tac_lap: "once",
+      quy_tac_lap: defaultRule,
+      so_lan_lap: DEFAULT_REPEAT_COUNTS.daily,
       bat_thong_bao: true,
       thoi_gian_nhac_truoc: 15,
       update_mode: "single"
@@ -357,15 +588,22 @@ export const CalendarView = () => {
     setEditingEvent(event);
     setFormError(null);
 
+    const s = new Date(event.thoi_gian_bat_dau);
+    const e = event.thoi_gian_ket_thuc ? new Date(event.thoi_gian_ket_thuc) : new Date(s.getTime() + 3600000);
+    const rule = event.quy_tac_lap || "once";
+
     setFormData({
       tieu_de: event.tieu_de || "",
       loai_su_kien: event.loai_su_kien || "hoc-tap",
-      thoi_gian_bat_dau: formatDateForInput(event.thoi_gian_bat_dau),
-      thoi_gian_ket_thuc: formatDateForInput(event.thoi_gian_ket_thuc),
+      ngay_bat_dau: formatDateOnly(s),
+      gio_bat_dau: formatTimeOnly(s),
+      ngay_ket_thuc: formatDateOnly(e),
+      gio_ket_thuc: formatTimeOnly(e),
       dia_diem: event.dia_diem || "",
       mo_ta: event.mo_ta || "",
       mau_sac: event.mau_sac || "#3b82f6",
-      quy_tac_lap: event.quy_tac_lap || "once",
+      quy_tac_lap: rule,
+      so_lan_lap: DEFAULT_REPEAT_COUNTS[rule] || 30,
       bat_thong_bao: event.bat_thong_bao !== false,
       thoi_gian_nhac_truoc: event.thoi_gian_nhac_truoc !== undefined ? Number(event.thoi_gian_nhac_truoc) : 15,
       update_mode: "single"
@@ -431,34 +669,49 @@ export const CalendarView = () => {
 
     const isDeadline = formData.loai_su_kien === "deadline";
 
-    if (isDeadline) {
-      if (!formData.thoi_gian_bat_dau) {
-        setFormError("Vui lòng chọn thời hạn cho deadline.");
-        return;
-      }
-      const start = new Date(formData.thoi_gian_bat_dau);
-      if (isNaN(start.getTime())) {
-        setFormError("Định dạng thời hạn deadline không hợp lệ.");
-        return;
-      }
-    } else {
-      if (!formData.thoi_gian_bat_dau || !formData.thoi_gian_ket_thuc) {
-        setFormError("Vui lòng nhập đầy đủ thời gian bắt đầu và kết thúc.");
-        return;
-      }
+    if (!formData.ngay_bat_dau) {
+      setFormError("Vui lòng chọn ngày bắt đầu.");
+      return;
+    }
 
-      const start = new Date(formData.thoi_gian_bat_dau);
-      const end = new Date(formData.thoi_gian_ket_thuc);
+    if (!formData.gio_bat_dau) {
+      setFormError(isDeadline ? "Vui lòng chọn giờ deadline." : "Vui lòng chọn giờ bắt đầu.");
+      return;
+    }
 
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        setFormError("Định dạng ngày giờ không hợp lệ.");
-        return;
-      }
+    if (!isDeadline && !formData.gio_ket_thuc) {
+      setFormError("Vui lòng chọn giờ kết thúc.");
+      return;
+    }
 
-      if (end.getTime() <= start.getTime()) {
-        setFormError("Thời gian kết thúc phải diễn ra sau thời gian bắt đầu.");
-        return;
-      }
+    // Thời gian bắt đầu và kết thúc của sự kiện trong ngày
+    const startIso = `${formData.ngay_bat_dau}T${formData.gio_bat_dau}`;
+    let endIso = isDeadline ? startIso : `${formData.ngay_bat_dau}T${formData.gio_ket_thuc}`;
+
+    const startDateObj = new Date(startIso);
+    let endDateObj = new Date(endIso);
+
+    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+      setFormError("Định dạng ngày giờ không hợp lệ.");
+      return;
+    }
+
+    if (!isDeadline && endDateObj.getTime() <= startDateObj.getTime()) {
+      setFormError("Giờ kết thúc phải diễn ra sau giờ bắt đầu trong ngày.");
+      return;
+    }
+
+    // Nếu phát hiện trùng lịch, cảnh báo xác nhận với người dùng
+    if (conflictingEvents.length > 0) {
+      const confirmMsg =
+        `⚠️ CẢNH BÁO TRÙNG LỊCH!\n\n` +
+        `Khung giờ bạn chọn đang bị trùng với ${conflictingEvents.length} sự kiện:\n` +
+        conflictingEvents.slice(0, 3).map(c => `• ${c.event.tieu_de} (${formatDisplayDateVi(c.conflictStart)}: ${formatTimeOnly(c.conflictStart)} - ${formatTimeOnly(c.conflictEnd)})`).join("\n") +
+        (conflictingEvents.length > 3 ? `\n• ...và ${conflictingEvents.length - 3} sự kiện khác` : "") +
+        `\n\nBạn có muốn điều chỉnh lại không?\n- Bấm [Hủy / Cancel] để quay lại sửa giờ.\n- Bấm [OK] để vẫn tiếp tục lưu sự kiện này.`;
+
+      const proceed = window.confirm(confirmMsg);
+      if (!proceed) return;
     }
 
     setSubmitting(true);
@@ -467,12 +720,14 @@ export const CalendarView = () => {
       const payload = {
         tieu_de: formData.tieu_de.trim(),
         loai_su_kien: formData.loai_su_kien,
-        thoi_gian_bat_dau: formData.thoi_gian_bat_dau,
-        thoi_gian_ket_thuc: isDeadline ? formData.thoi_gian_bat_dau : formData.thoi_gian_ket_thuc,
+        thoi_gian_bat_dau: startIso,
+        thoi_gian_ket_thuc: endIso,
+        ngay_ket_thuc_lap: formData.quy_tac_lap !== "once" ? formData.ngay_ket_thuc : null,
         dia_diem: formData.dia_diem ? formData.dia_diem.trim() : null,
         mo_ta: formData.mo_ta ? formData.mo_ta.trim() : null,
         mau_sac: formData.mau_sac,
         quy_tac_lap: formData.quy_tac_lap,
+        so_lan_lap: formData.quy_tac_lap !== "once" ? (Number(formData.so_lan_lap) || 1) : 1,
         bat_thong_bao: formData.bat_thong_bao,
         thoi_gian_nhac_truoc: Number(formData.thoi_gian_nhac_truoc) || 15
       };
@@ -481,7 +736,11 @@ export const CalendarView = () => {
         const res = await api.updateSuKien(editingEvent._id, payload, formData.update_mode);
         if (res.success) {
           setShowModal(false);
-          showToast("Cập nhật sự kiện thành công! 🎉", "success");
+          if (conflictingEvents.length > 0) {
+            showToast("Đã cập nhật sự kiện (Lưu ý: Có trùng lịch) ⚠️", "warning");
+          } else {
+            showToast("Cập nhật sự kiện thành công! 🎉", "success");
+          }
           await loadEvents();
         } else {
           setFormError(res.message || "Lỗi cập nhật sự kiện.");
@@ -490,7 +749,11 @@ export const CalendarView = () => {
         const res = await api.createSuKien(payload);
         if (res.success) {
           setShowModal(false);
-          showToast("Tạo sự kiện mới thành công! 🚀", "success");
+          if (conflictingEvents.length > 0) {
+            showToast("Đã tạo sự kiện (Lưu ý: Có trùng lịch) ⚠️", "warning");
+          } else {
+            showToast("Tạo sự kiện mới thành công! 🚀", "success");
+          }
           await loadEvents();
         } else {
           setFormError(res.message || "Lỗi tạo sự kiện.");
@@ -722,7 +985,7 @@ export const CalendarView = () => {
               <button
                 className="btn-primary d-flex align-items-center gap-1.5"
                 style={{ padding: "6px 14px", fontSize: "0.82rem", whiteSpace: "nowrap" }}
-                onClick={() => handleOpenCreateModal(currentDate)}
+                onClick={() => handleOpenCreateModal(selectedDayDate || currentDate)}
               >
                 <span>➕</span>
                 <span>Tạo sự kiện</span>
@@ -794,13 +1057,36 @@ export const CalendarView = () => {
                       key={index}
                       className={`month-day-cell ${!item.isCurrentMonth ? "other-month" : ""} ${isToday ? "today-cell" : ""}`}
                       onClick={() => handleDayClick(item.date)}
+                      onDoubleClick={() => handleOpenCreateModal(item.date)}
                     >
                       {/* Tiêu đề Ngày */}
-                      <div className="day-cell-top flex-shrink-0">
-                        <span className={`day-number ${isToday ? "today-num" : ""}`}>
-                          {item.date.getDate()}
-                        </span>
-                        {isToday && <span className="today-badge d-none d-sm-inline">Hôm nay</span>}
+                      <div className="day-cell-top flex-shrink-0 d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center gap-1">
+                          <span className={`day-number ${isToday ? "today-num" : ""}`}>
+                            {item.date.getDate()}
+                          </span>
+                          {isToday && <span className="today-badge d-none d-sm-inline">Hôm nay</span>}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-add-day-direct d-none d-md-inline-flex align-items-center justify-content-center"
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            padding: "0 4px",
+                            fontSize: "0.85rem",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                            opacity: 0.6
+                          }}
+                          title={`Thêm nhanh sự kiện cho ngày ${item.date.getDate()}/${item.date.getMonth() + 1}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenCreateModal(item.date);
+                          }}
+                        >
+                          ➕
+                        </button>
                       </div>
 
                       {/* Danh sách Sự kiện thuộc Ngày */}
@@ -1680,13 +1966,6 @@ export const CalendarView = () => {
                         if (formData.mau_sac === "#3b82f6" || !formData.mau_sac) {
                           nextData.mau_sac = "#f59e0b";
                         }
-                        nextData.thoi_gian_ket_thuc = formData.thoi_gian_bat_dau;
-                      } else {
-                        const start = new Date(formData.thoi_gian_bat_dau || Date.now());
-                        const end = new Date(formData.thoi_gian_ket_thuc || Date.now());
-                        if (end.getTime() <= start.getTime()) {
-                          nextData.thoi_gian_ket_thuc = formatDateForInput(new Date(start.getTime() + 3600000));
-                        }
                       }
                       setFormData(nextData);
                     }}
@@ -1706,21 +1985,65 @@ export const CalendarView = () => {
                   <select
                     className="form-select rounded-3"
                     value={formData.quy_tac_lap}
-                    onChange={(e) => setFormData({ ...formData, quy_tac_lap: e.target.value })}
-                    disabled={!!editingEvent}
+                    onChange={(e) => {
+                      const newRule = e.target.value;
+                      const newCount = DEFAULT_REPEAT_COUNTS[newRule] || 1;
+                      const newEnd = calculateEndDateFromRule(formData.ngay_bat_dau, newRule, newCount);
+                      setFormData({
+                        ...formData,
+                        quy_tac_lap: newRule,
+                        so_lan_lap: newCount,
+                        ngay_ket_thuc: newEnd
+                      });
+                    }}
                   >
                     <option value="once">Không lặp lại (Chỉ 1 lần)</option>
-                    <option value="daily">Hàng ngày (30 ngày)</option>
-                    <option value="weekly">Hàng tuần (12 tuần)</option>
-                    <option value="monthly">Hàng tháng (6 tháng)</option>
+                    <option value="daily">Hàng ngày</option>
+                    <option value="weekly">Hàng tuần</option>
+                    <option value="monthly">Hàng tháng</option>
+                    <option value="yearly">Hàng năm</option>
                   </select>
                 </div>
+
+                {formData.quy_tac_lap !== "once" && (
+                  <div className="col-12">
+                    <label className="form-label fw-bold small text-secondary mb-1">
+                      🔄 {REPEAT_CYCLE_CONFIG[formData.quy_tac_lap]?.label || "Số lần lặp"}{" "}
+                      <span className="text-danger">*</span>
+                    </label>
+                    <div className="input-group">
+                      <input
+                        type="number"
+                        className="form-control rounded-start-3"
+                        min={REPEAT_CYCLE_CONFIG[formData.quy_tac_lap]?.min || 1}
+                        max={REPEAT_CYCLE_CONFIG[formData.quy_tac_lap]?.max || 365}
+                        required
+                        value={formData.so_lan_lap}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const newEnd = calculateEndDateFromRule(formData.ngay_bat_dau, formData.quy_tac_lap, val);
+                          setFormData({
+                            ...formData,
+                            so_lan_lap: val,
+                            ngay_ket_thuc: newEnd
+                          });
+                        }}
+                      />
+                      <span className="input-group-text bg-light text-secondary rounded-end-3 fw-semibold small">
+                        {REPEAT_CYCLE_CONFIG[formData.quy_tac_lap]?.unit || "lần"}
+                      </span>
+                    </div>
+                    <div className="form-text text-muted" style={{ fontSize: "0.78rem" }}>
+                      💡 Hệ thống tự động tính ngày kết thúc chuỗi lặp tương ứng với số {REPEAT_CYCLE_CONFIG[formData.quy_tac_lap]?.unit} bạn nhập.
+                    </div>
+                  </div>
+                )}
               </div>
 
               {editingEvent && (editingEvent.quy_tac_lap !== "once" || editingEvent.nhom_lap_id) && (
                 <div className="alert alert-info py-2 px-3 mb-3 rounded-3 small">
                   <div className="fw-bold mb-1">
-                    🔄 Sự kiện này thuộc một chuỗi lặp lại. Chọn phạm vi áp dụng sửa:
+                    🔄 Sự kiện này thuộc một chuỗi lặp lại ({REPEAT_RULE_MAP[editingEvent.quy_tac_lap] || "Chuỗi lặp"}). Chọn phạm vi áp dụng:
                   </div>
                   <div className="d-flex gap-3 flex-wrap">
                     <div className="form-check m-0">
@@ -1734,7 +2057,7 @@ export const CalendarView = () => {
                         onChange={() => setFormData({ ...formData, update_mode: "single" })}
                       />
                       <label className="form-check-label" htmlFor="upSingle">
-                        Chỉ sự kiện này
+                        Chỉ buổi này (tách thành sự kiện riêng biệt)
                       </label>
                     </div>
                     <div className="form-check m-0">
@@ -1748,63 +2071,198 @@ export const CalendarView = () => {
                         onChange={() => setFormData({ ...formData, update_mode: "all" })}
                       />
                       <label className="form-check-label" htmlFor="upAll">
-                        Toàn bộ chuỗi lặp
+                        Toàn bộ chuỗi lặp (cập nhật ngày giờ & thông tin toàn chuỗi)
                       </label>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* NẾU LÀ DEADLINE: CHỈ HIỂN THỊ HẠN DEADLINE */}
-              {formData.loai_su_kien === "deadline" ? (
-                <div className="mb-3">
+              {/* Hàng: Ngày bắt đầu (cố định) & Ngày kết thúc (người dùng được set) */}
+              <div className="row g-2 g-sm-3 mb-3">
+                <div className="col-12 col-sm-6">
                   <label className="form-label fw-bold small text-secondary mb-1">
-                    ⏰ Hạn chót Deadline <span className="text-danger">*</span>
+                    📅 Ngày bắt đầu <span className="badge bg-secondary-subtle text-secondary ms-1">Cố định</span>
                   </label>
                   <input
-                    type="datetime-local"
-                    className="form-control rounded-3"
-                    required
-                    value={formData.thoi_gian_bat_dau}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        thoi_gian_bat_dau: e.target.value,
-                        thoi_gian_ket_thuc: e.target.value
-                      })
-                    }
+                    type="date"
+                    className="form-control rounded-3 bg-light text-secondary"
+                    value={formData.ngay_bat_dau}
+                    disabled
+                    readOnly
+                    title="Ngày bắt đầu được cố định theo ngày bạn đã chọn trên lịch"
                   />
-                  <div className="small text-secondary mt-1">
-                    💡 Đối với Deadline, chỉ cần chọn hạn chót. Hệ thống sẽ theo dõi và nhắc bạn đúng hạn.
+                  <div className="form-text text-muted" style={{ fontSize: "0.75rem" }}>
+                    🔒 Cố định theo ngày đã chọn trên lịch
                   </div>
                 </div>
+
+                <div className="col-12 col-sm-6">
+                  <label className="form-label fw-bold small text-secondary mb-1">
+                    🏁 Ngày kết thúc <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control rounded-3"
+                    required
+                    min={formData.ngay_bat_dau}
+                    value={formData.ngay_ket_thuc}
+                    onChange={(e) => {
+                      const newEndDate = e.target.value;
+                      let newCount = formData.so_lan_lap;
+                      if (formData.quy_tac_lap !== "once") {
+                        newCount = calculateCountFromEndDate(formData.ngay_bat_dau, newEndDate, formData.quy_tac_lap);
+                      }
+                      setFormData({
+                        ...formData,
+                        ngay_ket_thuc: newEndDate,
+                        so_lan_lap: newCount
+                      });
+                    }}
+                  />
+                  <div className="form-text text-muted" style={{ fontSize: "0.75rem" }}>
+                    {formData.quy_tac_lap === "once"
+                      ? "💡 Bạn có thể chọn ngày kết thúc cho sự kiện"
+                      : "💡 Tự động theo chu kỳ lặp hoặc tự chọn"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Hàng: Thời gian bắt đầu và kết thúc của sự kiện TRONG NGÀY */}
+              {formData.loai_su_kien === "deadline" ? (
+                <div className="mb-3">
+                  <label className="form-label fw-bold small text-secondary mb-1 d-flex align-items-center justify-content-between">
+                    <span>⏰ Giờ hạn chót Deadline <span className="text-danger">*</span></span>
+                    {conflictingEvents.length > 0 && (
+                      <span className="badge bg-warning text-dark" style={{ fontSize: "0.7rem" }}>
+                        ⚠️ Trùng giờ
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="time"
+                    className="form-control rounded-3"
+                    required
+                    value={formData.gio_bat_dau}
+                    onChange={(e) => setFormData({ ...formData, gio_bat_dau: e.target.value, gio_ket_thuc: e.target.value })}
+                  />
+                </div>
               ) : (
-                /* NẾU LÀ LOẠI SỰ KIỆN KHÁC: HIỂN THỊ CẢ BẮT ĐẦU VÀ KẾT THÚC */
                 <div className="row g-2 g-sm-3 mb-3">
                   <div className="col-12 col-sm-6">
-                    <label className="form-label fw-bold small text-secondary mb-1">
-                      Thời gian bắt đầu <span className="text-danger">*</span>
+                    <label className="form-label fw-bold small text-secondary mb-1 d-flex align-items-center justify-content-between">
+                      <span>⏰ Giờ bắt đầu trong ngày <span className="text-danger">*</span></span>
+                      {conflictingEvents.length > 0 && (
+                        <span className="badge bg-warning text-dark" style={{ fontSize: "0.7rem" }}>
+                          ⚠️ Trùng giờ
+                        </span>
+                      )}
                     </label>
                     <input
-                      type="datetime-local"
+                      type="time"
                       className="form-control rounded-3"
                       required
-                      value={formData.thoi_gian_bat_dau}
-                      onChange={(e) => setFormData({ ...formData, thoi_gian_bat_dau: e.target.value })}
+                      value={formData.gio_bat_dau}
+                      onChange={(e) => {
+                        const newStart = e.target.value;
+                        let newEnd = formData.gio_ket_thuc;
+                        if (newEnd <= newStart) {
+                          const [h, m] = newStart.split(":").map(Number);
+                          newEnd = `${String(Math.min(h + 1, 23)).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+                        }
+                        setFormData({
+                          ...formData,
+                          gio_bat_dau: newStart,
+                          gio_ket_thuc: newEnd
+                        });
+                      }}
                     />
                   </div>
 
                   <div className="col-12 col-sm-6">
-                    <label className="form-label fw-bold small text-secondary mb-1">
-                      Thời gian kết thúc <span className="text-danger">*</span>
+                    <label className="form-label fw-bold small text-secondary mb-1 d-flex align-items-center justify-content-between">
+                      <span>⏱️ Giờ kết thúc trong ngày <span className="text-danger">*</span></span>
+                      {conflictingEvents.length > 0 && (
+                        <span className="badge bg-warning text-dark" style={{ fontSize: "0.7rem" }}>
+                          ⚠️ Trùng giờ
+                        </span>
+                      )}
                     </label>
                     <input
-                      type="datetime-local"
+                      type="time"
                       className="form-control rounded-3"
                       required
-                      value={formData.thoi_gian_ket_thuc}
-                      onChange={(e) => setFormData({ ...formData, thoi_gian_ket_thuc: e.target.value })}
+                      value={formData.gio_ket_thuc}
+                      onChange={(e) => setFormData({ ...formData, gio_ket_thuc: e.target.value })}
                     />
+                  </div>
+                </div>
+              )}
+
+              {/* Banner tóm tắt thời gian trực quan */}
+              <div className="alert alert-light border py-2 px-3 mb-3 rounded-3 small text-muted d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                  📅 <strong>{formatDisplayDateVi(formData.ngay_bat_dau)}</strong>
+                  {formData.ngay_ket_thuc && formData.ngay_ket_thuc !== formData.ngay_bat_dau && (
+                    <> ➔ 🏁 <strong>{formatDisplayDateVi(formData.ngay_ket_thuc)}</strong></>
+                  )}
+                </div>
+                <div>
+                  ⏰ Khung giờ: <strong>{formData.gio_bat_dau}</strong> - <strong>{formData.gio_ket_thuc}</strong>
+                  {formData.quy_tac_lap !== "once" && (
+                    <span className="badge bg-primary-subtle text-primary ms-2">
+                      Lặp {formData.so_lan_lap} {REPEAT_CYCLE_CONFIG[formData.quy_tac_lap]?.unit} ({REPEAT_RULE_MAP[formData.quy_tac_lap]})
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* CẢNH BÁO TRÙNG LỊCH REALTIME KHI SETUP LỊCH */}
+              {conflictingEvents.length > 0 && (
+                <div className="alert alert-warning py-2.5 px-3 mb-3 rounded-3 border border-warning shadow-sm">
+                  <div className="d-flex align-items-center justify-content-between mb-1">
+                    <div className="d-flex align-items-center gap-2 fw-bold text-dark">
+                      <span className="fs-5">⚠️</span>
+                      <span>Phát hiện trùng lịch ({conflictingEvents.length} xung đột):</span>
+                    </div>
+                    <span className="badge bg-warning text-dark border border-warning-subtle">
+                      Cần chú ý
+                    </span>
+                  </div>
+                  <div className="text-secondary small mb-2" style={{ fontSize: "0.82rem" }}>
+                    Khung giờ bạn đang setup bị trùng với sự kiện khác trong lịch trình:
+                  </div>
+                  <div className="d-flex flex-column gap-1.5">
+                    {conflictingEvents.slice(0, 3).map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="d-flex align-items-center justify-content-between p-2 bg-white rounded border border-warning-subtle small shadow-xs"
+                      >
+                        <div className="d-flex align-items-center gap-2 text-truncate me-2">
+                          <span
+                            className="rounded-circle flex-shrink-0"
+                            style={{
+                              backgroundColor: item.event.mau_sac || "#f59e0b",
+                              width: "10px",
+                              height: "10px",
+                              display: "inline-block"
+                            }}
+                          />
+                          <strong className="text-dark text-truncate">{item.event.tieu_de}</strong>
+                        </div>
+                        <div className="text-secondary flex-shrink-0" style={{ fontSize: "0.78rem" }}>
+                          📅 {formatDisplayDateVi(item.conflictStart)}:{" "}
+                          <span className="badge bg-light text-dark border">
+                            {formatTimeOnly(item.conflictStart)} - {formatTimeOnly(item.conflictEnd)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {conflictingEvents.length > 3 && (
+                      <div className="text-muted text-center pt-1" style={{ fontSize: "0.75rem" }}>
+                        ...và còn {conflictingEvents.length - 3} sự kiện trùng lịch khác.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1953,7 +2411,7 @@ export const CalendarView = () => {
             {(deleteModal.event.quy_tac_lap !== "once" || deleteModal.event.nhom_lap_id) && (
               <div className="alert alert-danger py-2.5 px-3 mb-3 rounded-3 small">
                 <div className="fw-bold mb-2">
-                  🔄 Sự kiện này thuộc một chuỗi lặp lại. Chọn phạm vi xóa:
+                  🔄 Sự kiện này thuộc một chuỗi lặp lại ({REPEAT_RULE_MAP[deleteModal.event.quy_tac_lap] || "Chuỗi lặp"}). Chọn phạm vi xóa:
                 </div>
                 <div className="d-flex flex-column gap-1.5">
                   <div className="form-check">
@@ -1967,7 +2425,7 @@ export const CalendarView = () => {
                       onChange={() => setDeleteModal((prev) => ({ ...prev, deleteMode: "single" }))}
                     />
                     <label className="form-check-label" htmlFor="delSingle">
-                      Chỉ xóa sự kiện này
+                      Chỉ xóa buổi này (các buổi khác trong chuỗi vẫn giữ nguyên)
                     </label>
                   </div>
                   <div className="form-check">
@@ -1981,7 +2439,7 @@ export const CalendarView = () => {
                       onChange={() => setDeleteModal((prev) => ({ ...prev, deleteMode: "all" }))}
                     />
                     <label className="form-check-label" htmlFor="delAll">
-                      Xóa tất cả sự kiện trong chuỗi lặp
+                      Xóa toàn bộ các buổi trong chuỗi lặp
                     </label>
                   </div>
                 </div>

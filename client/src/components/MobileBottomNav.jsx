@@ -1,3 +1,4 @@
+//Thanh điều hướng chuẩn Mobile App dưới đáy màn hình
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";

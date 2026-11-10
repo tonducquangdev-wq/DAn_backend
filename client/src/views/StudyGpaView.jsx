@@ -1,3 +1,4 @@
+//Quản lý môn học, tự động tính GPA tích lũy, bài tập & deadline
 import React, { useEffect, useState } from "react";
 import { api } from "../services/api";
 import { TutorView } from "./TutorView";

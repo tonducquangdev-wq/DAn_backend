@@ -1,3 +1,4 @@
+//Hộp chat cộng đồng tập gym thời gian thực kèm thả cảm xúc
 import React, { useState, useEffect, useRef } from "react";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";

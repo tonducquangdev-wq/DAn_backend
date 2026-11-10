@@ -1,3 +1,4 @@
+//Bảng điều khiển KPI, duyệt hồ sơ, gửi broadcast thông báo
 import React, { useState, useEffect, useMemo } from "react";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";

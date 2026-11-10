@@ -7,6 +7,13 @@
 2. [CẤU TRÚC THƯ MỤC DỰ ÁN](#2-cấu-trúc-thư-mục-dự-án)
 3. [LUỒNG HOẠT ĐỘNG TỔNG THỂ (REQUEST LIFECYCLE)](#3-luồng-hoạt-động-tổng-thể-request-lifecycle)
 4. [CÁC LUỒNG NGHIỆP VỤ ĐẶC THÙ & ĐỒNG BỘ DỮ LIỆU TỰ ĐỘNG](#4-các-luồng-nghiệp-vụ-đặc-thù--đồng-bộ-dữ-liệu-tự-động)
+   - [4.1. Luồng Tự Động Hóa Đồng Bộ Lịch (Calendar Hub Auto-Sync)](#41-luồng-tự-động-hóa-đồng-bộ-lịch-calendar-hub-auto-sync)
+   - [4.2. Luồng Cấp Kế Hoạch Tập Gym & Chia Sẻ Giáo Án](#42-luồng-cấp-kế-hoạch-tập-gym--chia-sẻ-giáo-án-ppl-7-ngày--share-code)
+   - [4.3. Luồng Thẩm Định Hồ Sơ Chuyên Gia (Gia sư / PT)](#43-luồng-thẩm-định-hồ-sơ-chuyên-gia-gia-sư--pt)
+   - [4.4. Luồng Tác Vụ Ngầm Gửi Tóm Tắt Lịch Trình (Daily Briefing Scheduler)](#44-luồng-tác-vụ-ngầm-gửi-tóm-tắt-lịch-trình-daily-briefing-scheduler)
+   - [4.5. Luồng Trò Chuyện Thời Gian Thực: Chat 1 - 1 & Chat Cộng Đồng](#45-luồng-trò-chuyện-thời-gian-thực-chat-1---1--chat-cộng-đồng-workout-community-chat)
+   - [4.6. Luồng Ứng Dụng Di Động PWA & Thông Báo Đẩy Web Push (VAPID)](#46-luồng-ứng-dụng-di-động-pwa--thông-báo-đẩy-web-push-vapid)
+   - [4.7. Luồng Phân Quyền Người Dùng 2 Lớp (Role-Based Access Control - RBAC)](#47-luồng-phân-quyền-người-dùng-2-lớp-role-based-access-control---rbac)
 5. [DANH MỤC VÀ ĐẶC TẢ CHI TIẾT CÁC RESTFUL API](#5-danh-mục-và-đặc-tả-chi-tiết-các-restful-api)
    - [5.1. Nhóm Xác thực & Tài khoản (`/api/auth`)](#51-nhóm-xác-thực--tài-khoản-apiauth)
    - [5.2. Nhóm Lịch trình & Sự kiện (`/api/su-kien`)](#52-nhóm-lịch-trình--sự-kiện-apisu-kien)
@@ -105,6 +112,20 @@ test_backend/
 └── package.json
 ```
 
+### 2.1. Bản Đồ Chức Năng Các Thư Mục (Kiến Trúc Client - Server & MVC)
+
+Để hiểu rõ cách toàn bộ hệ thống vận hành, hãy hình dung kiến trúc này tương tự như **Một nhà hàng ẩm thực**:
+
+| Thư mục / File | Vai trò trong hệ thống | Chức năng cụ thể |
+| :--- | :--- | :--- |
+| **`client/`** | **Frontend (Giao diện người dùng)** | Xây dựng bằng React 19 + Vite. Chứa toàn bộ giao diện, các view, component, modal, CSS mà người dùng nhìn thấy và tương tác trên trình duyệt hoặc điện thoại di động. |
+| **`server.js`** | **Cửa chính đón nhận Request** | Điểm khởi đầu của ứng dụng Node.js/Express (Port 5000), cấu hình CORS, parse JSON body, mở cổng lắng nghe kết nối. |
+| **`Middleware/`** | **Trạm kiểm soát an ninh (Bảo vệ)** | Lọc request trước khi cho vào trong (ví dụ: `authMiddleware` giải mã JWT Token, `roleMiddleware` kiểm tra quyền Admin/Tutor/PT, chặn tài khoản bị khóa). |
+| **`Router/`** | **Người phục vụ (Bộ định tuyến URL)** | Nhận URL từ người dùng và chỉ đường dẫn: URL nào thuộc về Controller nào xử lý (ví dụ: `/api/tin-nhan-rieng` chuyển vào `tinNhanRiengController`). |
+| **`Controller/`** | **Đầu bếp chính (Bộ não nghiệp vụ - Business Logic)** | Nơi động não tính toán: Kiểm tra tính hợp lệ của dữ liệu, gọi Model truy vấn MongoDB, xử lý thuật toán (GPA, tính lương, đồng bộ sự kiện), kích hoạt Web Push Notification và trả JSON về Client. |
+| **`Model/`** | **Kho nguyên liệu (Khuôn mẫu dữ liệu - Schema)** | Định nghĩa cấu trúc bảng trong MongoDB qua Mongoose (User, TinNhanRieng, SuKien, MonHoc...). Quy định trường nào bắt buộc, kiểu dữ liệu gì (`String`, `Number`, `Boolean`...), và tạo Index tối ưu tìm kiếm. |
+| **`Utils/`** | **Công cụ phụ trợ (Helper / Services)** | Các tác vụ đặc biệt độc lập như `pushService.js` (gửi Web Push qua VAPID), `dailyBriefingScheduler.js` (cronjob tự động tóm tắt lịch trình buổi sáng). |
+
 ---
 
 ## 3. LUỒNG HOẠT ĐỘNG TỔNG THỂ (REQUEST LIFECYCLE)
@@ -187,6 +208,119 @@ Hệ thống sử dụng bảng `SuKien` làm **Hub trung tâm** để gom toàn
 * Lấy giờ hiện tại theo định dạng `HH:mm` múi giờ Việt Nam (`Asia/Ho_Chi_Minh`).
 * Truy vấn người dùng có `daily_briefing_enabled: true`, `daily_briefing_time` trùng với giờ hiện tại và `daily_briefing_last_sent !== dateStr`.
 * Quét toàn bộ sự kiện trong ngày của người dùng, định dạng thông điệp đẩy và gửi qua Web Push trực tiếp tới thiết bị. Đánh dấu `daily_briefing_last_sent` để đảm bảo không gửi trùng lặp.
+
+### 4.5. Luồng Trò Chuyện Thời Gian Thực: Chat 1 - 1 & Chat Cộng Đồng (Workout Community Chat)
+
+Hệ thống cung cấp 2 phân hệ chat phục vụ các mục đích giao tiếp khác nhau:
+
+#### A. Phân tích Bản chất Kỹ thuật (HTTP Short-Polling vs WebSocket)
+* **Cơ chế truyền tải hiện tại:** Sử dụng mô hình **HTTP Short-Polling** kết hợp **Web Push Notification**:
+  * Khi gửi tin nhắn: Client gọi `POST` gửi dữ liệu lên server lưu vào MongoDB.
+  * Khi nhận tin nhắn mới: Client duy trì một vòng lặp hẹn giờ (`setInterval`) gọi `GET` định kỳ (3.0 giây đối với Chat 1-1 và 3.5 giây đối với Chat Cộng đồng) để kéo danh sách tin nhắn mới nhất về render lại giao diện (`setMessages`).
+* **Lý do áp dụng mô hình Polling:**
+  * **Độ ổn định & Dễ bảo trì:** Không sợ đứt kết nối (connection drop), không cần viết logic handshake hoặc tự kết nối lại phức tạp.
+  * **Tương thích 100% môi trường Cloud:** Chạy mượt mà trên mọi hạ tầng hosting (kể cả Vercel, Serverless, Render free tier nơi WebSocket thường bị ngắt sau 30-60 giây).
+  * **Tận dụng hạ tầng RESTful API & JWT:** Dùng chung toàn bộ middleware xác thực, phân quyền và bắt lỗi có sẵn.
+* **Định hướng nâng cấp (Future Work):** Chuyển đổi sang **Socket.io (Full Real-time Duplex)** để đạt độ trễ < 50ms, bổ sung tính năng *"Đang gõ tin nhắn..." (Typing indicator)* và trạng thái Online/Offline trực tiếp.
+
+#### B. Chi tiết Luồng Chat 1 - 1 (Tin Nhắn Riêng Tư)
+* **Model:** `TinNhanRieng.js` với 2 chỉ mục kép: `{ nguoi_gui: 1, nguoi_nhan: 1, createdAt: -1 }` (tối ưu truy vấn 2 chiều) và `{ nguoi_nhan: 1, da_doc: 1 }` (đếm tin chưa đọc tức thì).
+* **Quy trình xử lý Backend (`tinNhanRiengController.js`):**
+  1. `getHoiThoai`: Gom nhóm tin nhắn theo từng đối tác bằng JavaScript `Map()`, tính số tin chưa đọc (`unread_count`), tự động làm giàu dữ liệu (enrich) với môn dạy của Gia sư hoặc chuyên môn của PT, ẩn hội thoại của tài khoản bị khóa (`banned`).
+  2. `getTinNhanVoiNguoiDung`: Lấy 100 tin nhắn gần nhất và **tự động chuyển `da_doc: true`** cho các tin nhắn đối phương gửi đến.
+  3. `guiTinNhan`: Lưu tin nhắn vào MongoDB và kích hoạt hàm `sendPushToUser` bắn **Web Push Notification** ra màn hình khóa điện thoại của người nhận.
+* **Trải nghiệm Frontend (`MessagesView.jsx`):**
+  * Bố cục 2 cột (Messenger style): Danh sách hội thoại bên trái, khung chat bên phải.
+  * **Thuật toán Smart Auto-Scroll:** Chỉ tự động cuộn xuống đáy khi người dùng đang đọc ở gần cuối (`isNearBottomRef`). Nếu người dùng đang cuộn lên xem tin nhắn cũ, màn hình giữ nguyên vị trí đọc để tránh giật lag.
+  * Tích hợp Emoji Picker, danh sách phản hồi nhanh (Quick Replies) cho học tập và tập gym.
+
+#### C. Chi tiết Luồng Chat Cộng Đồng (Workout Community Chat)
+* **Model:** `TinNhanTapLuyen.js` lưu `user_id`, `noi_dung`, `loai` và mảng `reactions: [{ user_id, icon }]`.
+* **Quy trình xử lý Backend (`chatTapLuyenController.js`):**
+  * `getTinNhan`: Lấy 60 tin nhắn mới nhất, populate avatar, vai trò (`role`) và huy hiệu xác minh của người gửi, đảo ngược thời gian xuôi dòng.
+  * `reactTinNhan`: Thả cảm xúc biểu cảm (cơ bắp 💪, tim ❤️, lửa 🔥...). Hỗ trợ toggle (bấm lại icon cũ để gỡ, bấm icon khác để đổi).
+  * `xoaTinNhan`: Cho phép người gửi xóa tin của chính mình hoặc Admin xóa tin nhắn vi phạm.
+* **Trải nghiệm Frontend (`WorkoutCommunityChat.jsx`):**
+  * Cửa sổ nổi (Floating Popup Modal) mở được ở mọi trang mà không làm mất luồng làm việc.
+  * **Polling có điều kiện (Lifecycle Cleanup):** Timer 3.5 giây chỉ chạy khi cửa sổ chat đang mở (`isOpen === true`). Khi đóng cửa sổ, timer lập tức bị hủy (`clearInterval`) để tiết kiệm băng thông và pin thiết bị.
+
+---
+
+### 4.6. Luồng Ứng Dụng Di Động PWA & Thông Báo Đẩy Web Push (VAPID)
+
+Hệ thống đạt chuẩn **Progressive Web App (PWA)**, biến ứng dụng web thành App di động hoàn chỉnh mà không cần xuất bản lên App Store / Google Play:
+
+#### A. Kiến trúc PWA (Progressive Web App)
+* **Cấu hình Manifest (`vite.config.js`):** Tích hợp `vite-plugin-pwa`, cấu hình `display: "standalone"`, `orientation: "portrait-primary"`, màu chủ đề `#2563eb`, cùng bộ icon đầy đủ kích thước (64x64, 192x192, 512x512, maskable icon) trong thư mục `client/public/`.
+* **Bộ nhớ đệm Offline (Service Worker & Workbox):** Caching toàn bộ assets (HTML, CSS, JS, Fonts, Images) với chiến lược `NetworkFirst` cho các API dữ liệu.
+* **Cài đặt thông minh (`PwaInstallPrompt.jsx`):**
+  * **Trên Android / Chrome:** Bắt sự kiện `beforeinstallprompt` hiển thị banner cài đặt 1 chạm.
+  * **Trên iPhone / Safari:** Nhận diện thiết bị iOS và hiển thị modal hướng dẫn người dùng nhấn biểu tượng *Chia sẻ (Share) ⎋ -> Thêm vào Màn hình chính (Add to Home Screen)*.
+
+#### B. Kiến trúc Thông Báo Đẩy Chuẩn Web Push Protocol (W3C / VAPID)
+* **Khóa bảo mật VAPID:** Cặp khóa bất đối xứng `VAPID_PUBLIC_KEY` và `VAPID_PRIVATE_KEY` cấu hình trong `.env`, xác thực danh tính server gửi tin nhắn với các máy chủ Push Service của Google (FCM) và Apple (APNs).
+* **Đăng ký Thiết bị (`Model/PushSubscription.js` & `pushNotificationController.js`):**
+  1. Người dùng bấm bật thông báo -> Trình duyệt xin quyền `Notification.requestPermission()`.
+  2. Tạo bản ghi Push Subscription chứa `endpoint` duy nhất và 2 khóa mã hóa `keys.p256dh`, `keys.auth`.
+  3. Gửi lên backend lưu vào bảng `PushSubscription`.
+* **Bắn Thông Báo Ra Màn Hình Khóa (`Utils/pushService.js`):**
+  * Hàm `sendPushToUser(userId, payload)` sử dụng thư viện `web-push` mã hóa payload và bắn đến thiết bị.
+  * Tự động phát hiện và xóa sạch các Subscription không còn hợp lệ (mã lỗi 410 Gone / 404 Not Found) khi người dùng gỡ app.
+* **Xử lý ngầm phía Client (`client/public/push-handler.js`):**
+  * Service Worker bắt sự kiện `self.addEventListener("push")`: Đánh thức điện thoại, phát chuông, rung máy theo nhịp `vibrate: [150, 50, 150]` và hiển thị thông báo ra màn hình khóa.
+  * Sự kiện `self.addEventListener("notificationclick")`: Đóng thông báo và tự động điều hướng trình duyệt đến đúng trang đích (trang chat, trang lịch, bài tập cần nộp...).
+
+---
+
+### 4.7. Luồng Phân Quyền Người Dùng 2 Lớp (Role-Based Access Control - RBAC)
+
+Hệ thống bảo vệ tài nguyên và phân chia nghiệp vụ chặt chẽ thông qua 4 vai trò người dùng:
+
+| Vai trò (`role`) | Tên gọi | Quyền hạn và Trách nhiệm |
+| :--- | :--- | :--- |
+| **`user`** (Mặc định) | Sinh viên / Học viên | Quản lý học tập, tính GPA, tạo dự án, ca làm part-time, tập gym, chat 1-1, tham gia chat cộng đồng, nộp hồ sơ chuyên gia. |
+| **`tutor`** | Gia sư Học tập | Sở hữu toàn bộ quyền của `user`, kèm huy hiệu **🎓 Gia Sư Xác Thực** (`is_expert_verified: true`), hiển thị trên danh bạ gia sư, nhận tin nhắn tư vấn và đặt lịch học. |
+| **`pt`** | Huấn Luyện Viên Thể Hình | Sở hữu toàn bộ quyền của `user`, kèm huy hiệu **🏋️ HLV PT Xác Thực**, xuất hiện trên danh bạ PT thể hình, tư vấn giáo án rèn luyện. |
+| **`admin`** | Quản Trị Viên Tối Cao | Toàn quyền kiểm soát hệ thống: Thống kê KPI, xét duyệt/từ chối hồ sơ chuyên gia, đổi vai trò người dùng, khóa (`status: "banned"`) hoặc mở khóa tài khoản, phát thông báo Broadcast toàn server. |
+
+#### A. Kiến trúc Bảo vệ 2 Lớp (Defense in Depth)
+
+```
+[HTTP Request từ Client]
+         │
+         ▼
+[LỚP 1: authMiddleware.js] (Xác thực danh tính - Authentication)
+  * Kiểm tra Header "Authorization: Bearer <token>"
+  * Giải mã JWT Token (kiểm tra chữ ký số và hạn dùng 7 ngày)
+  * Truy vấn User từ MongoDB
+  * Chặn tài khoản vi phạm: Nếu user.status === "banned" -> Trả về lỗi 403 Forbidden
+  * Gán đối tượng user vào req.user và chuyển tiếp
+         │
+         ▼
+[LỚP 2: roleMiddleware.js] (Phân quyền truy cập - Authorization)
+  * Hàm middleware: checkRole('admin') hoặc checkRole('tutor', 'pt')
+  * So khớp: req.user.role có nằm trong danh sách quyền cho phép không?
+  * Nếu không thỏa mãn -> Lập tức chặn đứng và trả về JSON:
+    { "success": false, "message": "Quyền truy cập bị từ chối. Chức năng này yêu cầu quyền [admin]." }
+  * Nếu thỏa mãn -> Cho phép vào Controller xử lý!
+```
+
+#### B. Phân Quyền Trên Giao Diện (Frontend UI Guarding)
+* Trong [AuthContext.jsx](file:///d:/laragon/laragon/www/test_backend/client/src/context/AuthContext.jsx): Lưu trữ trạng thái `user` và `user.role` tập trung.
+* Trong [App.jsx](file:///d:/laragon/laragon/www/test_backend/client/src/App.jsx):
+  * Chỉ hiển thị nút điều hướng **👑 Bảng Quản Trị Admin** khi `user?.role === "admin"`.
+  * Nếu người dùng thường cố tình gõ hash URL `#admin` vào trình duyệt, Router chặn lại và chuyển hướng về trang Lịch.
+  * Hiển thị huy hiệu phù hợp trên Topbar: Gia Sư (`tutor`), Huấn Luyện Viên (`pt`), hoặc nút *"Đăng Ký Chuyên Gia"* đối với tài khoản `user` thường.
+
+#### C. Quy Trình Nâng Cấp Quyền Hạn Tự Động (User -> Gia Sư / PT)
+1. **Nộp hồ sơ:** Người dùng điền thông tin, học vị, chứng chỉ tại form chuyên gia ([chuyenGiaController.js](file:///d:/laragon/laragon/www/test_backend/Controller/api/chuyenGiaController.js)), tạo bản ghi trong bảng `DangKyChuyenGia` (trạng thái: `pending`).
+2. **Thẩm định:** Quản trị viên kiểm tra hồ sơ, hình ảnh chứng chỉ trên Admin Dashboard.
+3. **Phê duyệt tự động (`adminController.js` - `duyetHoSo`):**
+   * Chuyển trạng thái hồ sơ sang `approved`.
+   * Tự động cập nhật `User.role` thành `'tutor'` hoặc `'pt'`.
+   * Kích hoạt cờ `User.is_expert_verified = true`.
+   * Tự động khởi tạo bản ghi trong bảng danh bạ công khai `GiaSu` hoặc `HuanLuyenVien`.
+   * Bắn thông báo nội bộ và gửi Web Push Notification chúc mừng tới điện thoại của người dùng.
 
 ---
 
@@ -524,44 +658,6 @@ Trong [`errorMiddleware.js`](file:///d:/laragon/laragon/www/test_backend/Middlew
 * **Lỗi không xác định:** Trả về `500 Internal Server Error` (ẩn stack trace khi ở chế độ Production).
 
 ---
-
-## 8. BỘ CÂU HỎI BẢO VỆ ĐỒ ÁN VÀ PHẢN BIỆN ĂN ĐIỂM CAO
-
-### Câu 1: Em hãy trình bày luồng xác thực (Authentication) và phân quyền (Authorization) trong dự án?
-* **Trả lời:**
-  * **Xác thực:** Khi người dùng gửi email và mật khẩu tại `/api/auth/login`, Controller dùng `bcrypt.compare` để đối chiếu mật khẩu đã hash trong DB. Nếu khớp, server ký một chuỗi JWT Token có thời hạn 7 ngày chứa `id` của user. Các request sau đó Client phải đính kèm Header `Authorization: Bearer <token>`.
-  * **Phân quyền:** Hệ thống có 4 vai trò chính (`user`, `tutor`, `pt`, `admin`). Tầng phân quyền sử dụng `roleMiddleware(allowedRoles)` kiểm tra trường `role` của `req.user`. Nếu không đủ thẩm quyền, hệ thống trả về mã `403 Forbidden`.
-
-### Câu 2: Khi người dùng tạo môn học hay bài tập, tại sao bên trang Lịch lại tự động xuất hiện sự kiện?
-* **Trả lời:**
-  * Đây là cơ chế **Auto-Sync** do em thiết kế tại Controller. Bảng `SuKien` đóng vai trò là Hub tổng hợp.
-  * Khi gọi API tạo Môn học (`createMonHoc`), Controller sẽ tự động tính toán các ngày học trong tuần từ `ngay_bat_dau` đến `ngay_ket_thuc`, đồng thời dùng `insertMany` để đẩy tất cả các buổi học vào bảng `SuKien` với `loai_su_kien: "hoc-tap"`.
-  * Tương tự, khi tạo Bài tập, hệ thống tự động sinh 1 bản ghi `SuKien` loại `"deadline"`. Nhờ vậy, Client chỉ cần gọi 1 API lịch duy nhất là hiển thị được tất cả lịch trình mà không cần ghép nối phức tạp.
-
-### Câu 3: Tính năng Daily Briefing gửi thông báo tổng hợp buổi sáng hoạt động thế nào? Có gây quá tải server không?
-* **Trả lời:**
-  * Tác vụ này chạy ngầm thông qua hàm [`startDailyBriefingScheduler`](file:///d:/laragon/laragon/www/test_backend/Utils/dailyBriefingScheduler.js) với chu kỳ kiểm tra mỗi 60 giây.
-  * Để không gây nghẽn server, hệ thống chỉ truy vấn các user thỏa mãn: `daily_briefing_enabled == true`, giờ hẹn `daily_briefing_time == currentTime` (theo múi giờ Việt Nam UTC+7) và `daily_briefing_last_sent !== dateStr`.
-  * Ngay khi tìm thấy, server cập nhật `daily_briefing_last_sent` thành ngày hôm nay để ngăn gửi trùng lặp, sau đó gom toàn bộ sự kiện trong ngày và gửi qua chuẩn Web Push (VAPID) trực tiếp đến Service Worker trên thiết bị người dùng.
-
-### Câu 4: Làm thế nào để tính điểm GPA hệ 10 và hệ 4 tự động?
-* **Trả lời:**
-  * Tại API `GET /api/bao-cao-hoc-tap`, Controller truy vấn toàn bộ các môn học của người dùng có `diem_so != null`.
-  * Sử dụng công thức tính điểm trung bình có trọng số theo số tín chỉ:
-    $$\text{GPA}_{10} = \frac{\sum (\text{Điểm môn} \times \text{Số tín chỉ})}{\sum \text{Số tín chỉ}}$$
-  * Đồng thời quy đổi điểm hệ 10 sang thang điểm 4 theo chuẩn đại học ($\ge 8.5 \to 4.0$, $\ge 7.0 \to 3.0$, $\ge 5.5 \to 2.0$, $\ge 4.0 \to 1.0$), từ đó tính $\text{GPA}_4$ và đưa ra xếp loại học lực tương ứng (Xuất sắc, Giỏi, Khá, Trung bình).
-
-### Câu 5: Hệ thống xử lý thế nào khi xóa dữ liệu môn học hoặc dự án? Có bị lỗi mồ côi dữ liệu (orphan records) không?
-* **Trả lời:**
-  * Đối với Môn học, em áp dụng cơ chế **Soft-delete** (`is_deleted: true`) trên bảng `MonHoc`, đồng thời chạy truy vấn cập nhật hàng loạt `SuKien.updateMany({ mon_hoc_id: id }, { is_deleted: true })` và xóa sạch các bản ghi trong `LichHoc`.
-  * Đối với Dự án, khi xóa Dự án thì Controller cũng tự động xóa toàn bộ các Tasks (`CongViec.deleteMany`) và Ca làm việc (`CaLamViec.deleteMany`) trực thuộc dự án đó, đảm bảo toàn vẹn dữ liệu trong cơ sở dữ liệu.
-
----
-
-## 9. KẾ HOẠCH TRIỂN KHAI 24/7 VÀ HƯỚNG PHÁT TRIỂN HỆ THỐNG
-
-### 9.1. Kế hoạch triển khai duy trì hệ thống chạy 24/7 (Deployment Strategies)
-Để đưa hệ thống thoát khỏi môi trường máy tính cục bộ (localhost), duy trì hoạt động liên tục 24/7 phục vụ người dùng thực tế mà không cần bật máy tính cá nhân, hệ thống hướng tới 2 phương án triển khai thực tiễn:
 
 #### Hướng 1: Triển khai Nền tảng Đám mây Miễn phí (Zero-Cost Cloud Deployment)
 * **Cơ sở dữ liệu (Database Cloud):**

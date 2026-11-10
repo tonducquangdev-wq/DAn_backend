@@ -1,3 +1,4 @@
+//Modal nộp bằng cấp đăng ký làm Gia Sư hoặc Huấn luyện viên PT
 import React, { useState, useEffect } from "react";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
