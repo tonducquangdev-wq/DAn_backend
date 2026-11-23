@@ -667,6 +667,11 @@ Trong [`errorMiddleware.js`](file:///d:/laragon/laragon/www/test_backend/Middlew
   * Triển khai mã nguồn Backend & Frontend lên nền tảng **Render.com** (hoặc **Railway.app**) liên kết trực tiếp với kho mã nguồn **GitHub**.
   * Thiết lập quy trình tự động hóa **CI/CD**: Mỗi khi cập nhật code lên nhánh `main`, nền tảng tự động build và deploy phiên bản mới không gián đoạn dịch vụ (Zero-Downtime Deployment).
   * **HTTPS & PWA:** Render tự động cấp chứng chỉ bảo mật SSL/TLS (Let's Encrypt) chính quy và tên miền cố định vĩnh viễn (ví dụ: `https://lifeplanner-backend.onrender.com`), đáp ứng hoàn hảo tiêu chuẩn bảo mật khắt khe của **PWA Mobile** và **Web Push Notification** trên cả Android và iOS.
+* **Frontend (Vercel - Triển khai riêng):**
+   * Triển khai frontend PWA/React lên nền tảng **Vercel** (gói miễn phí, CDN toàn cầu, tự cấp HTTPS).
+   * Cấu hình trên Vercel: **Root Directory** = `client`, **Build Command** = `npm install && npm run build`, **Output Directory** = `dist`.
+   * Thiết lập biến môi trường: `VITE_API_BASE_URL=https://<backend-render-url>.onrender.com/api`.
+   * File `client/vercel.json` đã được tạo sẵn (SPA rewrites → `/index.html`).
 
 ##### 📋 Quy trình triển khai thực tế từng bước (Step-by-Step Execution):
 

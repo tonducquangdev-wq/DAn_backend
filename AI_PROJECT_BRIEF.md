@@ -603,6 +603,12 @@ Environment Variables: MONGO_URI, JWT_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KE
 ```
 - Sau khi deploy: Setup cron-job ping `/` mỗi 10 phút (cron-job.org) để tránh sleep mode
 - HTTPS tự động được cấp bởi Render → PWA và Web Push hoạt động bình thường
+### Vercel (Miễn phí)
+- Triển khai frontend PWA/React lên **Vercel** (miễn phí, CDN toàn cầu, HTTPS tự động).
+- Cấu hình: Root Directory = `client`, Build Command = `npm install && npm run build`, Output Directory = `dist`.
+- Thiết lập biến môi trường: `VITE_API_BASE_URL=https://<backend-render-url>.onrender.com/api`.
+- File `client/vercel.json` đã tạo sẵn (SPA rewrites → `/index.html`).
+- Kích hoạt HTTPS và Domain tùy chỉnh.
 
 ### VPS (Production)
 ```bash
