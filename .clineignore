@@ -1,0 +1,22 @@
+# Thư mục thư viện & build (cả gốc lẫn trong client)
+node_modules/
+client/node_modules/
+dist/
+client/dist/
+build/
+.git/
+
+# Các file khóa phiên bản siêu dài (cực kỳ tốn token nếu AI đọc nhầm)
+package-lock.json
+client/package-lock.json
+
+# Thư mục chứa dữ liệu Database cục bộ & công cụ test
+life_planner_DB/
+.postman/
+postman/
+
+# File chứa mật khẩu, chuỗi kết nối DB, API Key bảo mật
+.env
+client/.env
+
+scripts/

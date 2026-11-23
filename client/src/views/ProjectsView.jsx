@@ -38,6 +38,7 @@ export const ProjectsView = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showSingleShiftModal, setShowSingleShiftModal] = useState(false);
   const [showBulkShiftModal, setShowBulkShiftModal] = useState(false);
+  const [showTaskScheduleModal, setShowTaskScheduleModal] = useState(false);
 
   // Toast
   const [toast, setToast] = useState(null);
@@ -62,6 +63,14 @@ export const ProjectsView = () => {
     mo_ta: "",
     do_uu_tien: "trung_binh",
     han_chot: ""
+  });
+
+  // Form Task Schedule (Set lịch làm việc)
+  const [taskScheduleForm, setTaskScheduleForm] = useState({
+    task_id: "",
+    ngay_lam: new Date().toISOString().split("T")[0],
+    gio_bat_dau: "08:00",
+    gio_ket_thuc: "12:00"
   });
 
   // Form Ca Làm Nhanh (Đơn lẻ)
@@ -246,7 +255,49 @@ export const ProjectsView = () => {
     setShowBulkShiftModal(true);
   };
 
-  // Lưu Dự Án (Tạo mới hoặc Cập nhật)
+  // Mở modal Set lịch làm việc cho Task
+  const handleOpenTaskScheduleModal = (task) => {
+    setTaskScheduleForm({
+      task_id: task._id,
+      ngay_lam: task.ngay_lam ? new Date(task.ngay_lam).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      gio_bat_dau: task.gio_bat_dau || "08:00",
+      gio_ket_thuc: task.gio_ket_thuc || "12:00"
+    });
+    setShowTaskScheduleModal(true);
+  };
+
+  // Set/Cập nhật lịch làm việc cho Task
+  const handleSetTaskSchedule = async (e) => {
+    e.preventDefault();
+    if (!taskScheduleForm.task_id) {
+      showToast("Lỗi: Không xác định được công việc", "danger");
+      return;
+    }
+    const res = await api.setTaskSchedule(taskScheduleForm.task_id, {
+      ngay_lam: taskScheduleForm.ngay_lam,
+      gio_bat_dau: taskScheduleForm.gio_bat_dau,
+      gio_ket_thuc: taskScheduleForm.gio_ket_thuc
+    });
+    if (res.success) {
+      setShowTaskScheduleModal(false);
+      showToast("Đã thiết lập lịch làm việc và đồng bộ lên Lịch! 📅", "success");
+      loadData();
+    } else {
+      showToast(res.message || "Lỗi thiết lập lịch làm việc", "danger");
+    }
+  };
+
+  // Gỡ bỏ lịch làm việc của Task
+  const handleRemoveTaskSchedule = async (taskId) => {
+    if (!window.confirm("Bạn có chắc muốn gỡ bỏ lịch làm việc của Task này? Sự kiện trên Lịch sẽ bị xóa.")) return;
+    const res = await api.removeTaskSchedule(taskId);
+    if (res.success) {
+      showToast("Đã gỡ bỏ lịch làm việc khỏi Task và xóa sự kiện trên Lịch", "success");
+      loadData();
+    } else {
+      showToast(res.message || "Lỗi gỡ bỏ lịch làm việc", "danger");
+    }
+  };
   const handleSaveProject = async (e) => {
     e.preventDefault();
     if (!projectForm.ten_du_an.trim()) {
@@ -787,17 +838,37 @@ export const ProjectsView = () => {
                               </div>
                             )}
 
-                            <span
-                              style={{
-                                fontSize: "0.72rem",
-                                color: "var(--text-muted)",
-                                background: "rgba(255,255,255,0.06)",
-                                padding: "2px 8px",
-                                borderRadius: "4px"
-                              }}
-                            >
-                              🗓️ Đồng bộ lịch
-                            </span>
+                            {t.ngay_lam && t.gio_bat_dau && t.gio_ket_thuc ? (
+                              <div
+                                style={{
+                                  fontSize: "0.8rem",
+                                  color: isDone ? "var(--text-muted)" : "#10b981",
+                                  fontWeight: 700,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  background: "rgba(16, 185, 129, 0.1)",
+                                  padding: "3px 10px",
+                                  borderRadius: "8px"
+                                }}
+                              >
+                                <span>📅 Đã set lịch:</span>
+                                <span>{formatDateDisplay(t.ngay_lam)}</span>
+                                <span>({t.gio_bat_dau} - {t.gio_ket_thuc})</span>
+                              </div>
+                            ) : (
+                              <span
+                                style={{
+                                  fontSize: "0.72rem",
+                                  color: "var(--text-muted)",
+                                  background: "rgba(255,255,255,0.06)",
+                                  padding: "2px 8px",
+                                  borderRadius: "4px"
+                                }}
+                              >
+                                📌 Chưa set lịch
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

@@ -17,7 +17,13 @@ const congViecSchema = new mongoose.Schema(
             default: "chua_lam"
         },
         tien_do: { type: Number, min: 0, max: 100, default: 0 },
-        han_chot: { type: Date, default: null }
+        han_chot: { type: Date, default: null },
+
+        // Lịch làm việc cho Task (Set lịch làm việc)
+        ngay_lam: { type: Date, default: null },
+        gio_bat_dau: { type: String, default: null }, // HH:mm
+        gio_ket_thuc: { type: String, default: null }, // HH:mm
+        su_kien_id: { type: mongoose.Schema.Types.ObjectId, ref: "SuKien", default: null }
     },
     { timestamps: true }
 );

@@ -4,15 +4,6 @@ const SuKien = require("../../Model/SuKien");
 const ALLOWED_EVENT_TYPES = ["hoc-tap", "tap-luyen", "deadline", "ca-nhan", "cong-viec"];
 const ALLOWED_REPEAT_RULES = ["once", "daily", "weekly", "monthly", "yearly"];
 
-// Bảng màu chuẩn đồng bộ tuyệt đối với Thể loại sự kiện trên thanh lọc
-const EVENT_DEFAULT_COLORS = {
-    "hoc-tap": "#3b82f6",    // Xanh dương
-    "tap-luyen": "#10b981",  // Xanh lá
-    "deadline": "#f59e0b",   // Cam vàng
-    "ca-nhan": "#8b5cf6",    // Tím
-    "cong-viec": "#6366f1"   // Xanh chàm
-};
-
 // Lấy danh sách sự kiện trong khoảng thời gian
 const getSuKien = async (req, res) => {
     try {
@@ -64,7 +55,7 @@ const createSuKien = async (req, res) => {
     try {
         const {
             loai_su_kien, tieu_de, mo_ta, thoi_gian_bat_dau, thoi_gian_ket_thuc,
-            ngay_ket_thuc_lap, dia_diem, mau_sac, do_uu_tien, quy_tac_lap, so_lan_lap, bat_thong_bao, so_ngay_nhac, thoi_gian_nhac_truoc, cong_viec_id
+            ngay_ket_thuc_lap, dia_diem, mau_sac, quy_tac_lap, so_lan_lap, bat_thong_bao, so_ngay_nhac, thoi_gian_nhac_truoc, cong_viec_id
         } = req.body;
 
         if (!tieu_de || typeof tieu_de !== "string" || !tieu_de.trim()) {

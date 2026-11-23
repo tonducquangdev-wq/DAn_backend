@@ -541,7 +541,7 @@ User B: POST /api/tap-luyen/community/import  →  clone toàn bộ KeHoachTapLu
 |---|---|---|
 | `CalendarView` | `#calendar` | Lịch tháng/tuần/ngày — gọi `/api/su-kien` |
 | `StudyGpaView` | `#study` | Môn học, GPA, bài tập deadline |
-| `ProjectsView` | `#projects` | Dự án, công việc, ca part-time |
+| `ProjectsView` | `#projects` | Dự án, công việc, ca part-time — click thẻ dự án để xem chi tiết (Tasks + Setup Lịch Làm & Lương gắn theo dự án đó) |
 | `WorkoutView` | `#workout` | Giáo án PPL, tập luyện, share code |
 | `MessagesView` | `#messages` | Chat 1-1 kiểu Messenger (2 cột) |
 | `TutorView` | `#tutors` | Danh sách gia sư/PT công khai |

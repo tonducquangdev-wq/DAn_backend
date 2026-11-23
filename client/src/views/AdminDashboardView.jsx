@@ -294,9 +294,6 @@ export const AdminDashboardView = ({ onBackToApp }) => {
               RBAC PORTAL
             </span>
           </div>
-          <p className="mt-1 mb-0 text-muted" style={{ fontSize: "0.88rem" }}>
-            Kiểm duyệt hồ sơ Gia Sư & PT Thể Hình, phân quyền và quản trị toàn bộ người dùng hệ thống.
-          </p>
         </div>
 
         {/* Action Buttons in Header */}

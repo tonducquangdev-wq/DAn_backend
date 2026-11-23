@@ -1,0 +1,7 @@
+# QUY TẮC LÀM VIỆC DỰ ÁN LIFE PLANNER
+
+1. **Ngôn ngữ giao tiếp:** Luôn luôn suy nghĩ, giải thích, lập kế hoạch và trả lời bằng tiếng Việt. Chỉ giữ nguyên tiếng Anh đối với tên biến, tên hàm, mã nguồn (code) và các thuật ngữ lập trình chuyên ngành.
+2. **Tiết kiệm ngữ cảnh & ngắn gọn:** Giải thích vấn đề và trình bày kế hoạch thật ngắn gọn, đi thẳng vào trọng tâm, không viết dài dòng.
+3. **Phạm vi đọc file:** Chỉ đọc đúng các file được gắn thẻ `@` hoặc trực tiếp liên quan đến lỗi/tính năng đang xử lý. Tuyệt đối không tự ý quét toàn bộ thư mục dự án.
+4. **Quy trình chạy lệnh:** Không tự ý chạy `npm run dev`, `npm start` hoặc khởi động lại server vì môi trường dev đã được bật sẵn.
+5. **Tự động cập nhật tài liệu dự án (`AI_PROJECT_BRIEF.md`):** Sau khi hoàn thành bất kỳ thay đổi nào về mã nguồn (thêm tính năng mới, sửa luồng nghiệp vụ, thêm/sửa API route, thay đổi schema Database hoặc cấu trúc UI/file), bắt buộc phải rà soát và cập nhật lại các mục tương ứng trong file `AI_PROJECT_BRIEF.md` để tài liệu luôn đồng bộ với code thực tế. Chỉ cập nhật ngắn gọn đúng phần bị thay đổi, không viết lại toàn bộ file.

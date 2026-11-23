@@ -9,6 +9,8 @@ const {
     createCongViec,
     updateCongViec,
     deleteCongViec,
+    setTaskSchedule,
+    removeTaskSchedule,
     getCaLamViec,
     createCaLamViec,
     bulkCreateCaLamViec,
@@ -35,5 +37,9 @@ router.post("/ca-lam-viec", authMiddleware, createCaLamViec);
 router.post("/ca-lam-viec/bulk", authMiddleware, bulkCreateCaLamViec);
 router.put("/ca-lam-viec/:id", authMiddleware, updateCaLamViec);
 router.delete("/ca-lam-viec/:id", authMiddleware, deleteCaLamViec);
+
+// Routes Set lịch làm việc cho Task
+router.post("/cong-viec/:id/set-schedule", authMiddleware, setTaskSchedule);
+router.delete("/cong-viec/:id/remove-schedule", authMiddleware, removeTaskSchedule);
 
 module.exports = router;

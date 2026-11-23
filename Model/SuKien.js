@@ -21,11 +21,6 @@ const suKienSchema = new mongoose.Schema(
         thoi_gian_ket_thuc: { type: Date, default: null },
         dia_diem: { type: String, default: null },
         mau_sac: { type: String, default: "#10B981" },
-        do_uu_tien: {
-            type: String,
-            enum: ["cao", "trung_binh", "thap"],
-            default: "trung_binh"
-        },
         quy_tac_lap: {
             type: String,
             enum: ["once", "daily", "weekly", "monthly", "yearly"],

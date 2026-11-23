@@ -31,6 +31,7 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
   const [baiTaps, setBaiTaps] = useState([]);
   const [showMonModal, setShowMonModal] = useState(false);
   const [showBtModal, setShowBtModal] = useState(false);
+  const [editingMonId, setEditingMonId] = useState(null);
   const [isViewingTutors, setIsViewingTutors] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
 
@@ -65,6 +66,50 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 4000);
+  };
+
+  const openEditModal = async (id) => {
+    try {
+      const res = await api.getMonHocById(id);
+      if (!res.success) return alert("Lỗi lấy dữ liệu môn học");
+      const m = res.data;
+      const form = {
+        ten_mon: m.ten_mon,
+        giang_vien: m.giang_vien,
+        phong_hoc: m.phong_hoc,
+        so_tin_chi: m.so_tin_chi,
+        diem_so: m.diem_so,
+        tien_do: m.tien_do,
+        ngay_bat_dau: m.ngay_bat_dau,
+        ngay_ket_thuc: m.ngay_ket_thuc,
+        gio_bat_dau: m.gio_bat_dau,
+        gio_ket_thuc: m.gio_ket_thuc,
+        ngay_hoc: m.ngay_hoc,
+        chi_tiet_lich_hoc: Array.isArray(m.chi_tiet_lich_hoc) ? m.chi_tiet_lich_hoc : [],
+        trang_thai: m.trang_thai,
+        mau_sac: m.mau_sac
+      };
+      setMonForm(form);
+      setShowMonModal(true);
+      setEditingMonId(id);
+    } catch (err) {
+      alert("Không thể mở modal sửa");
+    }
+  };
+
+  const handleEditMon = async (id) => {
+    const res = await api.updateMonHoc(id, monForm);
+    if (res.success) {
+      showToast(res.message || "Cập nhật môn học thành công");
+      setShowMonModal(false);
+      setMonForm(initialMonForm);
+      loadData();
+    } else if (res.conflicts && Array.isArray(res.conflicts) && res.conflicts.length > 0) {
+      const conflictList = res.conflicts.map(c => `${c.ten_mon} vào ${c.thu_label} (${c.gio_bat_dau} - ${c.gio_ket_thuc})`).join("\n");
+      alert(`⚠️ Trùng lịch học!\nMôn học này bị trùng với:\n${conflictList}\n\nVui lòng chọn khung giờ hoặc ngày học khác.`);
+    } else {
+      alert(res.message || "Lỗi cập nhật môn học");
+    }
   };
 
   const loadData = () => {
@@ -155,20 +200,51 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
   };
 
 
-  const handleCreateMon = async (e) => {
+  const handleSubmitMon = async (e) => {
     e.preventDefault();
     if (!monForm.ngay_hoc || monForm.ngay_hoc.length === 0) {
       alert("Vui lòng chọn ít nhất một ngày học trong tuần.");
       return;
     }
-    const res = await api.createMonHoc(monForm);
-    if (res.success) {
-      setShowMonModal(false);
-      setMonForm(initialMonForm);
-      loadData();
-      showToast(res.message || "Tạo môn học và tự động đồng bộ trang Lịch thành công!");
+    // Validation: Ngày bắt đầu không được lớn hơn ngày kết thúc
+    if (monForm.ngay_bat_dau && monForm.ngay_ket_thuc && monForm.ngay_bat_dau > monForm.ngay_ket_thuc) {
+      alert("Ngày bắt đầu môn học không được lớn hơn ngày kết thúc môn học.");
+      return;
+    }
+
+    if (editingMonId) {
+      // EDIT MODE
+      const res = await api.updateMonHoc(editingMonId, monForm);
+      if (res.success) {
+        setShowMonModal(false);
+        setMonForm(initialMonForm);
+        setEditingMonId(null);
+        loadData();
+        showToast(res.message || "Cập nhật môn học thành công!");
+      } else {
+        if (res.conflicts && Array.isArray(res.conflicts) && res.conflicts.length > 0) {
+          const conflictList = res.conflicts.map(c => `${c.ten_mon} vào ${c.thu_label} (${c.gio_bat_dau} - ${c.gio_ket_thuc})`).join("\n");
+          alert(`⚠️ Trùng lịch học!\nMôn học này bị trùng với:\n${conflictList}\n\nVui lòng chọn khung giờ hoặc ngày học khác.`);
+        } else {
+          alert(res.message || "Lỗi cập nhật môn học");
+        }
+      }
     } else {
-      alert(res.message || "Lỗi tạo môn học");
+      // CREATE MODE
+      const res = await api.createMonHoc(monForm);
+      if (res.success) {
+        setShowMonModal(false);
+        setMonForm(initialMonForm);
+        loadData();
+        showToast(res.message || "Tạo môn học và tự động đồng bộ trang Lịch thành công!");
+      } else {
+        if (res.conflicts && Array.isArray(res.conflicts) && res.conflicts.length > 0) {
+          const conflictList = res.conflicts.map(c => `${c.ten_mon} vào ${c.thu_label} (${c.gio_bat_dau} - ${c.gio_ket_thuc})`).join("\n");
+          alert(`⚠️ Trùng lịch học!\nMôn học này bị trùng với:\n${conflictList}\n\nVui lòng chọn khung giờ hoặc ngày học khác.`);
+        } else {
+          alert(res.message || "Lỗi tạo môn học");
+        }
+      }
     }
   };
 
@@ -328,7 +404,7 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
             <p className="text-muted fst-italic mb-3">
               Chưa có môn học nào được thêm. Hãy nhấn "Thêm Môn Học" để bắt đầu và tự động lên lịch học!
             </p>
-            <button className="btn-primary" onClick={() => setShowMonModal(true)}>
+            <button className="btn-primary" onClick={() => { setEditingMonId(null); setMonForm(initialMonForm); setShowMonModal(true); }}>
               ➕ Thêm Môn Học Đầu Tiên
             </button>
           </div>
@@ -489,15 +565,25 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                         </span>
                       </td>
                       <td style={{ textAlign: "center" }}>
-                        <button
-                          type="button"
-                          className="btn-table-action-delete"
-                          onClick={() => handleDeleteMon(m._id, m.ten_mon)}
-                          title="Xóa môn học và đồng bộ dọn dẹp lịch"
-                        >
-                          <i className="bi bi-trash3-fill"></i>
-                          <span>Xóa</span>
-                        </button>
+                        <div className="d-flex gap-2 flex-wrap justify-content-center">
+                          <button
+                            type="button"
+                            className="btn-primary btn-modal-action flex-grow-1 flex-sm-grow-0"
+                            onClick={() => openEditModal(m._id)}
+                            style={{ padding: "7px 14px", fontSize: "0.85rem", fontWeight: "700", borderRadius: "6px" }}
+                          >
+                            <span>✏️</span> Sửa
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-table-action-delete flex-grow-1 flex-sm-grow-0"
+                            onClick={() => handleDeleteMon(m._id, m.ten_mon)}
+                            title="Xóa môn học và đồng bộ dọn dẹp lịch"
+                            style={{ padding: "7px 14px", fontSize: "0.85rem", fontWeight: "700", borderRadius: "6px" }}
+                          >
+                            <i className="bi bi-trash3-fill"></i> Xóa
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -566,16 +652,26 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                             )}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          className="btn-table-action-delete flex-shrink-0"
-                          style={{ padding: "5px 10px", fontSize: "0.75rem" }}
-                          onClick={() => handleDeleteMon(m._id, m.ten_mon)}
-                          title="Xóa môn học"
-                        >
-                          <i className="bi bi-trash3-fill"></i>
-                          <span>Xóa</span>
-                        </button>
+                        <div className="d-flex gap-2 flex-shrink-0">
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            style={{ padding: "5px 10px", fontSize: "0.75rem" }}
+                            onClick={() => openEditModal(m._id)}
+                          >
+                            ✏️ Sửa
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-table-action-delete"
+                            style={{ padding: "5px 10px", fontSize: "0.75rem" }}
+                            onClick={() => handleDeleteMon(m._id, m.ten_mon)}
+                            title="Xóa môn học"
+                          >
+                            <i className="bi bi-trash3-fill"></i>
+                            <span>Xóa</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* Card Details Grid */}
@@ -764,16 +860,16 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
             style={{ maxWidth: "620px", width: "95%", maxHeight: "90vh", overflowY: "auto" }}
           >
             <div className="d-flex justify-content-between align-items-start mb-3">
-              <h3 className="fs-5 fw-bold mb-0">➕ Thêm Môn Học</h3>
+              <h3 className="fs-5 fw-bold mb-0">{editingMonId ? "✏️ Sửa Môn Học" : "➕ Thêm Môn Học"}</h3>
               <button
                 type="button"
                 className="btn-close"
-                onClick={() => setShowMonModal(false)}
+                onClick={() => { setShowMonModal(false); setEditingMonId(null); setMonForm(initialMonForm); }}
                 aria-label="Đóng"
                 style={{ filter: "var(--close-btn-filter, none)" }}
               />
             </div>
-            <form onSubmit={handleCreateMon}>
+            <form onSubmit={handleSubmitMon}>
               <div className="form-group mb-3">
                 <label className="form-label fw-semibold small mb-1">Tên môn học *</label>
                 <input
@@ -1060,7 +1156,7 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                   <button
                     type="button"
                     className="btn-secondary btn-modal-action flex-grow-1 flex-sm-grow-0"
-                    onClick={() => setShowMonModal(false)}
+                    onClick={() => { setShowMonModal(false); setEditingMonId(null); setMonForm(initialMonForm); }}
                   >
                     Hủy
                   </button>
@@ -1068,7 +1164,7 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                     type="submit"
                     className="btn-primary btn-modal-action flex-grow-1 flex-sm-grow-0"
                   >
-                    Lưu Môn Học
+                    {editingMonId ? "Cập nhật Môn Học" : "Lưu Môn Học"}
                   </button>
                 </div>
               </div>

@@ -79,6 +79,7 @@ export const api = {
 
   // Môn học & GPA
   getMonHoc: () => request("/mon-hoc"),
+  getMonHocById: (id) => request(`/mon-hoc/${id}`),
   createMonHoc: (data) => request("/mon-hoc", { method: "POST", body: JSON.stringify(data) }),
   updateMonHoc: (id, data) => request(`/mon-hoc/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteMonHoc: (id) => request(`/mon-hoc/${id}`, { method: "DELETE" }),

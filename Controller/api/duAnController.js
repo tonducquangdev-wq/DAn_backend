@@ -198,60 +198,12 @@ const createCongViec = async (req, res) => {
             trang_thai: trang_thai || "chua_lam",
             tien_do: tien_do ? Number(tien_do) : 0,
             han_chot: han_chot ? new Date(han_chot) : null
+            // KHÔNG tự động tạo SuKien ở đây - chỉ tạo khi user "Set lịch làm việc"
         });
-
-        // Tự động tạo sự kiện lịch cho Task
-        try {
-            let duAnInfo = null;
-            if (du_an_id) {
-                duAnInfo = await DuAn.findById(du_an_id);
-            }
-
-            let startDate, endDate;
-            if (congViec.han_chot) {
-                endDate = new Date(congViec.han_chot);
-                startDate = new Date(endDate.getTime() - 60 * 60 * 1000);
-            } else {
-                startDate = new Date();
-                endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-            }
-
-            let mauSac = "#6366F1";
-            if (do_uu_tien === "cao") {
-                mauSac = "#ef4444";
-            } else if (do_uu_tien === "trung_binh") {
-                mauSac = "#f59e0b";
-            } else if (do_uu_tien === "thap") {
-                mauSac = "#10b981";
-            } else if (duAnInfo?.mau_sac) {
-                mauSac = duAnInfo.mau_sac;
-            }
-
-            const eventTitle = duAnInfo
-                ? `[Task - ${duAnInfo.ten_du_an}] ${congViec.tieu_de}`
-                : `[Task] ${congViec.tieu_de}`;
-
-            await SuKien.create({
-                user_id: req.user._id,
-                cong_viec_id: congViec._id,
-                du_an_id: du_an_id || null,
-                loai_su_kien: congViec.han_chot ? "deadline" : "cong-viec",
-                tieu_de: eventTitle,
-                mo_ta: congViec.mo_ta || (duAnInfo ? `Thuộc: ${duAnInfo.ten_du_an}` : "Công việc cần xử lý"),
-                thoi_gian_bat_dau: startDate,
-                thoi_gian_ket_thuc: endDate,
-                mau_sac: mauSac,
-                quy_tac_lap: "once",
-                bat_thong_bao: true,
-                is_deleted: false
-            });
-        } catch (eventErr) {
-            console.error("Lỗi tự động thêm task vào lịch:", eventErr);
-        }
 
         const populatedCongViec = await CongViec.findById(congViec._id).populate("du_an_id", "ten_du_an mau_sac loai_du_an");
 
-        res.status(201).json({ success: true, message: "Tạo công việc thành công và đã tự động thêm vào lịch", data: populatedCongViec });
+        res.status(201).json({ success: true, message: "Tạo công việc thành công", data: populatedCongViec });
     } catch (error) {
         res.status(500).json({ success: false, message: "Lỗi tạo công việc: " + error.message });
     }
@@ -263,52 +215,19 @@ const updateCongViec = async (req, res) => {
         const congViec = await CongViec.findOne({ _id: id, user_id: req.user._id });
         if (!congViec) return res.status(404).json({ success: false, message: "Không tìm thấy công việc" });
 
-        Object.assign(congViec, req.body);
-        if (req.body.han_chot !== undefined) {
-            congViec.han_chot = req.body.han_chot ? new Date(req.body.han_chot) : null;
-        }
-        await congViec.save();
-
-        // Đồng bộ cập nhật sự kiện lịch
-        try {
-            const suKien = await SuKien.findOne({ cong_viec_id: congViec._id, is_deleted: false });
-            if (suKien) {
-                let duAnInfo = null;
-                if (congViec.du_an_id) {
-                    duAnInfo = await DuAn.findById(congViec.du_an_id);
+        // Chỉ cập nhật các trường cơ bản, KHÔNG tự động sync SuKien ở đây
+        // SuKien chỉ được cập nhật qua endpoint riêng setTaskSchedule / removeTaskSchedule
+        const allowedFields = ['tieu_de', 'mo_ta', 'do_uu_tien', 'trang_thai', 'tien_do', 'han_chot', 'du_an_id'];
+        allowedFields.forEach(field => {
+            if (req.body[field] !== undefined) {
+                if (field === 'han_chot') {
+                    congViec.han_chot = req.body.han_chot ? new Date(req.body.han_chot) : null;
+                } else {
+                    congViec[field] = req.body[field];
                 }
-
-                const prefix = duAnInfo ? `[Task - ${duAnInfo.ten_du_an}] ` : `[Task] `;
-                const isCompleted = congViec.trang_thai === "hoan_thanh";
-                suKien.tieu_de = `${prefix}${congViec.tieu_de}${isCompleted ? " (Đã xong)" : ""}`;
-
-                if (congViec.mo_ta !== undefined) suKien.mo_ta = congViec.mo_ta;
-                if (congViec.du_an_id !== undefined) suKien.du_an_id = congViec.du_an_id;
-
-                if (congViec.han_chot) {
-                    const endDate = new Date(congViec.han_chot);
-                    suKien.thoi_gian_ket_thuc = endDate;
-                    suKien.thoi_gian_bat_dau = new Date(endDate.getTime() - 60 * 60 * 1000);
-                    suKien.loai_su_kien = "deadline";
-                }
-
-                if (isCompleted) {
-                    suKien.mau_sac = "#94a3b8";
-                } else if (congViec.do_uu_tien === "cao") {
-                    suKien.mau_sac = "#ef4444";
-                } else if (congViec.do_uu_tien === "trung_binh") {
-                    suKien.mau_sac = "#f59e0b";
-                } else if (congViec.do_uu_tien === "thap") {
-                    suKien.mau_sac = "#10b981";
-                } else if (duAnInfo?.mau_sac) {
-                    suKien.mau_sac = duAnInfo.mau_sac;
-                }
-
-                await suKien.save();
             }
-        } catch (eventErr) {
-            console.error("Lỗi đồng bộ sửa task sang lịch:", eventErr);
-        }
+        });
+        await congViec.save();
 
         const populatedCongViec = await CongViec.findById(congViec._id).populate("du_an_id", "ten_du_an mau_sac loai_du_an");
 
@@ -318,14 +237,142 @@ const updateCongViec = async (req, res) => {
     }
 };
 
+// SET LỊCH LÀM VIỆC CHO TASK - Tạo/Cập nhật SuKien tương ứng
+const setTaskSchedule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { ngay_lam, gio_bat_dau, gio_ket_thuc } = req.body;
+
+        const congViec = await CongViec.findOne({ _id: id, user_id: req.user._id });
+        if (!congViec) return res.status(404).json({ success: false, message: "Không tìm thấy công việc" });
+
+        if (!ngay_lam || !gio_bat_dau || !gio_ket_thuc) {
+            return res.status(400).json({ success: false, message: "Vui lòng nhập đầy đủ Ngày làm, Giờ bắt đầu, Giờ kết thúc" });
+        }
+
+        const dateStr = String(ngay_lam).split("T")[0];
+        const startISO = new Date(`${dateStr}T${gio_bat_dau}:00`);
+        let endISO = new Date(`${dateStr}T${gio_ket_thuc}:00`);
+        if (endISO <= startISO) {
+            endISO = new Date(endISO.getTime() + 24 * 60 * 60 * 1000);
+        }
+
+        let duAnInfo = null;
+        if (congViec.du_an_id) {
+            duAnInfo = await DuAn.findById(congViec.du_an_id);
+        }
+
+        let mauSac = "#6366F1";
+        if (congViec.do_uu_tien === "cao") {
+            mauSac = "#ef4444";
+        } else if (congViec.do_uu_tien === "trung_binh") {
+            mauSac = "#f59e0b";
+        } else if (congViec.do_uu_tien === "thap") {
+            mauSac = "#10b981";
+        } else if (duAnInfo?.mau_sac) {
+            mauSac = duAnInfo.mau_sac;
+        }
+
+        const eventTitle = duAnInfo
+            ? `[Task - ${duAnInfo.ten_du_an}] ${congViec.tieu_de}`
+            : `[Task] ${congViec.tieu_de}`;
+
+        let suKien = null;
+        if (congViec.su_kien_id) {
+            // Cập nhật SuKien đã có
+            suKien = await SuKien.findOne({ _id: congViec.su_kien_id, user_id: req.user._id });
+            if (suKien) {
+                suKien.thoi_gian_bat_dau = startISO;
+                suKien.thoi_gian_ket_thuc = endISO;
+                suKien.tieu_de = eventTitle;
+                suKien.mo_ta = congViec.mo_ta || (duAnInfo ? `Thuộc: ${duAnInfo.ten_du_an}` : "Công việc cần xử lý");
+                suKien.mau_sac = mauSac;
+                suKien.dia_diem = duAnInfo?.dia_chi || null;
+                suKien.is_deleted = false;
+                await suKien.save();
+            }
+        }
+
+        if (!suKien) {
+            // Tạo SuKien mới
+            suKien = await SuKien.create({
+                user_id: req.user._id,
+                cong_viec_id: congViec._id,
+                du_an_id: congViec.du_an_id || null,
+                loai_su_kien: "cong-viec",
+                tieu_de: eventTitle,
+                mo_ta: congViec.mo_ta || (duAnInfo ? `Thuộc: ${duAnInfo.ten_du_an}` : "Công việc cần xử lý"),
+                thoi_gian_bat_dau: startISO,
+                thoi_gian_ket_thuc: endISO,
+                dia_diem: duAnInfo?.dia_chi || null,
+                mau_sac: mauSac,
+                quy_tac_lap: "once",
+                bat_thong_bao: true,
+                is_deleted: false
+            });
+        }
+
+        // Cập nhật lịch làm việc vào Task
+        congViec.su_kien_id = suKien._id;
+        congViec.ngay_lam = new Date(dateStr);
+        congViec.gio_bat_dau = gio_bat_dau;
+        congViec.gio_ket_thuc = gio_ket_thuc;
+        await congViec.save();
+
+        const populatedCongViec = await CongViec.findById(congViec._id).populate("du_an_id", "ten_du_an mau_sac loai_du_an");
+
+        res.status(200).json({ success: true, message: "Đã thiết lập lịch làm việc và đồng bộ lên Lịch!", data: populatedCongViec });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi thiết lập lịch làm việc: " + error.message });
+    }
+};
+
+// GỠ BỎ LỊCH LÀM VIỆC CỦA TASK - Xóa SuKien tương ứng
+const removeTaskSchedule = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const congViec = await CongViec.findOne({ _id: id, user_id: req.user._id });
+        if (!congViec) return res.status(404).json({ success: false, message: "Không tìm thấy công việc" });
+
+        // Xóa mềm SuKien liên quan
+        if (congViec.su_kien_id) {
+            await SuKien.updateOne(
+                { _id: congViec.su_kien_id, user_id: req.user._id },
+                { $set: { is_deleted: true } }
+            );
+        }
+        await SuKien.updateMany(
+            { cong_viec_id: congViec._id, user_id: req.user._id },
+            { $set: { is_deleted: true } }
+        );
+
+        // Gỡ lịch làm việc khỏi Task
+        congViec.ngay_lam = null;
+        congViec.gio_bat_dau = null;
+        congViec.gio_ket_thuc = null;
+        congViec.su_kien_id = null;
+        await congViec.save();
+
+        const populatedCongViec = await CongViec.findById(congViec._id).populate("du_an_id", "ten_du_an mau_sac loai_du_an");
+
+        res.status(200).json({ success: true, message: "Đã gỡ bỏ lịch làm việc khỏi Task và xóa sự kiện trên Lịch", data: populatedCongViec });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi gỡ bỏ lịch làm việc: " + error.message });
+    }
+};
+
 const deleteCongViec = async (req, res) => {
     try {
         const { id } = req.params;
-        await CongViec.deleteOne({ _id: id, user_id: req.user._id });
+        
+        // Xóa mềm SuKien liên quan trước khi xóa Task
         await SuKien.updateMany(
             { cong_viec_id: id, user_id: req.user._id },
             { $set: { is_deleted: true } }
         );
+        
+        await CongViec.deleteOne({ _id: id, user_id: req.user._id });
         res.status(200).json({ success: true, message: "Xóa công việc thành công" });
     } catch (error) {
         res.status(500).json({ success: false, message: "Lỗi xóa công việc: " + error.message });
@@ -719,6 +766,8 @@ module.exports = {
     createCongViec,
     updateCongViec,
     deleteCongViec,
+    setTaskSchedule,
+    removeTaskSchedule,
     getCaLamViec,
     createCaLamViec,
     bulkCreateCaLamViec,

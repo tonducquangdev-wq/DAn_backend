@@ -6,6 +6,70 @@ const GiaSu = require("../../Model/GiaSu");
 const SuKien = require("../../Model/SuKien");
 const User = require("../../Model/User");
 
+// Helper kiểm tra trùng lịch học với các môn học hiện có của user
+const checkScheduleConflict = async (userId, monHocData, excludeMonHocId) => {
+    const toMinutes = (timeStr) => {
+        if (!timeStr || typeof timeStr !== "string" || !timeStr.includes(":")) return null;
+        const [h, m] = timeStr.split(":").map(Number);
+        return h * 60 + m;
+    };
+
+    const newStart = monHocData.ngay_bat_dau ? new Date(monHocData.ngay_bat_dau) : new Date();
+    const newEnd = monHocData.ngay_ket_thuc ? new Date(monHocData.ngay_ket_thuc) : new Date(newStart.getTime() + 60 * 24 * 60 * 60 * 1000);
+    const newDays = Array.isArray(monHocData.ngay_hoc) ? monHocData.ngay_hoc : [];
+    const newChiTiet = Array.isArray(monHocData.chi_tiet_lich_hoc) ? monHocData.chi_tiet_lich_hoc : [];
+
+    const existingLichHocs = await LichHoc.find({ user_id: userId }).populate("mon_hoc_id", "ten_mon ngay_bat_dau ngay_ket_thuc ngay_hoc is_deleted");
+
+    const conflicts = [];
+
+    for (const lh of existingLichHocs) {
+        if (excludeMonHocId && lh.mon_hoc_id && String(lh.mon_hoc_id._id) === String(excludeMonHocId)) continue;
+        if (lh.mon_hoc_id && lh.mon_hoc_id.is_deleted) continue;
+
+        const curStart = lh.mon_hoc_id?.ngay_bat_dau;
+        const curEnd = lh.mon_hoc_id?.ngay_ket_thuc;
+        if (!curStart || !curEnd) continue;
+
+        // 1. Overlap về ngày: (ngayBatDauMoi <= ngayKetThucCu) && (ngayKetThucMoi >= ngayBatDauCu)
+        if (!(newStart <= curEnd && newEnd >= curStart)) continue;
+
+        // 2. Overlap về thứ trong tuần
+        const curThu = lh.thu_trong_tuan;
+        const isSameDay = newDays.includes(curThu) || newChiTiet.some(ct => Number(ct.thu_trong_tuan) === curThu);
+        if (!isSameDay) continue;
+
+        // 3. Overlap về giờ: (gioBatDauMoi < gioKetThucCu) && (gioKetThucMoi > gioBatDauCu)
+        const curStartMin = toMinutes(lh.gio_bat_dau);
+        const curEndMin = toMinutes(lh.gio_ket_thuc);
+        if (curStartMin === null || curEndMin === null) continue;
+
+        let newStartMin = null, newEndMin = null;
+        const matchingChiTiet = newChiTiet.find(ct => Number(ct.thu_trong_tuan) === curThu);
+        if (matchingChiTiet) {
+            newStartMin = toMinutes(matchingChiTiet.gio_bat_dau);
+            newEndMin = toMinutes(matchingChiTiet.gio_ket_thuc);
+        } else {
+            newStartMin = toMinutes(monHocData.gio_bat_dau);
+            newEndMin = toMinutes(monHocData.gio_ket_thuc);
+        }
+        if (newStartMin === null || newEndMin === null) continue;
+
+        if (newStartMin < curEndMin && newEndMin > curStartMin) {
+            const mapDay = { 2: "Thứ 2", 3: "Thứ 3", 4: "Thứ 4", 5: "Thứ 5", 6: "Thứ 6", 7: "Thứ 7", 8: "Chủ Nhật" };
+            conflicts.push({
+                ten_mon: lh.mon_hoc_id?.ten_mon || "Môn học",
+                thu_trong_tuan: curThu,
+                thu_label: mapDay[curThu] || `Thứ ${curThu}`,
+                gio_bat_dau: lh.gio_bat_dau,
+                gio_ket_thuc: lh.gio_ket_thuc
+            });
+        }
+    }
+
+    return conflicts;
+};
+
 // 1. Quản lý Môn học
 const getMonHoc = async (req, res) => {
     try {
@@ -13,6 +77,36 @@ const getMonHoc = async (req, res) => {
         res.status(200).json({ success: true, data: monHocs });
     } catch (error) {
         res.status(500).json({ success: false, message: "Lỗi lấy danh sách môn học: " + error.message });
+    }
+};
+
+const formatDateInput = (date) => {
+    if (!date) return "";
+    // Mongoose Date hoặc JS Date -> format YYYY-MM-DD
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return "";
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
+const getMonHocById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const monHoc = await MonHoc.findOne({ _id: id, user_id: req.user._id, is_deleted: false });
+        if (!monHoc) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy môn học" });
+        }
+        // Định dạng ngày cho phù hợp với input type="date" của frontend
+        const formattedMonHoc = {
+            ...monHoc._doc,
+            ngay_bat_dau: formatDateInput(monHoc.ngay_bat_dau),
+            ngay_ket_thuc: formatDateInput(monHoc.ngay_ket_thuc)
+        };
+        res.status(200).json({ success: true, data: formattedMonHoc });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Lỗi lấy chi tiết môn học: " + error.message });
     }
 };
 
@@ -45,6 +139,11 @@ const createMonHoc = async (req, res) => {
         const endDate = ngay_ket_thuc ? new Date(ngay_ket_thuc) : new Date(startDate.getTime() + 60 * 24 * 60 * 60 * 1000);
         const validStartHour = gio_bat_dau && typeof gio_bat_dau === "string" && gio_bat_dau.includes(":") ? gio_bat_dau : "07:30";
         const validEndHour = gio_ket_thuc && typeof gio_ket_thuc === "string" && gio_ket_thuc.includes(":") ? gio_ket_thuc : "09:30";
+
+        // Validation: Ngày bắt đầu không được lớn hơn ngày kết thúc
+        if (startDate > endDate) {
+            return res.status(400).json({ success: false, message: "Ngày bắt đầu môn học không được lớn hơn ngày kết thúc môn học" });
+        }
 
         // Chuẩn hóa danh sách thứ trong tuần (2: Thứ 2, ..., 8: CN)
         let parsedNgayHoc = [];
@@ -91,6 +190,21 @@ const createMonHoc = async (req, res) => {
             scheduleMap[item.thu_trong_tuan] = item;
         });
 
+        // Kiểm tra trùng lịch học trước khi tạo môn học
+        const conflicts = await checkScheduleConflict(req.user._id, {
+            ngay_bat_dau: startDate,
+            ngay_ket_thuc: endDate,
+            gio_bat_dau: validStartHour,
+            gio_ket_thuc: validEndHour,
+            ngay_hoc: parsedNgayHoc,
+            chi_tiet_lich_hoc: parsedChiTiet
+        }, null);
+
+        if (conflicts && conflicts.length > 0) {
+            const conflictMsg = conflicts.map(c => `${c.ten_mon} vào ${c.thu_label} (${c.gio_bat_dau} - ${c.gio_ket_thuc})`).join("; ");
+            return res.status(400).json({ success: false, message: `Trùng lịch học với môn ${conflictMsg}. Vui lòng chọn khung giờ hoặc ngày khác!`, conflicts });
+        }
+
         // 1. Tạo môn học trong DB
         const monHoc = await MonHoc.create({
             user_id: req.user._id,
@@ -131,12 +245,16 @@ const createMonHoc = async (req, res) => {
 
         const eventTitle = ma_mon ? `${ten_mon.trim()} (${ma_mon.trim()})` : ten_mon.trim();
 
+        // Hoist biến giờ ra ngoài loop để fallback (khi không trùng thứ) vẫn tham chiếu được
+        let [sH, sM] = validStartHour.split(":").map(Number);
+        let [eH, eM] = validEndHour.split(":").map(Number);
+
         while (current <= endLimit && eventsToInsert.length < maxSessions) {
             const vnDay = current.getDay() === 0 ? 8 : current.getDay() + 1;
             if (scheduleMap[vnDay]) {
                 const session = scheduleMap[vnDay];
-                const [sH, sM] = session.gio_bat_dau.split(":").map(Number);
-                const [eH, eM] = session.gio_ket_thuc.split(":").map(Number);
+                [sH, sM] = session.gio_bat_dau.split(":").map(Number);
+                [eH, eM] = session.gio_ket_thuc.split(":").map(Number);
                 const sessionRoom = session.phong_hoc || phong_hoc || "Chưa cập nhật";
                 const eventDesc = `Lớp học phần: ${ten_mon.trim()}\nGiảng viên: ${giang_vien || "Chưa cập nhật"}\nPhòng học: ${sessionRoom}${so_tin_chi ? `\nSố tín chỉ: ${so_tin_chi}` : ""}`;
 
@@ -164,6 +282,9 @@ const createMonHoc = async (req, res) => {
 
         if (eventsToInsert.length === 0) {
             // Đảm bảo tối thiểu 1 buổi nếu không trùng thứ
+            // sessionRoom & eventDesc tái tạo ở đây vì chưa có session trong trường hợp này
+            const sessionRoom = phong_hoc || "Chưa cập nhật";
+            const eventDesc = `Lớp học phần: ${ten_mon.trim()}\nGiảng viên: ${giang_vien || "Chưa cập nhật"}\nPhòng học: ${sessionRoom}${so_tin_chi ? `\nSố tín chỉ: ${so_tin_chi}` : ""}`;
             const evStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), sH, sM, 0);
             const evEnd = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), eH, eM, 0);
             eventsToInsert.push({
@@ -203,9 +324,122 @@ const updateMonHoc = async (req, res) => {
         if (!monHoc) return res.status(404).json({ success: false, message: "Không tìm thấy môn học" });
 
         Object.assign(monHoc, req.body);
+
+        // Validation: Ngày bắt đầu không được lớn hơn ngày kết thúc (cho trường hợp cập nhật cả hai ngày)
+        if (monHoc.ngay_bat_dau && monHoc.ngay_ket_thuc && new Date(monHoc.ngay_bat_dau) > new Date(monHoc.ngay_ket_thuc)) {
+            return res.status(400).json({ success: false, message: "Ngày bắt đầu môn học không được lớn hơn ngày kết thúc môn học" });
+        }
+
+        // Kiểm tra trùng lịch học (bỏ qua chính môn đang sửa)
+        const conflicts = await checkScheduleConflict(req.user._id, {
+            ngay_bat_dau: monHoc.ngay_bat_dau,
+            ngay_ket_thuc: monHoc.ngay_ket_thuc,
+            gio_bat_dau: monHoc.gio_bat_dau,
+            gio_ket_thuc: monHoc.gio_ket_thuc,
+            ngay_hoc: monHoc.ngay_hoc,
+            chi_tiet_lich_hoc: monHoc.chi_tiet_lich_hoc
+        }, id);
+
+        if (conflicts && conflicts.length > 0) {
+            const conflictMsg = conflicts.map(c => `${c.ten_mon} vào ${c.thu_label} (${c.gio_bat_dau} - ${c.gio_ket_thuc})`).join("; ");
+            return res.status(400).json({ success: false, message: `Trùng lịch học với môn ${conflictMsg}. Vui lòng chọn khung giờ hoặc ngày khác!`, conflicts });
+        }
+
         await monHoc.save();
 
-        res.status(200).json({ success: true, message: "Cập nhật môn học thành công", data: monHoc });
+        // Đồng bộ LichHoc: xóa bản ghi cũ và tạo mới theo chi tiết lịch học mới
+        await LichHoc.deleteMany({ user_id: req.user._id, mon_hoc_id: id });
+        for (const item of monHoc.chi_tiet_lich_hoc) {
+            await LichHoc.create({
+                user_id: req.user._id,
+                mon_hoc_id: monHoc._id,
+                thu_trong_tuan: item.thu_trong_tuan,
+                gio_bat_dau: item.gio_bat_dau,
+                gio_ket_thuc: item.gio_ket_thuc,
+                phong_hoc: item.phong_hoc || monHoc.phong_hoc || null
+            });
+        }
+
+        // Đồng bộ SuKien: xóa sự kiện cũ của môn này và tạo sự kiện mới
+        await SuKien.updateMany(
+            { user_id: req.user._id, nhom_lap_id: `monhoc_${id}` },
+            { $set: { is_deleted: true } }
+        );
+
+        const eventsToInsert = [];
+        const startDate = monHoc.ngay_bat_dau ? new Date(monHoc.ngay_bat_dau) : new Date();
+        const endDate = monHoc.ngay_ket_thuc ? new Date(monHoc.ngay_ket_thuc) : new Date(startDate.getTime() + 60 * 24 * 60 * 60 * 1000);
+        const scheduleMap = {};
+        monHoc.chi_tiet_lich_hoc.forEach(item => {
+            scheduleMap[item.thu_trong_tuan] = item;
+        });
+
+        const eventTitle = monHoc.ma_mon ? `${monHoc.ten_mon.trim()} (${monHoc.ma_mon.trim()})` : monHoc.ten_mon.trim();
+
+        // Hoist biến giờ ra ngoài loop để fallback tham chiếu được
+        const validStartHour = monHoc.chi_tiet_lich_hoc[0]?.gio_bat_dau || "07:30";
+        const validEndHour = monHoc.chi_tiet_lich_hoc[0]?.gio_ket_thuc || "09:30";
+        let [sH, sM] = validStartHour.split(":").map(Number);
+        let [eH, eM] = validEndHour.split(":").map(Number);
+
+        let current = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+        const endLimit = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+        const maxSessions = 100;
+
+        while (current <= endLimit && eventsToInsert.length < maxSessions) {
+            const vnDay = current.getDay() === 0 ? 8 : current.getDay() + 1;
+            if (scheduleMap[vnDay]) {
+                const session = scheduleMap[vnDay];
+                [sH, sM] = session.gio_bat_dau.split(":").map(Number);
+                [eH, eM] = session.gio_ket_thuc.split(":").map(Number);
+                const sessionRoom = session.phong_hoc || monHoc.phong_hoc || "Chưa cập nhật";
+                const eventDesc = `Lớp học phần: ${monHoc.ten_mon.trim()}\nGiảng viên: ${monHoc.giang_vien || "Chưa cập nhật"}\nPhòng học: ${sessionRoom}`;
+
+                const evStart = new Date(current.getFullYear(), current.getMonth(), current.getDate(), sH, sM, 0);
+                const evEnd = new Date(current.getFullYear(), current.getMonth(), current.getDate(), eH, eM, 0);
+
+                eventsToInsert.push({
+                    user_id: req.user._id,
+                    mon_hoc_id: monHoc._id,
+                    loai_su_kien: "hoc-tap",
+                    tieu_de: eventTitle,
+                    mo_ta: eventDesc,
+                    thoi_gian_bat_dau: evStart,
+                    thoi_gian_ket_thuc: evEnd,
+                    dia_diem: session.phong_hoc || monHoc.phong_hoc || null,
+                    mau_sac: monHoc.mau_sac || "#3B82F6",
+                    quy_tac_lap: "weekly",
+                    nhom_lap_id: `monhoc_${monHoc._id}`,
+                    bat_thong_bao: true,
+                    so_ngay_nhac: 0
+                });
+            }
+            current.setDate(current.getDate() + 1);
+        }
+
+        if (eventsToInsert.length === 0) {
+            const evStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), sH, sM, 0);
+            const evEnd = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), eH, eM, 0);
+            eventsToInsert.push({
+                user_id: req.user._id,
+                mon_hoc_id: monHoc._id,
+                loai_su_kien: "hoc-tap",
+                tieu_de: eventTitle,
+                mo_ta: `Lớp học phần: ${monHoc.ten_mon.trim()}\nGiảng viên: ${monHoc.giang_vien || "Chưa cập nhật"}\nPhòng học: ${monHoc.phong_hoc || "Chưa cập nhật"}`,
+                thoi_gian_bat_dau: evStart,
+                thoi_gian_ket_thuc: evEnd,
+                dia_diem: monHoc.phong_hoc || null,
+                mau_sac: monHoc.mau_sac || "#3B82F6",
+                quy_tac_lap: "once",
+                nhom_lap_id: `monhoc_${monHoc._id}`,
+                bat_thong_bao: true,
+                so_ngay_nhac: 0
+            });
+        }
+
+        await SuKien.insertMany(eventsToInsert);
+
+        res.status(200).json({ success: true, message: "Cập nhật môn học thành công và đã đồng bộ lại lịch học", data: monHoc, total_events_created: eventsToInsert.length });
     } catch (error) {
         res.status(500).json({ success: false, message: "Lỗi cập nhật môn học: " + error.message });
     }
@@ -509,6 +743,7 @@ const getGiaSu = async (req, res) => {
 
 module.exports = {
     getMonHoc,
+    getMonHocById,
     createMonHoc,
     updateMonHoc,
     deleteMonHoc,

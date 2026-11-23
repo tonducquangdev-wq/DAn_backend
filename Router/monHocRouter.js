@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
     getMonHoc,
+    getMonHocById,
     createMonHoc,
     updateMonHoc,
     deleteMonHoc,
@@ -20,6 +21,7 @@ router.get("/gia-su", optionalAuth, getGiaSu);
 
 // Protected Môn học routes
 router.get("/mon-hoc", authMiddleware, getMonHoc);
+router.get("/mon-hoc/:id", authMiddleware, getMonHocById);
 router.post("/mon-hoc", authMiddleware, createMonHoc);
 router.put("/mon-hoc/:id", authMiddleware, updateMonHoc);
 router.delete("/mon-hoc/:id", authMiddleware, deleteMonHoc);
