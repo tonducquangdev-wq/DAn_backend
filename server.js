@@ -86,9 +86,9 @@ const { notFound, errorHandler } = require("./Middleware/errorMiddleware");
 app.use("/api", notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT) || 3000;
 const server = app.listen(PORT, () => {
-    console.log(`🚀 Life Planner Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Life Planner Server running on port ${PORT}`);
 });
 
 module.exports = { app, server };
