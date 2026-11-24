@@ -54,6 +54,9 @@ app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 // Thư mục chứa file đính kèm/avatar tĩnh
 app.use("/public", express.static(path.join(__dirname, "Public")));
 
+// Health check endpoint cho cron-job.org (tránh bị hiểu nhầm server ngủ/lỗi)
+app.get("/ping", (req, res) => res.status(200).send("OK"));
+
 // Nạp các Routes API
 app.use("/api/auth", authRouter);
 app.use("/api/su-kien", suKienRouter);
