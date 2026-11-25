@@ -1,7 +1,7 @@
-# STRICT TOKEN-SAVING RULES
+# QUY TẮC DỰ ÁN LIFE PLANNER (GÓI MIỄN PHÍ)
 
-1. **Language & Brevity:** Respond in concise English. No greetings, no filler text, no lengthy explanations. Output max 2-3 bullet points for plans or summaries.
-2. **Surgical Edits Only:** Always use `replace_in_file` (diff edits) to modify code. NEVER use `write_to_file` to overwrite existing files.
-3. **Minimal Context:** Only read files explicitly mentioned via `@` or directly required. Never list directories or read unrelated files.
-4. **No Server Commands:** Never run `npm run dev`, `npm start`, or restart servers (already running).
-5. **Sync Docs:** Update `AI_PROJECT_BRIEF.md` using `replace_in_file` only for modified sections.
+1. **Ngôn ngữ & Ngắn gọn:** Luôn giải thích và lập kế hoạch bằng tiếng Việt ngắn gọn, đi thẳng vào trọng tâm (tối đa 3-4 gạch đầu dòng), không viết lan man.
+2. **Tiết kiệm ngữ cảnh (Chống tràn bộ nhớ):** Chỉ đọc đúng các file được gắn thẻ `@` hoặc trực tiếp liên quan đến lỗi đang xử lý. Tuyệt đối không tự ý quét toàn bộ thư mục dự án.
+3. **Sửa code chuẩn xác:** Ưu tiên dùng `replace_in_file` để sửa đúng đoạn code thay đổi, hạn chế viết lại toàn bộ file lớn để tránh lỗi ngắt giữa chừng của model miễn phí.
+4. **Quy trình chạy lệnh:** Không tự ý chạy `npm run dev`, `npm start` hoặc khởi động lại server vì môi trường dev đã được bật sẵn.
+5. **Đồng bộ tài liệu:** Sau khi hoàn thành thay đổi code, cập nhật ngắn gọn phần thay đổi vào `AI_PROJECT_BRIEF.md` bằng `replace_in_file`.

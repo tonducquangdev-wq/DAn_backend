@@ -133,6 +133,27 @@ export async function subscribeToPushNotifications() {
 
   // BƯỚC 4: Đăng ký với Push Service của trình duyệt
   let subscription = await registration.pushManager.getSubscription();
+  const previousEndpoint = subscription?.endpoint;
+
+  // Kiểm tra nếu VAPID Public Key đã thay đổi thì unsubscribe subscription cũ
+  if (subscription) {
+    const existingKey = subscription.options?.applicationServerKey;
+    const keysMatch =
+      existingKey &&
+      currentApplicationServerKey &&
+      existingKey.length === currentApplicationServerKey.length &&
+      Array.from(existingKey).every((value, index) => value === currentApplicationServerKey[index]);
+
+    if (!keysMatch) {
+      try {
+        await subscription.unsubscribe();
+      } catch (e) {
+        console.warn("Không thể unsubscribe subscription cũ khi VAPID key thay đổi:", e);
+      }
+      subscription = null;
+    }
+  }
+
   if (!subscription) {
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
@@ -157,6 +178,15 @@ export async function subscribeToPushNotifications() {
     subscription: subscription.toJSON(),
     device_info: deviceInfo
   });
+
+  // Dọn subscription cũ (nếu endpoint đã thay đổi) sau khi tạo subscription mới
+  if (previousEndpoint && subscription?.endpoint && previousEndpoint !== subscription.endpoint) {
+    try {
+      await api.unsubscribePush({ endpoint: previousEndpoint });
+    } catch (e) {
+      console.warn("Không thể xóa subscription cũ sau khi re-subscribe:", e);
+    }
+  }
 
   return resSave;
 }

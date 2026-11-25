@@ -9,7 +9,7 @@
 |---|---|
 | **Tên dự án** | Life Planner RESTful API Server |
 | **Mô tả** | Backend + Frontend tích hợp — Ứng dụng quản lý đời sống toàn diện cho sinh viên và người đi làm |
-| **Port mặc định** | `5000` |
+| **Port mặc định** | `3000` (process.env.PORT hoặc 3000) |
 | **Entry point** | `server.js` |
 | **Ngôn ngữ** | JavaScript (CommonJS — `"type": "commonjs"`) |
 | **Node.js** | v18+ |
@@ -115,8 +115,9 @@ test_backend/
 │   │   ├── App.jsx                ← Router chính, guard route admin
 │   │   ├── main.jsx               ← Entry point React
 │   │   ├── context/AuthContext.jsx← State toàn cục: user, token, role
-│   │   ├── services/api.js        ← Axios instance với baseURL và interceptor token
+│   │   ├── services/api.js        ← fetch-based instance với baseURL và interceptor token
 │   │   ├── services/pushNotificationClient.js ← Logic đăng ký Web Push
+│   │   ├── services/notificationService.js ← Browser notification & âm thanh nhắc nhở
 │   │   ├── views/                 ← 8 màn hình chính
 │   │   │   ├── CalendarView.jsx   ← Xem lịch tháng/tuần/ngày
 │   │   │   ├── StudyGpaView.jsx   ← Môn học, GPA, bài tập deadline
@@ -162,7 +163,7 @@ VAPID_EMAIL=mailto:support@lifeplanner.com
 ADMIN_DEFAULT_EMAIL=admin@lifeplanner.com
 ADMIN_DEFAULT_PASSWORD=admin123456
 
-PORT=5000
+PORT=3000
 ```
 
 ---
@@ -190,7 +191,7 @@ Client (React / Postman)
     │  Header: "Authorization: Bearer <token>"
     ▼
 server.js
-    │  cors() → express.json({limit:"25mb"}) → express.urlencoded()
+    │  cors() (allowed origins: https://life-planner-lemon.vercel.app, http://localhost:5173, http://localhost:5000, http://localhost:3000) → express.json({limit:"25mb"}) → express.urlencoded()
     ▼
 authMiddleware.js         ← XÁC THỰC: giải mã JWT, tìm user DB, chặn "banned"
     ▼
@@ -492,6 +493,9 @@ Khi cần gửi thông báo:
     → Utils/pushService.js: webpush.sendNotification(subscription, payload)
     → Service Worker (sw.js): self.addEventListener("push") → showNotification()
     → Người dùng click thông báo → notificationclick → mở đúng trang đích
+
+- Nếu VAPID Public Key thay đổi, frontend `subscribeToPushNotifications()` phải unsubscribe subscription cũ (so sánh `applicationServerKey`) rồi subscribe lại.
+- Nếu `web-push` trả lỗi `403/410/404`, backend tự động xóa subscription khỏi `PushSubscription`.
 ```
 
 ### 9.6 Workout Share Code
@@ -551,7 +555,7 @@ User B: POST /api/tap-luyen/community/import  →  clone toàn bộ KeHoachTapLu
 ### State Management
 - `AuthContext.jsx` — Context API: lưu `user`, `token`, hàm `login()`, `logout()`
 - `localStorage` — lưu JWT token giữa các lần reload
-- Axios `api.js` — instance với `baseURL` và `Authorization` header tự động
+- `api.js` (fetch-based) — instance với `baseURL` và `Authorization` header tự động
 
 ### Smart Auto-Scroll (MessagesView)
 - Chỉ tự cuộn xuống đáy khi `isNearBottom === true`

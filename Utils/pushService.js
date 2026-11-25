@@ -55,8 +55,8 @@ const sendPushToUser = async (userId, payload) => {
                     error: err.message,
                     statusCode: err.statusCode
                 });
-                // Nếu subscription hết hạn (410 Gone hoặc 404 Not Found), tự động dọn dẹp
-                if (err.statusCode === 410 || err.statusCode === 404) {
+                // Nếu subscription hết hạn (410 Gone hoặc 404 Not Found) hoặc key VAPID không hợp lệ (403), tự động dọn dẹp
+                if (err.statusCode === 410 || err.statusCode === 404 || err.statusCode === 403) {
                     await PushSubscription.deleteOne({ _id: sub._id });
                 }
             }
@@ -125,7 +125,7 @@ const sendPushBroadcast = async (payload, targetRole = "all") => {
                     error: err.message,
                     statusCode: err.statusCode
                 });
-                if (err.statusCode === 410 || err.statusCode === 404) {
+                if (err.statusCode === 410 || err.statusCode === 404 || err.statusCode === 403) {
                     await PushSubscription.deleteOne({ _id: sub._id });
                 }
             }
