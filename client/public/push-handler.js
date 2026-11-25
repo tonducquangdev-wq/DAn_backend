@@ -13,46 +13,21 @@ self.addEventListener("push", (event) => {
   }
 
   const title = data.title || "Life Planner";
-self.addEventListener("push", (event) => {
-  let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch (e) {
-    data = {
-      title: "Life Planner",
-      body: event.data ? event.data.text() : "Bạn có thông báo mới"
-    };
-  }
-
-  const title = data.title || "Life Planner";
   const options = {
     body: data.body || "Bạn có thông báo mới từ hệ thống Life Planner.",
     icon: data.icon || "/pwa-192x192.png",
     badge: data.badge || "/pwa-64x64.png",
     tag: data.tag || "life-planner-notification",
     renotify: true,
+    requireInteraction: true, // Giữ thông báo trên màn hình khóa (iOS/Android) khi app bị kill
     vibrate: [150, 50, 150], // Rung điện thoại
     data: {
       url: data.url || "/"
     }
   };
 
-  event.waitUntil(
-    self.registration.showNotification(title, options).then(() => event.waitUntil?.()).catch(() => {})
-  );
-});
-  const options = {
-    body: data.body || "Bạn có thông báo mới từ hệ thống Life Planner.",
-    icon: data.icon || "/pwa-192x192.png",
-    badge: data.badge || "/pwa-64x64.png",
-    tag: data.tag || "life-planner-notification",
-    renotify: true,
-    vibrate: [150, 50, 150], // Rung điện thoại
-    data: {
-      url: data.url || "/"
-    }
-  };
-
+  // iOS Safari yêu cầu showNotification phải được gọi ngay trong event.waitUntil,
+  // không kiểm tra tab đang mở/đóng, không đặt điều kiện chặn nào trước showNotification.
   event.waitUntil(self.registration.showNotification(title, options));
 });
 

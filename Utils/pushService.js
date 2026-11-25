@@ -11,6 +11,10 @@ if (!vapidEmail.startsWith("mailto:")) {
 }
 console.log(`[PushService] ✅ VAPID_EMAIL đang dùng: ${vapidEmail}`);
 
+if (!vapidPublicKey || !vapidPrivateKey) {
+    console.error(`[PushService] ❌ VAPID_PUBLIC_KEY hoặc VAPID_PRIVATE_KEY chưa được cấu hình trong .env`);
+}
+
 webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey);
 
 /**

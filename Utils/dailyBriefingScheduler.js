@@ -257,8 +257,12 @@ async function checkAndSendEventReminders() {
                         console.log(
                             `[Scheduler] ✅ Đã gửi nhắc "${ev.tieu_de}" (${ev.loai_su_kien}) cho ${user.email} (${result.sent} thiết bị)`
                         );
+                    } else if (pushSubsCount > 0) {
+                        console.warn(
+                            `[Scheduler] ⚠️ Có ${pushSubsCount} thiết bị đăng ký nhưng gửi nhắc "${ev.tieu_de}" cho ${user.email} thất bại (web-push trả về sent=0)`
+                        );
                     } else {
-                        console.warn(`[Scheduler] ⚠️ Không gửi được nhắc "${ev.tieu_de}" cho ${user.email} (không có thiết bị)`);
+                        console.warn(`[Scheduler] ⚠️ Không gửi được nhắc "${ev.tieu_de}" cho ${user.email} (không có thiết bị đăng ký push)`);
                     }
                 } catch (evErr) {
                     console.error(`[Scheduler] ❌ Lỗi gửi nhắc sự kiện ${ev._id}:`, evErr.message);

@@ -484,6 +484,11 @@ setInterval(async () => {
 
 > **Logs chẩn đoán (2026):** Mỗi chu kỳ quét in `[Reminder Scan] 🕛 giờ VN` + `[Scheduler] 👤 ...` + `[PushService] 🚀 ...`; lỗi gửi in `statusCode/body/message`. Dùng log này để debug trên Render tab Logs.
 
+> **Lưu ý iOS/Android khi tắt đa nhiệm (kill app):**
+> - iOS Safari: PWA phải được **"Add to Home Screen"**, người dùng bật quyền Notification, và chỉ hoạt động trên iOS 16.4+. Nếu chỉ mở Safari thường hoặc tắt app từ switcher, Service Worker có thể không đánh thức.
+> - Android Chrome: Service Worker vẫn nhận push trong nền, nhưng nếu tắt hẳn trình duyệt hoặc tắt thông báo hệ thống cho Chrome, push sẽ bị chặn.
+> - `push-handler.js` dùng `requireInteraction: true` để giữ thông báo trên màn hình khóa và luôn gọi `showNotification` trong `event.waitUntil` (không kiểm tra tab mở/đóng).
+
 ### 9.5 PWA Web Push (VAPID)
 ```
 Trình duyệt xin quyền Notification
