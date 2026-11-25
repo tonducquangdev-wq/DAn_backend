@@ -13,6 +13,34 @@ self.addEventListener("push", (event) => {
   }
 
   const title = data.title || "Life Planner";
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = {
+      title: "Life Planner",
+      body: event.data ? event.data.text() : "Bạn có thông báo mới"
+    };
+  }
+
+  const title = data.title || "Life Planner";
+  const options = {
+    body: data.body || "Bạn có thông báo mới từ hệ thống Life Planner.",
+    icon: data.icon || "/pwa-192x192.png",
+    badge: data.badge || "/pwa-64x64.png",
+    tag: data.tag || "life-planner-notification",
+    renotify: true,
+    vibrate: [150, 50, 150], // Rung điện thoại
+    data: {
+      url: data.url || "/"
+    }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options).then(() => event.waitUntil?.()).catch(() => {})
+  );
+});
   const options = {
     body: data.body || "Bạn có thông báo mới từ hệ thống Life Planner.",
     icon: data.icon || "/pwa-192x192.png",

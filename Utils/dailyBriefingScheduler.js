@@ -232,10 +232,17 @@ async function checkAndSendEventReminders() {
                 // Chỉ gửi nếu còn trong khoảng lead_time (từ leadMinutes phút tới 0)
                 if (diffMinutes <= leadMinutes && diffMinutes > -1) {
                     remindable.push(ev);
+                } else {
+                    console.log(
+                        `[Reminder Scan] ⏭️ SKIP "${ev.tieu_de}" (${ev.loai_su_kien}) của ${user.email} | diffMinutes=${diffMinutes.toFixed(1)} | leadMinutes=${leadMinutes} | Lý do: ${diffMinutes <= -1 ? "Đã qua giờ bắt đầu" : "Chưa tới lead_time"}`
+                    );
                 }
             }
 
-            if (remindable.length === 0) continue;
+            if (remindable.length === 0) {
+                console.log(`[Reminder Scan] ⏭️ ${user.email}: 0 sự kiện đủ điều kiện nhắc trong chu kỳ này`);
+                continue;
+            }
 
             // Gửi push cho mỗi sự kiện trong khoảng
             for (const ev of remindable) {
@@ -259,8 +266,8 @@ async function checkAndSendEventReminders() {
             }
         }
 
-        if (totalSent > 0) {
-            console.log(`[Scheduler] 🔔 Tổng cộng đã gửi ${totalSent} thông báo nhắc sự kiện`);
+        if (totalSent === 0) {
+            console.log("[Reminder Scan] ℹ️ Không có thông báo nhắc nào được gửi trong chu kỳ này");
         }
     } catch (err) {
         console.error("[Scheduler] ❌ Lỗi vòng lặp kiểm tra nhắc sự kiện:", err.message);
