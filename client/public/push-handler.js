@@ -18,9 +18,7 @@ self.addEventListener("push", (event) => {
     icon: data.icon || "/pwa-192x192.png",
     badge: data.badge || "/pwa-64x64.png",
     tag: data.tag || "life-planner-notification",
-    renotify: true,
     requireInteraction: true, // Giữ thông báo trên màn hình khóa (iOS/Android) khi app bị kill
-    vibrate: [150, 50, 150], // Rung điện thoại
     data: {
       url: data.url || "/"
     }

@@ -81,26 +81,53 @@ const unsubscribe = async (req, res) => {
 const testPush = async (req, res) => {
     try {
         const user = req.user;
+        const { delaySeconds = 0 } = req.body; // Lấy delaySeconds từ body, mặc định là 0
 
-        const result = await sendPushToUser(user._id, {
-            title: "🔔 Life Planner Thông Báo",
-            body: `Xin chào ${user.name}! Thông báo đẩy trên điện thoại của bạn đang hoạt động cực kỳ mượt mà. 🎉`,
-            icon: "/pwa-192x192.png",
-            url: "/#messages",
-            data: { test: true }
-        });
+        // Nếu delaySeconds > 0, thực hiện setTimeout trước khi gửi
+        if (delaySeconds > 0) {
+            setTimeout(async () => {
+                const result = await sendPushToUser(user._id, {
+                    title: "🔔 Life Planner Thông Báo",
+                    body: `Xin chào ${user.name}! Thông báo đẩy trên điện thoại của bạn đang hoạt động cực kỳ mượt mà. 🎉`,
+                    icon: "/pwa-192x192.png",
+                    url: "/#messages",
+                    data: { test: true }
+                });
 
-        if (result.sent === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Không thể gửi thông báo: Thiết bị của bạn chưa đăng ký hoặc không hoạt động."
+                if (result.sent === 0) {
+                    console.warn(`[TestPush] Không thể gửi thông báo test đến userId=${user._id} sau ${delaySeconds}s`);
+                } else {
+                    console.log(`[TestPush] Đã gửi test push đến userId=${user._id} sau ${delaySeconds}s`);
+                }
+            }, delaySeconds * 1000);
+        } else {
+            // Gửi ngay nếu không có delay
+            const result = await sendPushToUser(user._id, {
+                title: "🔔 Life Planner Thông Báo",
+                body: `Xin chào ${user.name}! Thông báo đẩy trên điện thoại của bạn đang hoạt động cực kỳ mượt mà. 🎉`,
+                icon: "/pwa-192x192.png",
+                url: "/#messages",
+                data: { test: true }
+            });
+
+            if (result.sent === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Không thể gửi thông báo: Thiết bị của bạn chưa đăng ký hoặc không hoạt động."
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Đã gửi thông báo đẩy thử nghiệm đến điện thoại của bạn!",
+                data: result
             });
         }
 
+        // Trả về phản hồi ngay khi có delay
         res.status(200).json({
             success: true,
-            message: "Đã gửi thông báo đẩy thử nghiệm đến điện thoại của bạn!",
-            data: result
+            message: `Đã lên lịch gửi thông báo test sau ${delaySeconds} giây. Vui lòng thoát khỏi ứng dụng và chờ kiểm tra.`
         });
     } catch (error) {
         res.status(500).json({

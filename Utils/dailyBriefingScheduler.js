@@ -212,14 +212,29 @@ async function checkAndSendEventReminders() {
 
             // Lọc theo cờ thông báo tương ứng loại sự kiện
             const filteredEvents = events.filter((ev) => {
-                if (ev.bat_thong_bao === false) return false;
-                if (ev.loai_su_kien === "deadline" && user.notify_deadlines === false) return false;
-                if (ev.loai_su_kien === "tap-luyen" && user.notify_workouts === false) return false;
-                if (ev.loai_su_kien === "hoc-tap" && user.notify_events === false) return false;
+                if (ev.bat_thong_bao === false) {
+                    console.log(`[Reminder Scan] ⏭️ SKIP "${ev.tieu_de}" (${ev.loai_su_kien}) của ${user.email} | lý do: bat_thong_bao=false`);
+                    return false;
+                }
+                if (ev.loai_su_kien === "deadline" && user.notify_deadlines === false) {
+                    console.log(`[Reminder Scan] ⏭️ SKIP "${ev.tieu_de}" (${ev.loai_su_kien}) của ${user.email} | lý do: notify_deadlines=false`);
+                    return false;
+                }
+                if (ev.loai_su_kien === "tap-luyen" && user.notify_workouts === false) {
+                    console.log(`[Reminder Scan] ⏭️ SKIP "${ev.tieu_de}" (${ev.loai_su_kien}) của ${user.email} | lý do: notify_workouts=false`);
+                    return false;
+                }
+                if (ev.loai_su_kien === "hoc-tap" && user.notify_events === false) {
+                    console.log(`[Reminder Scan] ⏭️ SKIP "${ev.tieu_de}" (${ev.loai_su_kien}) của ${user.email} | lý do: notify_events=false`);
+                    return false;
+                }
                 return true;
             });
 
-            if (filteredEvents.length === 0) continue;
+            if (filteredEvents.length === 0) {
+                console.log(`[Reminder Scan] ⏭️ ${user.email}: 0 sự kiện đủ điều kiện nhắc sau khi filter cờ thông báo`);
+                continue;
+            }
 
             // Tính khoảng thời gian cho mỗi sự kiện (lead_time)
             const nowMs = now.getTime();
@@ -234,13 +249,13 @@ async function checkAndSendEventReminders() {
                     remindable.push(ev);
                 } else {
                     console.log(
-                        `[Reminder Scan] ⏭️ SKIP "${ev.tieu_de}" (${ev.loai_su_kien}) của ${user.email} | diffMinutes=${diffMinutes.toFixed(1)} | leadMinutes=${leadMinutes} | Lý do: ${diffMinutes <= -1 ? "Đã qua giờ bắt đầu" : "Chưa tới lead_time"}`
+                        `[Reminder Scan] ⏭️ SKIP "${ev.tieu_de}" (${ev.loai_su_kien}) của ${user.email} | diffMinutes=${diffMinutes.toFixed(1)} | leadMinutes=${leadMinutes} | lý do: ${diffMinutes <= -1 ? "Đã qua giờ bắt đầu" : "Chưa tới lead_time"}`
                     );
                 }
             }
 
             if (remindable.length === 0) {
-                console.log(`[Reminder Scan] ⏭️ ${user.email}: 0 sự kiện đủ điều kiện nhắc trong chu kỳ này`);
+                console.log(`[Reminder Scan] ⏭️ ${user.email}: 0 sự kiện đủ điều kiện nhắc sau khi tính lead_time`);
                 continue;
             }
 
