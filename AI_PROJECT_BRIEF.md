@@ -660,3 +660,5 @@ pm2 startup && pm2 save
 
 *File này được cập nhật ngày **02/11/2026**: Hoàn thiện tính năng Cảnh báo Trùng lịch thời gian thực (Real-time Schedule Conflict Detection): Tự động tính toán các buổi dự kiến (kể cả chuỗi lặp) và phát hiện chồng lấn thời gian với sự kiện đã có; hiển thị huy hiệu `⚠️ Trùng giờ` cùng banner cảnh báo danh sách sự kiện bị trùng chi tiết ngay trên modal setup lịch; bật hộp thoại xác nhận khi bấm Lưu để người dùng quyết định điều chỉnh lại hoặc tiếp tục.*
 
+* **11/2026** — Sửa lệch 7h múi giờ cho `deadline` (và mọi loại sự kiện): Frontend gửi ISO có offset `+07:00` (`toVnIso` helper); Backend parse an toàn với `ensureVnOffset` (append `+07:00` nếu thiếu offset); Hiển thị dùng `new Date(iso).toLocaleTimeString("vi-VN")` — không thêm `"Z"`.
+

@@ -63,6 +63,13 @@ const formatDateForInput = (dateObj) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
+// Helper ghép ISO string có offset +07:00 cho múi giờ Việt Nam
+// Ví dụ: toVnIso("2026-11-25", "09:00") => "2026-11-25T09:00:00+07:00"
+const toVnIso = (dateStr, timeStr) => {
+  if (!dateStr || !timeStr) return "";
+  return `${dateStr}T${timeStr}:00+07:00`;
+};
+
 // Helper tính Ngày kết thúc (YYYY-MM-DD) từ Ngày bắt đầu, Quy tắc lặp và Số lần lặp
 const calculateEndDateFromRule = (startDateStr, rule, count = 1) => {
   if (!startDateStr) return "";
@@ -684,9 +691,9 @@ export const CalendarView = () => {
       return;
     }
 
-    // Thời gian bắt đầu và kết thúc của sự kiện trong ngày
-    const startIso = `${formData.ngay_bat_dau}T${formData.gio_bat_dau}`;
-    let endIso = isDeadline ? startIso : `${formData.ngay_bat_dau}T${formData.gio_ket_thuc}`;
+    // Thời gian bắt đầu và kết thúc của sự kiện trong ngày (ghép ISO có offset +07:00 cho múi giờ Việt Nam)
+    const startIso = toVnIso(formData.ngay_bat_dau, formData.gio_bat_dau);
+    let endIso = isDeadline ? startIso : toVnIso(formData.ngay_bat_dau, formData.gio_ket_thuc);
 
     const startDateObj = new Date(startIso);
     let endDateObj = new Date(endIso);

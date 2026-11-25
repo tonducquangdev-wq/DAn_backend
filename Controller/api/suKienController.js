@@ -4,6 +4,17 @@ const SuKien = require("../../Model/SuKien");
 const ALLOWED_EVENT_TYPES = ["hoc-tap", "tap-luyen", "deadline", "ca-nhan", "cong-viec"];
 const ALLOWED_REPEAT_RULES = ["once", "daily", "weekly", "monthly", "yearly"];
 
+// Helper: đảm bảo chuỗi datetime có offset múi giờ Việt Nam (+07:00)
+// Nếu đã có 'Z' hoặc '+HH:MM' / '-HH:MM' cuối chuỗi thì giữ nguyên, không thì append '+07:00'
+// Hỗ trợ cả Date object (Mongoose) và string (req.body)
+const ensureVnOffset = (input) => {
+  if (!input) return input;
+  if (input instanceof Date) return input; // Mongoose trả Date object, giữ nguyên
+  const trimmed = String(input).trim();
+  const hasOffset = /Z$|[+-]\d{2}:?\d{2}$/.test(trimmed);
+  return hasOffset ? trimmed : `${trimmed}+07:00`;
+};
+
 // Lấy danh sách sự kiện trong khoảng thời gian
 const getSuKien = async (req, res) => {
     try {
@@ -81,14 +92,14 @@ const createSuKien = async (req, res) => {
                     message: "Vui lòng chọn thời hạn cho deadline"
                 });
             }
-            startDate = new Date(deadlineInput);
+            startDate = new Date(ensureVnOffset(deadlineInput));
             if (isNaN(startDate.getTime())) {
                 return res.status(400).json({
                     success: false,
                     message: "Định dạng thời hạn deadline không hợp lệ"
                 });
             }
-            endDate = thoi_gian_ket_thuc ? new Date(thoi_gian_ket_thuc) : new Date(startDate);
+            endDate = thoi_gian_ket_thuc ? new Date(ensureVnOffset(thoi_gian_ket_thuc)) : new Date(startDate);
             if (isNaN(endDate.getTime()) || endDate.getTime() < startDate.getTime()) {
                 endDate = new Date(startDate);
             }
@@ -100,8 +111,8 @@ const createSuKien = async (req, res) => {
                 });
             }
 
-            startDate = new Date(thoi_gian_bat_dau);
-            endDate = new Date(thoi_gian_ket_thuc);
+            startDate = new Date(ensureVnOffset(thoi_gian_bat_dau));
+            endDate = new Date(ensureVnOffset(thoi_gian_ket_thuc));
 
             if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
                 return res.status(400).json({
@@ -300,7 +311,7 @@ const updateSuKien = async (req, res) => {
 
         // Validation thời gian
         const eventType = updateData.loai_su_kien !== undefined ? updateData.loai_su_kien : event.loai_su_kien;
-        const newStart = updateData.thoi_gian_bat_dau ? new Date(updateData.thoi_gian_bat_dau) : new Date(event.thoi_gian_bat_dau);
+        const newStart = updateData.thoi_gian_bat_dau ? new Date(ensureVnOffset(updateData.thoi_gian_bat_dau)) : new Date(ensureVnOffset(event.thoi_gian_bat_dau));
         let newEnd;
 
         if (isNaN(newStart.getTime())) {
@@ -312,12 +323,12 @@ const updateSuKien = async (req, res) => {
 
         if (eventType === "deadline") {
             // Đối với deadline, chỉ cần mốc deadline
-            newEnd = updateData.thoi_gian_ket_thuc ? new Date(updateData.thoi_gian_ket_thuc) : new Date(newStart);
+            newEnd = updateData.thoi_gian_ket_thuc ? new Date(ensureVnOffset(updateData.thoi_gian_ket_thuc)) : new Date(newStart);
             if (isNaN(newEnd.getTime()) || newEnd.getTime() < newStart.getTime()) {
                 newEnd = new Date(newStart);
             }
         } else {
-            newEnd = updateData.thoi_gian_ket_thuc ? new Date(updateData.thoi_gian_ket_thuc) : new Date(event.thoi_gian_ket_thuc || newStart);
+            newEnd = updateData.thoi_gian_ket_thuc ? new Date(ensureVnOffset(updateData.thoi_gian_ket_thuc)) : new Date(ensureVnOffset(event.thoi_gian_ket_thuc || newStart));
             if (isNaN(newEnd.getTime())) {
                 return res.status(400).json({
                     success: false,
