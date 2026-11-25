@@ -46,6 +46,53 @@ function timeToMinutes(timeStr) {
 }
 
 /**
+ * Soạn nội dung Web Push nhắc trước 1 sự kiện (deadline / học tập / tập luyện / công việc)
+ */
+function buildEventReminderMessage(user, event) {
+    const startTime = new Date(event.thoi_gian_bat_dau).toLocaleTimeString("vi-VN", {
+        timeZone: "Asia/Ho_Chi_Minh",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    const icon =
+        event.loai_su_kien === "hoc-tap"
+            ? "📚"
+            : event.loai_su_kien === "tap-luyen"
+            ? "🏋️"
+            : event.loai_su_kien === "deadline"
+            ? "⏰"
+            : event.loai_su_kien === "cong-viec"
+            ? "💼"
+            : "☕";
+
+    const leadMinutes = Number(event.thoi_gian_nhac_truoc || user.notify_lead_time || 15);
+    const now = new Date();
+    const startMs = new Date(event.thoi_gian_bat_dau).getTime();
+    const diffMinutes = Math.max(0, Math.round((startMs - now.getTime()) / 60000));
+
+    const timeText = diffMinutes === 0 ? "Đang diễn ra ngay bây giờ!" : `Sẽ diễn ra sau ${diffMinutes} phút (${startTime})`;
+
+    return {
+        title: `${icon} Nhắc nhở: ${event.tieu_de}`,
+        body: `${timeText}${event.dia_diem ? ` tại ${event.dia_diem}` : ""}`,
+        url: "/#calendar",
+        icon: "/pwa-192x192.png",
+        badge: "/pwa-64x64.png",
+        tag: `event-remind-${event._id}`,
+        renotify: true,
+        vibrate: [200, 100, 200],
+        data: {
+            type: "event_reminder",
+            eventId: event._id,
+            loai_su_kien: event.loai_su_kien,
+            thoi_gian_bat_dau: event.thoi_gian_bat_dau,
+            dia_diem: event.dia_diem
+        }
+    };
+}
+
+/**
  * Soạn nội dung thông báo đẩy tóm tắt lịch trình trong ngày
  */
 function buildDailyBriefingMessage(user, events) {
@@ -115,6 +162,100 @@ async function sendDailyBriefingToUser(user) {
 
 let schedulerInterval = null;
 let lastSchedulerCheck = null;
+
+/**
+ * Kiểm tra và gửi Web Push nhắc trước cho các sự kiện sắp diễn ra
+ * (quét mỗi phút; mỗi sự kiện chỉ gửi 1 lần nhờ cờ push_reminded)
+ */
+async function checkAndSendEventReminders() {
+    try {
+        const now = new Date();
+
+        // Lấy tất cả sự kiện chưa nhắc, chưa xóa, và đang trong khoảng lead_time tới
+        const upcomingEvents = await SuKien.find({
+            is_deleted: false,
+            push_reminded: false,
+            thoi_gian_bat_dau: { $gt: now }
+        }).sort({ thoi_gian_bat_dau: 1 });
+
+        if (!upcomingEvents || upcomingEvents.length === 0) return;
+
+        // Gom nhóm theo user để chỉ quét PushSubscription 1 lần / user
+        const eventsByUser = new Map();
+        for (const ev of upcomingEvents) {
+            if (!eventsByUser.has(ev.user_id)) {
+                eventsByUser.set(ev.user_id, []);
+            }
+            eventsByUser.get(ev.user_id).push(ev);
+        }
+
+        // Lấy toàn bộ user liên quan 1 truy vấn duy nhất
+        const userIds = Array.from(eventsByUser.keys());
+        const users = await User.find({ _id: { $in: userIds } });
+        const userMap = new Map(users.map((u) => [u._id.toString(), u]));
+
+        let totalSent = 0;
+
+        for (const [userId, events] of eventsByUser) {
+            const user = userMap.get(userId);
+            if (!user) continue;
+
+            // Lọc theo cờ thông báo tương ứng loại sự kiện
+            const filteredEvents = events.filter((ev) => {
+                if (ev.bat_thong_bao === false) return false;
+                if (ev.loai_su_kien === "deadline" && user.notify_deadlines === false) return false;
+                if (ev.loai_su_kien === "tap-luyen" && user.notify_workouts === false) return false;
+                if (ev.loai_su_kien === "hoc-tap" && user.notify_events === false) return false;
+                return true;
+            });
+
+            if (filteredEvents.length === 0) continue;
+
+            // Tính khoảng thời gian cho mỗi sự kiện (lead_time)
+            const nowMs = now.getTime();
+            const remindable = [];
+            for (const ev of filteredEvents) {
+                const startMs = new Date(ev.thoi_gian_bat_dau).getTime();
+                const leadMinutes = Number(ev.thoi_gian_nhac_truoc || user.notify_lead_time || 15);
+                const diffMinutes = (startMs - nowMs) / 60000; // phút tới giờ bắt đầu
+
+                // Chỉ gửi nếu còn trong khoảng lead_time (từ leadMinutes phút tới 0)
+                if (diffMinutes <= leadMinutes && diffMinutes > -1) {
+                    remindable.push(ev);
+                }
+            }
+
+            if (remindable.length === 0) continue;
+
+            // Gửi push cho mỗi sự kiện trong khoảng
+            for (const ev of remindable) {
+                try {
+                    const payload = buildEventReminderMessage(user, ev);
+                    const result = await sendPushToUser(user._id, payload);
+
+                    if (result.sent > 0) {
+                        ev.push_reminded = true;
+                        await ev.save();
+                        totalSent += result.sent;
+                        console.log(
+                            `[Scheduler] ✅ Đã gửi nhắc "${ev.tieu_de}" (${ev.loai_su_kien}) cho ${user.email} (${result.sent} thiết bị)`
+                        );
+                    } else {
+                        console.warn(`[Scheduler] ⚠️ Không gửi được nhắc "${ev.tieu_de}" cho ${user.email} (không có thiết bị)`);
+                    }
+                } catch (evErr) {
+                    console.error(`[Scheduler] ❌ Lỗi gửi nhắc sự kiện ${ev._id}:`, evErr.message);
+                }
+            }
+        }
+
+        if (totalSent > 0) {
+            console.log(`[Scheduler] 🔔 Tổng cộng đã gửi ${totalSent} thông báo nhắc sự kiện`);
+        }
+    } catch (err) {
+        console.error("[Scheduler] ❌ Lỗi vòng lặp kiểm tra nhắc sự kiện:", err.message);
+    }
+}
 
 /**
  * Kiểm tra xem có người dùng nào nên nhận thông báo không
@@ -195,8 +336,12 @@ function startDailyBriefingScheduler() {
 
     // Thực hiện kiểm tra ngay lập tức khi bắt đầu
     checkAndSendBriefings();
-    
-    schedulerInterval = setInterval(checkAndSendBriefings, 60 * 1000);
+    checkAndSendEventReminders();
+
+    schedulerInterval = setInterval(async () => {
+        checkAndSendBriefings();
+        checkAndSendEventReminders();
+    }, 60 * 1000);
 }
 
 module.exports = {
@@ -204,7 +349,9 @@ module.exports = {
     getCurrentVietnamTimeForCheck,
     timeToMinutes,
     buildDailyBriefingMessage,
+    buildEventReminderMessage,
     sendDailyBriefingToUser,
+    checkAndSendEventReminders,
     startDailyBriefingScheduler,
     getSchedulerStatus
 };

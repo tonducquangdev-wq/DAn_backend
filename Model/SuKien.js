@@ -30,7 +30,8 @@ const suKienSchema = new mongoose.Schema(
         bat_thong_bao: { type: Boolean, default: true },
         thoi_gian_nhac_truoc: { type: Number, default: 15 }, // Số phút nhắc trước (0, 5, 10, 15, 30, 60, 1440...)
         so_ngay_nhac: { type: Number, default: 0 },
-        is_deleted: { type: Boolean, default: false }
+        is_deleted: { type: Boolean, default: false },
+        push_reminded: { type: Boolean, default: false } // Đã gửi Web Push nhắc trước chưa
     },
     { timestamps: true }
 );
