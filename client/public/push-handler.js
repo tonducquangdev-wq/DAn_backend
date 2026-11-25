@@ -47,3 +47,6 @@ self.addEventListener("notificationclick", (event) => {
     })
   );
 });
+
+// Đánh dấu đã nạp handler để sw.js biết không cần fallback (tránh hiển thị trùng notification)
+self.__lpPushHandlerRegistered = true;

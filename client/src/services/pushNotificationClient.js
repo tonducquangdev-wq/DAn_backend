@@ -140,9 +140,9 @@ export async function subscribeToPushNotifications() {
     const existingKey = subscription.options?.applicationServerKey;
     const keysMatch =
       existingKey &&
-      currentApplicationServerKey &&
-      existingKey.length === currentApplicationServerKey.length &&
-      Array.from(existingKey).every((value, index) => value === currentApplicationServerKey[index]);
+      applicationServerKey &&
+      existingKey.length === applicationServerKey.length &&
+      Array.from(existingKey).every((value, index) => value === applicationServerKey[index]);
 
     if (!keysMatch) {
       try {

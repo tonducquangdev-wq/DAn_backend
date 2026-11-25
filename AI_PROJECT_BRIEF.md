@@ -488,6 +488,8 @@ setInterval(async () => {
 > - iOS Safari: PWA phải được **"Add to Home Screen"**, người dùng bật quyền Notification, và chỉ hoạt động trên iOS 16.4+. Nếu chỉ mở Safari thường hoặc tắt app từ switcher, Service Worker có thể không đánh thức.
 > - Android Chrome: Service Worker vẫn nhận push trong nền, nhưng nếu tắt hẳn trình duyệt hoặc tắt thông báo hệ thống cho Chrome, push sẽ bị chặn.
 > - `push-handler.js` dùng `requireInteraction: true` để giữ thông báo trên màn hình khóa và luôn gọi `showNotification` trong `event.waitUntil` (không kiểm tra tab mở/đóng).
+> - `sw.js` sẽ nạp `push-handler.js` qua `importScripts` với query `?v=` để cache-bust; nếu file không nạp được, SW sẽ dùng **fallback handler** tối giản để đảm bảo `showNotification` vẫn được gọi.
+> - Lỗi `ReferenceError: currentApplicationServerKey` (biến chưa khai báo) trong `pushNotificationClient.js` đã được sửa thành `applicationServerKey` để tránh crash khi đăng ký lại subscription trên iOS/Android.
 
 ### 9.5 PWA Web Push (VAPID)
 ```
