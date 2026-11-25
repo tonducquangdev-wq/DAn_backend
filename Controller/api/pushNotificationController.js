@@ -82,7 +82,7 @@ const testPush = async (req, res) => {
     try {
         const user = req.user;
 
-        await sendPushToUser(user._id, {
+        const result = await sendPushToUser(user._id, {
             title: "🔔 Life Planner Thông Báo",
             body: `Xin chào ${user.name}! Thông báo đẩy trên điện thoại của bạn đang hoạt động cực kỳ mượt mà. 🎉`,
             icon: "/pwa-192x192.png",
@@ -90,9 +90,17 @@ const testPush = async (req, res) => {
             data: { test: true }
         });
 
+        if (result.sent === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể gửi thông báo: Thiết bị của bạn chưa đăng ký hoặc không hoạt động."
+            });
+        }
+
         res.status(200).json({
             success: true,
-            message: "Đã gửi thông báo đẩy thử nghiệm đến điện thoại của bạn!"
+            message: "Đã gửi thông báo đẩy thử nghiệm đến điện thoại của bạn!",
+            data: result
         });
     } catch (error) {
         res.status(500).json({
@@ -168,6 +176,22 @@ const updateDailyBriefingSettings = async (req, res) => {
             "daily_briefing_enabled daily_briefing_time daily_briefing_last_sent"
         );
 
+        // Nếu người dùng bật thông báo và chưa có thiết bị đăng ký, báo lỗi
+        if (enabled === true) {
+            const subs = await PushSubscription.find({ user_id: userId });
+            if (subs.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Bạn đã bật thông báo hàng ngày nhưng chưa đăng ký nhận thông báo trên thiết bị. Vui lòng kích hoạt thông báo trên thiết bị.",
+                    data: {
+                        enabled: updatedUser.daily_briefing_enabled,
+                        time: updatedUser.daily_briefing_time,
+                        last_sent: updatedUser.daily_briefing_last_sent
+                    }
+                });
+            }
+        }
+
         res.status(200).json({
             success: true,
             message: "Đã lưu cài đặt thông báo sự kiện trong ngày thành công!",
@@ -191,16 +215,30 @@ const updateDailyBriefingSettings = async (req, res) => {
 const testDailyBriefing = async (req, res) => {
     try {
         const user = req.user;
-        const { sendDailyBriefingToUser } = require("../../Utils/dailyBriefingScheduler");
+        const { sendDailyBriefingToUser, getSchedulerStatus } = require("../../Utils/dailyBriefingScheduler");
 
         const result = await sendDailyBriefingToUser(user);
+
+        // Check if there were devices to send to
+        if (result.sent === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể gửi thử thông báo: bạn chưa đăng ký nhận thông báo trên thiết bị nào hoặc thiết bị không hoạt động.",
+                data: {
+                    eventCount: result.eventCount,
+                    payload: result.payload,
+                    sent: result.sent
+                }
+            });
+        }
 
         res.status(200).json({
             success: true,
             message: `Đã gửi thử thông báo tổng hợp hôm nay (${result.eventCount} sự kiện) ra điện thoại của bạn!`,
             data: {
                 eventCount: result.eventCount,
-                payload: result.payload
+                payload: result.payload,
+                sent: result.sent
             }
         });
     } catch (error) {

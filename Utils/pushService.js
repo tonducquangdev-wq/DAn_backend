@@ -12,11 +12,14 @@ webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey);
  * Gửi thông báo đẩy đến 1 người dùng cụ thể (tất cả các thiết bị đã đăng ký của họ)
  * @param {string|ObjectId} userId - ID người dùng
  * @param {object} payload - Dữ liệu thông báo { title, body, icon, url, data }
+ * @returns {Promise<{sent: number, failed: number, errors: Array}>}
  */
 const sendPushToUser = async (userId, payload) => {
     try {
         const subscriptions = await PushSubscription.find({ user_id: userId });
-        if (!subscriptions || subscriptions.length === 0) return;
+        if (!subscriptions || subscriptions.length === 0) {
+            return { sent: 0, failed: 0, errors: [] };
+        }
 
         const stringifiedPayload = JSON.stringify({
             title: payload.title || "Life Planner",
@@ -27,6 +30,10 @@ const sendPushToUser = async (userId, payload) => {
             tag: payload.tag || "life-planner-notification",
             data: payload.data || {}
         });
+
+        let sent = 0;
+        let failed = 0;
+        const errors = [];
 
         const sendPromises = subscriptions.map(async (sub) => {
             try {
@@ -40,19 +47,27 @@ const sendPushToUser = async (userId, payload) => {
                     },
                     stringifiedPayload
                 );
+                sent++;
             } catch (err) {
+                failed++;
+                errors.push({
+                    endpoint: sub.endpoint,
+                    error: err.message,
+                    statusCode: err.statusCode
+                });
                 // Nếu subscription hết hạn (410 Gone hoặc 404 Not Found), tự động dọn dẹp
                 if (err.statusCode === 410 || err.statusCode === 404) {
                     await PushSubscription.deleteOne({ _id: sub._id });
-                } else {
-                    console.error("Lỗi gửi push đến subscription:", err.message);
                 }
             }
         });
 
         await Promise.all(sendPromises);
+        
+        return { sent, failed, errors };
     } catch (error) {
         console.error("Lỗi gửi Push Notification đến user:", error);
+        return { sent: 0, failed: 0, errors: [error.message] };
     }
 };
 
@@ -60,6 +75,7 @@ const sendPushToUser = async (userId, payload) => {
  * Gửi thông báo đẩy cho nhiều người dùng hoặc cả server
  * @param {object} payload - { title, body, icon, url }
  * @param {string} [targetRole="all"] - "all", "user", "tutor", "pt"
+ * @returns {Promise<{sent: number, failed: number, errors: Array}>}
  */
 const sendPushBroadcast = async (payload, targetRole = "all") => {
     try {
@@ -72,7 +88,9 @@ const sendPushBroadcast = async (payload, targetRole = "all") => {
         const userIds = targetUsers.map((u) => u._id);
 
         const subscriptions = await PushSubscription.find({ user_id: { $in: userIds } });
-        if (!subscriptions || subscriptions.length === 0) return;
+        if (!subscriptions || subscriptions.length === 0) {
+            return { sent: 0, failed: 0, errors: [] };
+        }
 
         const stringifiedPayload = JSON.stringify({
             title: payload.title || "Life Planner Thông Báo",
@@ -82,6 +100,10 @@ const sendPushBroadcast = async (payload, targetRole = "all") => {
             url: payload.url || "/",
             tag: "broadcast-" + Date.now()
         });
+
+        let sent = 0;
+        let failed = 0;
+        const errors = [];
 
         const promises = subscriptions.map(async (sub) => {
             try {
@@ -95,7 +117,14 @@ const sendPushBroadcast = async (payload, targetRole = "all") => {
                     },
                     stringifiedPayload
                 );
+                sent++;
             } catch (err) {
+                failed++;
+                errors.push({
+                    endpoint: sub.endpoint,
+                    error: err.message,
+                    statusCode: err.statusCode
+                });
                 if (err.statusCode === 410 || err.statusCode === 404) {
                     await PushSubscription.deleteOne({ _id: sub._id });
                 }
@@ -103,8 +132,10 @@ const sendPushBroadcast = async (payload, targetRole = "all") => {
         });
 
         await Promise.all(promises);
+        return { sent, failed, errors };
     } catch (error) {
         console.error("Lỗi broadcast push notification:", error);
+        return { sent: 0, failed: 0, errors: [error.message] };
     }
 };
 

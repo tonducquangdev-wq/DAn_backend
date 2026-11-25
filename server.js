@@ -21,7 +21,14 @@ const pushRouter = require("./Router/pushRouter");
 const syncExpertUsers = require("./Utils/syncExpertUsers");
 const { startDailyBriefingScheduler } = require("./Utils/dailyBriefingScheduler");
 
+// Load environment variables FIRST
 dotenv.config();
+
+// Ensure we have proper VAPID keys loaded upon startup
+if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    console.warn("⚠️ VAPID keys not found in environment variables. Falling back to hardcoded keys.");
+}
+
 connectDB().then(() => {
     syncExpertUsers();
     startDailyBriefingScheduler();
