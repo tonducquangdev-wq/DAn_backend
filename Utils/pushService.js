@@ -5,6 +5,11 @@ const User = require("../Model/User");
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "BPzDQMMjP6YHh_C1jnypACZdF3PqWVb5qlwobOK0dnY-aFieR-g5bfeZpZvHXY6iu7tfV1Xy3znfo7tEsz2Gzwg";
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "sjRrETYsNAw928TrHvCsIYAvCxZokevwxojeMu2DPOE";
 const vapidEmail = process.env.VAPID_EMAIL || "mailto:support@lifeplanner.com";
+if (!vapidEmail.startsWith("mailto:")) {
+    console.warn(`[PushService] ⚠️ VAPID_EMAIL="${vapidEmail}" không có tiền tố "mailto:" — đang sửa tự động`);
+    vapidEmail = `mailto:${vapidEmail}`;
+}
+console.log(`[PushService] ✅ VAPID_EMAIL đang dùng: ${vapidEmail}`);
 
 webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey);
 
@@ -18,8 +23,11 @@ const sendPushToUser = async (userId, payload) => {
     try {
         const subscriptions = await PushSubscription.find({ user_id: userId });
         if (!subscriptions || subscriptions.length === 0) {
+            console.warn(`[PushService] ⚠️ Không có thiết bị đăng ký push cho userId=${userId}`);
             return { sent: 0, failed: 0, errors: [] };
         }
+
+        console.log(`[PushService] 🚀 Bắt đầu gửi push tới userId=${userId}, số thiết bị=${subscriptions.length}`);
 
         const stringifiedPayload = JSON.stringify({
             title: payload.title || "Life Planner",
@@ -48,6 +56,7 @@ const sendPushToUser = async (userId, payload) => {
                     stringifiedPayload
                 );
                 sent++;
+                console.log(`[PushService] ✅ Gửi push tới userId=${userId} thành công (statusCode: 201) - thiết bị: ${sub.endpoint}`);
             } catch (err) {
                 failed++;
                 errors.push({
@@ -55,6 +64,7 @@ const sendPushToUser = async (userId, payload) => {
                     error: err.message,
                     statusCode: err.statusCode
                 });
+                console.error(`[PushService] ❌ Gửi push tới userId=${userId} thất bại - endpoint: ${sub.endpoint} | statusCode: ${err.statusCode} | body: ${JSON.stringify(err.body)} | message: ${err.message}`);
                 // Nếu subscription hết hạn (410 Gone hoặc 404 Not Found) hoặc key VAPID không hợp lệ (403), tự động dọn dẹp
                 if (err.statusCode === 410 || err.statusCode === 404 || err.statusCode === 403) {
                     await PushSubscription.deleteOne({ _id: sub._id });

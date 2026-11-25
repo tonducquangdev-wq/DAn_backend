@@ -157,7 +157,7 @@ JWT_SECRET=life_planner_secret_key_2026
 
 VAPID_PUBLIC_KEY=BPzDQMMjP6YHh_C1jnypACZdF3PqWVb5qlwobOK0dnY-aFieR-g5bfeZpZvHXY6iu7tfV1Xy3znfo7tEsz2Gzwg
 VAPID_PRIVATE_KEY=sjRrETYsNAw928TrHvCsIYAvCxZokevwxojeMu2DPOE
-VAPID_EMAIL=mailto:support@lifeplanner.com
+VAPID_EMAIL=mailto:support@lifeplanner.com  // ✅ VAPID_EMAIL luôn bắt đầu bằng "mailto:" để tương thích Chrome Android & Apple Safari iOS
 
 # Tùy chọn — tài khoản admin mặc định
 ADMIN_DEFAULT_EMAIL=admin@lifeplanner.com
@@ -481,6 +481,8 @@ setInterval(async () => {
   // Ghi daily_briefing_last_sent = todayStr
 }, 60_000); // mỗi 60 giây
 ```
+
+> **Logs chẩn đoán (2026):** Mỗi chu kỳ quét in `[Reminder Scan] 🕛 giờ VN` + `[Scheduler] 👤 ...` + `[PushService] 🚀 ...`; lỗi gửi in `statusCode/body/message`. Dùng log này để debug trên Render tab Logs.
 
 ### 9.5 PWA Web Push (VAPID)
 ```

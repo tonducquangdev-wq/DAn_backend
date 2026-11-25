@@ -1,5 +1,6 @@
 const User = require("../Model/User");
 const SuKien = require("../Model/SuKien");
+const PushSubscription = require("../Model/PushSubscription");
 const { sendPushToUser } = require("./pushService");
 
 /**
@@ -170,6 +171,8 @@ let lastSchedulerCheck = null;
 async function checkAndSendEventReminders() {
     try {
         const now = new Date();
+        const nowVN = getCurrentVietnamTimeForCheck();
+        const { dateStr } = getTodayVietnamRange();
 
         // Lấy tất cả sự kiện chưa nhắc, chưa xóa, và đang trong khoảng lead_time tới
         const upcomingEvents = await SuKien.find({
@@ -177,6 +180,8 @@ async function checkAndSendEventReminders() {
             push_reminded: false,
             thoi_gian_bat_dau: { $gt: now }
         }).sort({ thoi_gian_bat_dau: 1 });
+
+        console.log(`[Reminder Scan] 🕛 giờ VN: ${nowVN} | Tìm thấy ${upcomingEvents.length} sự kiện chưa nhắc`);
 
         if (!upcomingEvents || upcomingEvents.length === 0) return;
 
@@ -199,6 +204,11 @@ async function checkAndSendEventReminders() {
         for (const [userId, events] of eventsByUser) {
             const user = userMap.get(userId);
             if (!user) continue;
+
+            const pushSubsCount = (await PushSubscription.find({ user_id: userId })).length;
+            console.log(
+                `[Scheduler] 👤 ${user.name} (${user.email}): notify_events=${user.notify_events}, notify_deadlines=${user.notify_deadlines}, notify_workouts=${user.notify_workouts}, notify_lead_time=${user.notify_lead_time}, push_subs=${pushSubsCount}`
+            );
 
             // Lọc theo cờ thông báo tương ứng loại sự kiện
             const filteredEvents = events.filter((ev) => {
