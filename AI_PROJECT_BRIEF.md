@@ -484,11 +484,18 @@ setInterval(async () => {
 
 > **Logs chẩn đoán (2026):** Mỗi chu kỳ quét in `[Reminder Scan] 🕛 giờ VN` + `[Scheduler] 👤 ...` + `[PushService] 🚀 ...`; lỗi gửi in `statusCode/body/message`. Dùng log này để debug trên Render tab Logs.
 
+> **Sửa lỗi Web Push Reminder (11/2026):**
+> 1. **Nguyên nhân chính:** `dailyBriefingScheduler.js` dùng `ev.user_id` (MongoDB ObjectId) làm key Map, nhưng `userMap` dùng key `u._id.toString()` (String) → `userMap.get(userId)` trả về `undefined` → mọi sự kiện bị bỏ qua (`if (!user) continue`). Đã sửa bằng cách ép `ev.user_id.toString()` khi gom nhóm và truy xuất.
+> 2. **Grace period 5 phút:** Truy vấn DB đổi từ `thoi_gian_bat_dau: { $gt: now }` sang `{ $gt: graceStart, $lte: now + 24h }` để bắt sự kiện nếu scheduler chạy trễ. Filter `diffMinutes > -5` (catch-up) thay vì `> -1`.
+> 3. **`thoi_gian_nhac_truoc = 0`:** Đổi `event.thoi_gian_nhac_truoc || ...` thành `event.thoi_gian_nhac_truoc ?? ...` để không bị bỏ qua giá trị 0.
+> 4. **Chống double send:** Dùng `SuKien.findOneAndUpdate({ _id, push_reminded: false }, { $set: { push_reminded: true } })` atomic claim trước khi gửi. Nếu gửi thất bại, hoàn tác `push_reminded = false`.
+> 5. **pushService.js:** Xóa VAPID keys hardcode (chỉ đọc từ env), không log hardcode `statusCode: 201`, không xóa subscription khi lỗi 403 (chỉ xóa 410/404).
+
 > **Lưu ý iOS/Android khi tắt đa nhiệm (kill app):**
 > - iOS Safari: PWA phải được **"Add to Home Screen"**, người dùng bật quyền Notification, và chỉ hoạt động trên iOS 16.4+. Nếu chỉ mở Safari thường hoặc tắt app từ switcher, Service Worker có thể không đánh thức.
 > - Android Chrome: Service Worker vẫn nhận push trong nền, nhưng nếu tắt hẳn trình duyệt hoặc tắt thông báo hệ thống cho Chrome, push sẽ bị chặn.
 > - `push-handler.js` dùng `requireInteraction: true` để giữ thông báo trên màn hình khóa và luôn gọi `showNotification` trong `event.waitUntil` (không kiểm tra tab mở/đóng).
-> - `sw.js` sẽ nạp `push-handler.js` qua `importScripts` với query `?v=` để cache-bust; nếu file không nạp được, SW sẽ dùng **fallback handler** tối giản để đảm bảo `showNotification` vẫn được gọi.
+> - `sw.js` nạp `push-handler.js` qua `importScripts` với query `?v=` để cache-bust; nếu file không nạp được, SW sẽ dùng **fallback handler** tối giản để đảm bảo `showNotification` vẫn được gọi.
 > - Lỗi `ReferenceError: currentApplicationServerKey` (biến chưa khai báo) trong `pushNotificationClient.js` đã được sửa thành `applicationServerKey` để tránh crash khi đăng ký lại subscription trên iOS/Android.
 
 ### 9.5 PWA Web Push (VAPID)

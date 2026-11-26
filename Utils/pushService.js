@@ -2,8 +2,8 @@ const webpush = require("web-push");
 const PushSubscription = require("../Model/PushSubscription");
 const User = require("../Model/User");
 
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "BPzDQMMjP6YHh_C1jnypACZdF3PqWVb5qlwobOK0dnY-aFieR-g5bfeZpZvHXY6iu7tfV1Xy3znfo7tEsz2Gzwg";
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "sjRrETYsNAw928TrHvCsIYAvCxZokevwxojeMu2DPOE";
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 const vapidEmail = process.env.VAPID_EMAIL || "mailto:support@lifeplanner.com";
 if (!vapidEmail.startsWith("mailto:")) {
     console.warn(`[PushService] ⚠️ VAPID_EMAIL="${vapidEmail}" không có tiền tố "mailto:" — đang sửa tự động`);
@@ -60,7 +60,7 @@ const sendPushToUser = async (userId, payload) => {
                     stringifiedPayload
                 );
                 sent++;
-                console.log(`[PushService] ✅ Gửi push tới userId=${userId} thành công (statusCode: 201) - thiết bị: ${sub.endpoint}`);
+                console.log(`[PushService] ✅ Gửi push tới userId=${userId} thành công - thiết bị: ${sub.endpoint}`);
             } catch (err) {
                 failed++;
                 errors.push({
@@ -69,8 +69,9 @@ const sendPushToUser = async (userId, payload) => {
                     statusCode: err.statusCode
                 });
                 console.error(`[PushService] ❌ Gửi push tới userId=${userId} thất bại - endpoint: ${sub.endpoint} | statusCode: ${err.statusCode} | body: ${JSON.stringify(err.body)} | message: ${err.message}`);
-                // Nếu subscription hết hạn (410 Gone hoặc 404 Not Found) hoặc key VAPID không hợp lệ (403), tự động dọn dẹp
-                if (err.statusCode === 410 || err.statusCode === 404 || err.statusCode === 403) {
+                // Nếu subscription hết hạn (410 Gone hoặc 404 Not Found), tự động dọn dẹp.
+                // Lỗi 403 (VAPID không hợp lệ) không xóa subscription vì có thể là lỗi tạm thời.
+                if (err.statusCode === 410 || err.statusCode === 404) {
                     await PushSubscription.deleteOne({ _id: sub._id });
                 }
             }
@@ -139,7 +140,7 @@ const sendPushBroadcast = async (payload, targetRole = "all") => {
                     error: err.message,
                     statusCode: err.statusCode
                 });
-                if (err.statusCode === 410 || err.statusCode === 404 || err.statusCode === 403) {
+                if (err.statusCode === 410 || err.statusCode === 404) {
                     await PushSubscription.deleteOne({ _id: sub._id });
                 }
             }

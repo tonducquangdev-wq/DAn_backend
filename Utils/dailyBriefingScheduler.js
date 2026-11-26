@@ -67,7 +67,7 @@ function buildEventReminderMessage(user, event) {
             ? "💼"
             : "☕";
 
-    const leadMinutes = Number(event.thoi_gian_nhac_truoc || user.notify_lead_time || 15);
+    const leadMinutes = Number(event.thoi_gian_nhac_truoc ?? user.notify_lead_time ?? 15);
     const now = new Date();
     const startMs = new Date(event.thoi_gian_bat_dau).getTime();
     const diffMinutes = Math.max(0, Math.round((startMs - now.getTime()) / 60000));
@@ -174,24 +174,30 @@ async function checkAndSendEventReminders() {
         const nowVN = getCurrentVietnamTimeForCheck();
         const { dateStr } = getTodayVietnamRange();
 
-        // Lấy tất cả sự kiện chưa nhắc, chưa xóa, và đang trong khoảng lead_time tới
+        // Grace period 5 phút để bắt sự kiện vừa qua nếu scheduler chạy trễ
+        const graceMs = 5 * 60 * 1000;
+        const graceStart = new Date(now.getTime() - graceMs);
+
+        // Lấy tất cả sự kiện chưa nhắc, chưa xóa, và bắt đầu trong khoảng grace period tới
         const upcomingEvents = await SuKien.find({
             is_deleted: false,
             push_reminded: false,
-            thoi_gian_bat_dau: { $gt: now }
+            thoi_gian_bat_dau: { $gt: graceStart, $lte: new Date(now.getTime() + 24 * 60 * 60 * 1000) }
         }).sort({ thoi_gian_bat_dau: 1 });
 
-        console.log(`[Reminder Scan] 🕛 giờ VN: ${nowVN} | Tìm thấy ${upcomingEvents.length} sự kiện chưa nhắc`);
+        console.log(`[Reminder Scan] 🕛 giờ VN: ${nowVN} | Tìm thấy ${upcomingEvents.length} sự kiện chưa nhắc (grace period 5 phút)`);
 
         if (!upcomingEvents || upcomingEvents.length === 0) return;
 
         // Gom nhóm theo user để chỉ quét PushSubscription 1 lần / user
+        // Ép userId về string để tránh ObjectId vs String mismatch khi tra userMap
         const eventsByUser = new Map();
         for (const ev of upcomingEvents) {
-            if (!eventsByUser.has(ev.user_id)) {
-                eventsByUser.set(ev.user_id, []);
+            const userIdStr = ev.user_id.toString();
+            if (!eventsByUser.has(userIdStr)) {
+                eventsByUser.set(userIdStr, []);
             }
-            eventsByUser.get(ev.user_id).push(ev);
+            eventsByUser.get(userIdStr).push(ev);
         }
 
         // Lấy toàn bộ user liên quan 1 truy vấn duy nhất
@@ -201,11 +207,14 @@ async function checkAndSendEventReminders() {
 
         let totalSent = 0;
 
-        for (const [userId, events] of eventsByUser) {
-            const user = userMap.get(userId);
-            if (!user) continue;
+        for (const [userIdStr, events] of eventsByUser) {
+            const user = userMap.get(userIdStr);
+            if (!user) {
+                console.warn(`[Scheduler] ⚠️ Không tìm thấy user trong DB cho userId=${userIdStr}, bỏ qua ${events.length} sự kiện`);
+                continue;
+            }
 
-            const pushSubsCount = (await PushSubscription.find({ user_id: userId })).length;
+            const pushSubsCount = (await PushSubscription.find({ user_id: userIdStr })).length;
             console.log(
                 `[Scheduler] 👤 ${user.name} (${user.email}): notify_events=${user.notify_events}, notify_deadlines=${user.notify_deadlines}, notify_workouts=${user.notify_workouts}, notify_lead_time=${user.notify_lead_time}, push_subs=${pushSubsCount}`
             );
@@ -241,15 +250,18 @@ async function checkAndSendEventReminders() {
             const remindable = [];
             for (const ev of filteredEvents) {
                 const startMs = new Date(ev.thoi_gian_bat_dau).getTime();
-                const leadMinutes = Number(ev.thoi_gian_nhac_truoc || user.notify_lead_time || 15);
+                const leadMinutes = Number(ev.thoi_gian_nhac_truoc ?? user.notify_lead_time ?? 15);
                 const diffMinutes = (startMs - nowMs) / 60000; // phút tới giờ bắt đầu
 
-                // Chỉ gửi nếu còn trong khoảng lead_time (từ leadMinutes phút tới 0)
-                if (diffMinutes <= leadMinutes && diffMinutes > -1) {
+                // Chỉ gửi nếu trong khoảng grace period (-5 phút) đến leadMinutes
+                // diffMinutes <= leadMinutes: chưa quá hạn nhắc
+                // diffMinutes > -5: chưa quá 5 phút kể từ giờ bắt đầu (catch-up)
+                if (diffMinutes <= leadMinutes && diffMinutes > -5) {
                     remindable.push(ev);
                 } else {
+                    const reason = diffMinutes <= -5 ? "Qua quá 5 phút kể từ giờ bắt đầu (bỏ qua)" : "Chưa tới lead_time";
                     console.log(
-                        `[Reminder Scan] ⏭️ SKIP "${ev.tieu_de}" (${ev.loai_su_kien}) của ${user.email} | diffMinutes=${diffMinutes.toFixed(1)} | leadMinutes=${leadMinutes} | lý do: ${diffMinutes <= -1 ? "Đã qua giờ bắt đầu" : "Chưa tới lead_time"}`
+                        `[Reminder Scan] ⏭️ SKIP "${ev.tieu_de}" (${ev.loai_su_kien}) của ${user.email} | diffMinutes=${diffMinutes.toFixed(1)} | leadMinutes=${leadMinutes} | lý do: ${reason}`
                     );
                 }
             }
@@ -262,22 +274,37 @@ async function checkAndSendEventReminders() {
             // Gửi push cho mỗi sự kiện trong khoảng
             for (const ev of remindable) {
                 try {
+                    // Atomic claim: đánh dấu push_reminded=true TRƯỚC khi gửi để tránh
+                    // double send khi có nhiều instance Render chạy scheduler cùng lúc.
+                    const claimed = await SuKien.findOneAndUpdate(
+                        { _id: ev._id, push_reminded: false },
+                        { $set: { push_reminded: true } },
+                        { new: true }
+                    );
+                    if (!claimed) {
+                        console.log(`[Scheduler] ⏭️ SKIP "${ev.tieu_de}" - đã được gửi bởi instance khác`);
+                        continue;
+                    }
+
                     const payload = buildEventReminderMessage(user, ev);
                     const result = await sendPushToUser(user._id, payload);
 
                     if (result.sent > 0) {
-                        ev.push_reminded = true;
-                        await ev.save();
                         totalSent += result.sent;
                         console.log(
                             `[Scheduler] ✅ Đã gửi nhắc "${ev.tieu_de}" (${ev.loai_su_kien}) cho ${user.email} (${result.sent} thiết bị)`
                         );
-                    } else if (pushSubsCount > 0) {
-                        console.warn(
-                            `[Scheduler] ⚠️ Có ${pushSubsCount} thiết bị đăng ký nhưng gửi nhắc "${ev.tieu_de}" cho ${user.email} thất bại (web-push trả về sent=0)`
-                        );
                     } else {
-                        console.warn(`[Scheduler] ⚠️ Không gửi được nhắc "${ev.tieu_de}" cho ${user.email} (không có thiết bị đăng ký push)`);
+                        // Hoàn tác push_reminded=false để thử lại lần sau
+                        claimed.push_reminded = false;
+                        await claimed.save();
+                        if (pushSubsCount > 0) {
+                            console.warn(
+                                `[Scheduler] ⚠️ Có ${pushSubsCount} thiết bị đăng ký nhưng gửi nhắc "${ev.tieu_de}" cho ${user.email} thất bại (web-push trả về sent=0)`
+                            );
+                        } else {
+                            console.warn(`[Scheduler] ⚠️ Không gửi được nhắc "${ev.tieu_de}" cho ${user.email} (không có thiết bị đăng ký push)`);
+                        }
                     }
                 } catch (evErr) {
                     console.error(`[Scheduler] ❌ Lỗi gửi nhắc sự kiện ${ev._id}:`, evErr.message);
