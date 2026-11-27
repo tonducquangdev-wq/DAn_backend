@@ -5,11 +5,19 @@ import { LEAD_TIME_OPTIONS, formatLeadTime } from "../services/notificationServi
 
 // Ánh xạ Loại Sự Kiện cho Filter Pills & Badges
 const EVENT_TYPE_MAP = {
-  "hoc-tap": { label: "Học tập", icon: "📚", color: "#3b82f6", pillBg: "#eff6ff", textColor: "#2563eb", badgeClass: "badge-primary" },
-  "tap-luyen": { label: "Tập luyện", icon: "🏋️", color: "#10b981", pillBg: "#ecfdf5", textColor: "#059669", badgeClass: "badge-success" },
-  "deadline": { label: "Deadline", icon: "⏰", color: "#f59e0b", pillBg: "#fff7ed", textColor: "#d97706", badgeClass: "badge-warning" },
-  "ca-nhan": { label: "Cá nhân", icon: "☕", color: "#8b5cf6", pillBg: "#faf5ff", textColor: "#9333ea", badgeClass: "badge-warning" },
-  "cong-viec": { label: "Công việc", icon: "💼", color: "#6366f1", pillBg: "#e0e7ff", textColor: "#4f46e5", badgeClass: "badge-primary" }
+  "hoc-tap": { label: "Học tập", icon: "📚", shortLabel: "HOC", color: "#3b82f6", pillBg: "#eff6ff", textColor: "#2563eb", badgeClass: "badge-primary" },
+  "tap-luyen": { label: "Tập luyện", icon: "🏋️", shortLabel: "TAP", color: "#10b981", pillBg: "#ecfdf5", textColor: "#059669", badgeClass: "badge-success" },
+  "deadline": { label: "Deadline", icon: "⏰", shortLabel: "DL", color: "#f59e0b", pillBg: "#fff7ed", textColor: "#d97706", badgeClass: "badge-warning" },
+  "ca-nhan": { label: "Cá nhân", icon: "☕", shortLabel: "DA", color: "#8b5cf6", pillBg: "#faf5ff", textColor: "#9333ea", badgeClass: "badge-warning" },
+  "cong-viec": { label: "Công việc", icon: "💼", shortLabel: "CONV", color: "#6366f1", pillBg: "#eef2ff", textColor: "#4f46e5", badgeClass: "badge-primary" }
+};
+
+const TYPE_ICON = {
+  "hoc-tap": "bi-book",
+  "tap-luyen": "bi-dumbbell",
+  deadline: "bi-alarm",
+  "ca-nhan": "bi-person",
+  "cong-viec": "bi-briefcase"
 };
 
 const REPEAT_RULE_MAP = {
@@ -26,6 +34,15 @@ const DEFAULT_REPEAT_COUNTS = {
   weekly: 12,  // 12 tuần (~ 3 tháng)
   monthly: 6,  // 6 tháng
   yearly: 1    // 1 năm
+};
+
+// Short abbreviations cho từng loại sự kiện (hiển thị trên Huy hiệu góc & chips)
+const SHORT_LABELS = {
+  "hoc-tap": "HOC",
+  "tap-luyen": "TAP",
+  "deadline": "DL",
+  "ca-nhan": "DA",
+  "cong-viec": "CONV"
 };
 
 // Cấu hình nhãn và giới hạn cho input số lần lặp
@@ -953,21 +970,85 @@ export const CalendarView = () => {
                     : `Tháng ${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`}
                 </span>
               </div>
-              <div className="cal-nav-buttons d-flex gap-1">
-                <button className="cal-nav-btn" onClick={handlePrev} title="Thời gian trước">
-                  &lt;
-                </button>
-                <button className="cal-nav-btn" onClick={handleNext} title="Thời gian sau">
-                  &gt;
+              <div className="d-flex align-items-center" style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "var(--neu-bg)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "10px",
+                padding: "2px",
+                boxShadow: "inset 2px 2px 5px var(--neu-inset-dark), inset -2px -2px 5px var(--neu-inset-light)"
+              }}>
+                <button
+                  type="button"
+                  className="flex items-center justify-center"
+                  style={{
+                    width: "28px", height: "28px", borderRadius: "8px",
+                    border: "none", background: "none", color: "var(--text-muted)",
+                    cursor: "pointer", transition: "all 0.2s ease",
+                    display: "flex", alignItems: "center", justifyContent: "center"
+                  }}
+                  onClick={handlePrev}
+                  title="Thời gian trước"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = "2px 2px 6px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light)";
+                    e.currentTarget.style.color = "var(--primary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = "none";
+                    e.currentTarget.style.color = "var(--text-muted)";
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m15 18-6-6 6-6"/>
+                  </svg>
                 </button>
                 <button
                   type="button"
-                  className="cal-nav-btn px-2.5"
-                  style={{ width: "auto", fontSize: "0.75rem", fontWeight: 700 }}
+                  className="flex items-center justify-center"
+                  style={{
+                    borderRight: "1px solid var(--border-color)", padding: "0 10px",
+                    border: "none", background: "none", color: "var(--text-main)",
+                    fontWeight: "600", fontSize: "0.8rem", cursor: "pointer",
+                    whiteSpace: "nowrap", borderRadius: "6px", transition: "all 0.2s ease",
+                    display: "flex", alignItems: "center"
+                  }}
                   onClick={handleToday}
                   title="Quay về hôm nay"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(59,130,246,0.08)";
+                    e.currentTarget.style.color = "var(--primary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "none";
+                    e.currentTarget.style.color = "var(--text-main)";
+                  }}
                 >
                   Hôm nay
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center justify-center"
+                  style={{
+                    width: "28px", height: "28px", borderRadius: "8px",
+                    border: "none", background: "none", color: "var(--text-muted)",
+                    cursor: "pointer", transition: "all 0.2s ease",
+                    display: "flex", alignItems: "center", justifyContent: "center"
+                  }}
+                  onClick={handleNext}
+                  title="Thời gian sau"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = "2px 2px 6px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light)";
+                    e.currentTarget.style.color = "var(--primary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = "none";
+                    e.currentTarget.style.color = "var(--text-muted)";
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
                 </button>
               </div>
             </div>
@@ -1101,7 +1182,7 @@ export const CalendarView = () => {
                         {/* 1. Trên Desktop & Tablet (>= 768px): Hiển thị thanh chip sự kiện chi tiết */}
                         <div className="d-none d-md-flex flex-column gap-1">
                           {dayEvents.slice(0, 2).map((ev) => {
-                            const typeInfo = EVENT_TYPE_MAP[ev.loai_su_kien] || { color: ev.mau_sac || "#3b82f6" };
+                            const typeInfo = EVENT_TYPE_MAP[ev.loai_su_kien] || { color: ev.mau_sac || "#3b82f6", icon: "📌", shortLabel: SHORT_LABELS[ev.loai_su_kien] || "Sự kiện" };
                             return (
                               <div
                                 key={ev._id}
@@ -1286,7 +1367,7 @@ export const CalendarView = () => {
                           </div>
                         ) : (
                           dayEvents.map((ev) => {
-                            const typeInfo = EVENT_TYPE_MAP[ev.loai_su_kien] || { color: ev.mau_sac || "#3b82f6", icon: "📌" };
+                            const typeInfo = EVENT_TYPE_MAP[ev.loai_su_kien] || { color: ev.mau_sac || "#3b82f6", icon: "📌", shortLabel: SHORT_LABELS[ev.loai_su_kien] || "Sự kiện" };
                             const eventBg = ev.mau_sac || typeInfo.color || "#3b82f6";
                             const startTime = new Date(ev.thoi_gian_bat_dau).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
                             const endTime = new Date(ev.thoi_gian_ket_thuc).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
@@ -1294,7 +1375,7 @@ export const CalendarView = () => {
                             return (
                               <div
                                 key={ev._id}
-                                className="week-event-chip-card"
+                                className="week-event-chip-card position-relative"
                                 style={{ background: eventBg }}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -1306,6 +1387,9 @@ export const CalendarView = () => {
                                 }}
                                 title="Bấm để xem danh sách hoặc chi tiết sự kiện"
                               >
+                                <div className="event-corner-badge">
+                                  {typeInfo.icon} {typeInfo.shortLabel}
+                                </div>
                                 {/* Dòng 1: Chấm tròn ● + Tiêu đề sự kiện + Chuông 🔔 */}
                                 <div className="week-event-chip-header">
                                   <span className="event-chip-dot">●</span>
@@ -1470,29 +1554,33 @@ export const CalendarView = () => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-shrink-0">
-              <div>
-                <div className="d-flex align-items-center gap-2">
-                  <span className="fs-5">📋</span>
-                  <h4 className="fw-bold m-0 fs-5" style={{ color: "var(--text-main)" }}>
-                    Sự Kiện Trong Ngày
-                  </h4>
-                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1" style={{ fontSize: "0.74rem" }}>
-                    {selectedDayEvents.length} sự kiện
-                  </span>
+            <div className="dme-header d-flex justify-content-between align-items-center flex-shrink-0">
+              <div className="d-flex align-items-center gap-2 min-w-0">
+                <div className="dme-header-icon flex-shrink-0">
+                  <i className="bi bi-calendar2-event"></i>
                 </div>
-                <div className="text-secondary small mt-1 fw-semibold">
-                  📅 {selectedDayDate.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
+                <div className="min-w-0">
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    <h4 className="dme-title m-0">
+                      Sự Kiện Trong Ngày
+                    </h4>
+                    <span className="dme-count-pill">
+                      {selectedDayEvents.length} sự kiện
+                    </span>
+                  </div>
+                  <div className="dme-date-line">
+                    <i className="bi bi-calendar-week"></i>
+                    {selectedDayDate.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}
+                  </div>
                 </div>
               </div>
               <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0"
-                style={{ width: "32px", height: "32px" }}
+                className="dme-close-btn flex-shrink-0"
                 onClick={() => setSelectedDayDate(null)}
                 title="Đóng"
               >
-                ✖
+                <i className="bi bi-x-lg"></i>
               </button>
             </div>
 
@@ -1508,13 +1596,15 @@ export const CalendarView = () => {
               }}
             >
               {selectedDayEvents.length === 0 ? (
-                <div className="day-modal-empty text-center py-4">
-                  <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>☕</div>
-                  <h5 className="fw-bold mb-1 fs-6" style={{ color: "var(--text-main)" }}>
+                <div className="day-modal-empty text-center">
+                  <div className="dme-empty-icon flex-shrink-0">
+                    <i className="bi bi-cup-hot"></i>
+                  </div>
+                  <h5 className="dme-empty-title fw-bold mb-1">
                     Chưa có sự kiện nào trong ngày này
                   </h5>
-                  <p className="small text-secondary m-0">
-                    Bạn có thể bấm nút "Thêm sự kiện mới" bên dưới để lên kế hoạch học tập, tập luyện hoặc công việc!
+                  <p className="dme-empty-desc small mb-0" style={{ maxWidth: "320px", margin: "0 auto", lineHeight: 1.5 }}>
+                    Bấm <strong>"Thêm Sự Kiện"</strong> bên dưới để lên kế hoạch học tập, tập luyện hoặc công việc nhé!
                   </p>
                 </div>
               ) : (
@@ -1532,70 +1622,48 @@ export const CalendarView = () => {
                     return (
                       <div
                         key={ev._id}
-                        className="day-modal-event-card p-3.5 rounded-3"
-                        style={{
-                          borderLeft: `5px solid ${ev.mau_sac || typeInfo.color}`,
-                          padding: "16px 18px",
-                          overflow: "hidden"
-                        }}
+                        className="day-modal-event-card"
+                        style={{ "--accent": ev.mau_sac || typeInfo.color }}
                         onClick={() => {
                           setSelectedDayDate(null);
                           setDetailEvent(ev);
                         }}
                         title="Bấm để xem chi tiết sự kiện"
                       >
-                        {/* Hàng 1: Huy hiệu phân loại & Cụm nút thao tác (Tách bạch 2 bên rộng rãi) */}
-                        <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-2.5 pb-0.5">
-                          {/* Huy hiệu bên trái */}
-                          <div className="d-flex align-items-center gap-2 flex-wrap min-w-0">
-                            <span className={`badge ${typeInfo.badgeClass}`} style={{ fontSize: "0.74rem", padding: "4px 9px", borderRadius: "8px" }}>
-                              {typeInfo.icon} {typeInfo.label}
+                        {/* Hàng 1: loại + nhãn phụ + nút thao tác */}
+                        <div className="d-flex align-items-start justify-content-between gap-2 flex-wrap min-w-0">
+                          <div className="d-flex align-items-center gap-1.5 flex-wrap min-w-0">
+                            <span
+                              className="dme-type-pill"
+                              style={{ background: typeInfo.pillBg, color: typeInfo.textColor }}
+                            >
+                              <i className={`bi ${TYPE_ICON[ev.loai_su_kien] || "bi-bookmark"}`}></i>
+                              {typeInfo.label}
                             </span>
                             {ev.quy_tac_lap && ev.quy_tac_lap !== "once" && (
-                              <span className="badge bg-success-subtle text-success border border-success-subtle" style={{ fontSize: "0.73rem", padding: "4px 9px", borderRadius: "8px" }}>
-                                🔄 {REPEAT_RULE_MAP[ev.quy_tac_lap]}
+                              <span className="dme-mini-pill">
+                                <i className="bi bi-arrow-repeat"></i> {REPEAT_RULE_MAP[ev.quy_tac_lap]}
                               </span>
                             )}
                             {ev.bat_thong_bao !== false ? (
-                              <span
-                                className="badge text-success border border-success-subtle"
-                                style={{
-                                  fontSize: "0.73rem",
-                                  padding: "4px 9px",
-                                  borderRadius: "8px",
-                                  background: "rgba(16, 185, 129, 0.12)"
-                                }}
-                              >
-                                🔔 {formatShortLeadTime(ev.thoi_gian_nhac_truoc)}
+                              <span className="dme-mini-pill">
+                                <i className="bi bi-bell-fill"></i> {formatShortLeadTime(ev.thoi_gian_nhac_truoc)}
                               </span>
                             ) : (
-                              <span
-                                className="badge text-secondary border border-secondary-subtle"
-                                style={{
-                                  fontSize: "0.73rem",
-                                  padding: "4px 9px",
-                                  borderRadius: "8px",
-                                  background: "rgba(100, 116, 139, 0.12)"
-                                }}
-                              >
-                                🔕 Tắt chuông
+                              <span className="dme-mini-pill dme-mini-pill-off">
+                                <i className="bi bi-bell-slash"></i> Tắt
                               </span>
                             )}
                           </div>
 
-                          {/* Cụm nút thao tác bên phải (Giãn cách 10px rõ ràng, độc lập) */}
-                          <div
-                            className="day-action-btn-group flex-shrink-0 ms-auto"
-                            style={{ display: "flex", alignItems: "center", gap: "10px" }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          <div className="day-action-btn-group flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               className={`day-action-btn notify-btn ${ev.bat_thong_bao === false ? "off" : ""}`}
                               onClick={() => handleQuickToggleNotification(ev)}
-                              title={ev.bat_thong_bao !== false ? "Bấm để TẮT thông báo" : "Bấm để BẬT thông báo"}
+                              title={ev.bat_thong_bao !== false ? "Tắt thông báo" : "Bật thông báo"}
                             >
-                              {ev.bat_thong_bao !== false ? "🔔 Bật" : "🔕 Tắt"}
+                              <i className={`bi ${ev.bat_thong_bao !== false ? "bi-bell" : "bi-bell-slash"}`}></i>
                             </button>
                             <button
                               type="button"
@@ -1606,7 +1674,7 @@ export const CalendarView = () => {
                               }}
                               title="Chỉnh sửa sự kiện"
                             >
-                              ✏️ Sửa
+                              <i className="bi bi-pencil"></i>
                             </button>
                             <button
                               type="button"
@@ -1617,60 +1685,36 @@ export const CalendarView = () => {
                               }}
                               title="Xóa sự kiện"
                             >
-                              🗑️ Xóa
+                              <i className="bi bi-trash3"></i>
                             </button>
                           </div>
                         </div>
 
-                        {/* Hàng 2: Tiêu đề sự kiện (Tách biệt rõ ràng, dễ đọc) */}
-                        <div
-                          className="day-modal-event-title fw-bold mb-2"
-                          style={{
-                            fontSize: "1.04rem",
-                            color: "var(--text-main)",
-                            lineHeight: "1.4",
-                            wordBreak: "break-word",
-                            overflowWrap: "anywhere"
-                          }}
-                        >
-                          {ev.tieu_de}
-                        </div>
+                        {/* Tiêu đề sự kiện */}
+                        <div className="day-modal-event-title mt-2">{ev.tieu_de}</div>
 
-                        {/* Hàng 3: Thời gian & Địa điểm (Có khoảng cách thoáng đãng) */}
-                        <div className="d-flex align-items-center gap-3 flex-wrap small text-secondary mb-1">
+                        {/* Thời gian & địa điểm */}
+                        <div className="d-flex align-items-center gap-1.5 flex-wrap mt-2">
                           {ev.loai_su_kien === "deadline" ? (
-                            <span className="d-inline-flex align-items-center gap-1.5 fw-medium">
-                              <span className="fs-6">⏰</span> Hạn: <strong className="text-danger">{startTime}</strong>
+                            <span className="dme-meta-chip dme-chip-deadline">
+                              <i className="bi bi-alarm"></i> Hạn: {startTime}
                             </span>
                           ) : (
-                            <span className="d-inline-flex align-items-center gap-1.5 fw-medium">
-                              <span className="fs-6 text-primary">🕒</span> {startTime} – {endTime}
+                            <span className="dme-meta-chip">
+                              <i className="bi bi-clock"></i> {startTime} – {endTime}
                             </span>
                           )}
                           {ev.dia_diem && (
-                            <span className="d-inline-flex align-items-center gap-1.5 text-truncate" style={{ maxWidth: "260px" }}>
-                              <span className="fs-6 text-danger">📍</span> {ev.dia_diem}
+                            <span className="dme-meta-chip dme-chip-place">
+                              <i className="bi bi-geo-alt"></i> {ev.dia_diem}
                             </span>
                           )}
                         </div>
 
-                        {/* Hàng 4: Ghi chú mô tả (Cách biệt bằng đường kẻ đứt tinh tế) */}
+                        {/* Ghi chú mô tả */}
                         {ev.mo_ta && (
-                          <div
-                            className="small text-secondary mt-2.5 pt-2"
-                            style={{
-                              borderTop: "1px dashed rgba(100, 116, 139, 0.2)",
-                              lineHeight: "1.55",
-                              fontSize: "0.85rem",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              wordBreak: "break-word"
-                            }}
-                          >
-                            📝 {ev.mo_ta}
+                          <div className="dme-note">
+                            <i className="bi bi-stickies"></i> {ev.mo_ta}
                           </div>
                         )}
                       </div>
@@ -1680,30 +1724,26 @@ export const CalendarView = () => {
               )}
             </div>
 
-            {/* Footer Buttons (Bootstrap Grid Responsive) */}
-            <div className="row g-2 pt-3 mt-2 border-top w-100 m-0 flex-shrink-0">
-              <div className="col-4 col-sm-auto">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary w-100 py-2 rounded-3"
-                  onClick={() => setSelectedDayDate(null)}
-                >
-                  Đóng
-                </button>
-              </div>
-              <div className="col-8 col-sm-auto ms-sm-auto">
-                <button
-                  type="button"
-                  className="btn btn-primary w-100 py-2 rounded-3 fw-bold"
-                  onClick={() => {
-                    const targetDate = selectedDayDate;
-                    setSelectedDayDate(null);
-                    handleOpenCreateModal(targetDate);
-                  }}
-                >
-                  ➕ Thêm Sự Kiện
-                </button>
-              </div>
+            {/* Footer Buttons */}
+            <div className="dme-footer d-flex gap-2 pt-3 mt-1 border-top flex-shrink-0 w-100 m-0">
+              <button
+                type="button"
+                className="dme-btn-ghost flex-1"
+                onClick={() => setSelectedDayDate(null)}
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                className="dme-btn-primary flex-1 flex-shrink-0"
+                onClick={() => {
+                  const targetDate = selectedDayDate;
+                  setSelectedDayDate(null);
+                  handleOpenCreateModal(targetDate);
+                }}
+              >
+                <i className="bi bi-plus-lg me-1"></i> Thêm Sự Kiện
+              </button>
             </div>
           </div>
         </div>
@@ -2040,9 +2080,7 @@ export const CalendarView = () => {
                         {REPEAT_CYCLE_CONFIG[formData.quy_tac_lap]?.unit || "lần"}
                       </span>
                     </div>
-                    <div className="form-text text-muted" style={{ fontSize: "0.78rem" }}>
-                      💡 Hệ thống tự động tính ngày kết thúc chuỗi lặp tương ứng với số {REPEAT_CYCLE_CONFIG[formData.quy_tac_lap]?.unit} bạn nhập.
-                    </div>
+
                   </div>
                 )}
               </div>
@@ -2099,9 +2137,6 @@ export const CalendarView = () => {
                     readOnly
                     title="Ngày bắt đầu được cố định theo ngày bạn đã chọn trên lịch"
                   />
-                  <div className="form-text text-muted" style={{ fontSize: "0.75rem" }}>
-                    🔒 Cố định theo ngày đã chọn trên lịch
-                  </div>
                 </div>
 
                 <div className="col-12 col-sm-6">
@@ -2127,11 +2162,6 @@ export const CalendarView = () => {
                       });
                     }}
                   />
-                  <div className="form-text text-muted" style={{ fontSize: "0.75rem" }}>
-                    {formData.quy_tac_lap === "once"
-                      ? "💡 Bạn có thể chọn ngày kết thúc cho sự kiện"
-                      : "💡 Tự động theo chu kỳ lặp hoặc tự chọn"}
-                  </div>
                 </div>
               </div>
 
@@ -2158,7 +2188,7 @@ export const CalendarView = () => {
                 <div className="row g-2 g-sm-3 mb-3">
                   <div className="col-12 col-sm-6">
                     <label className="form-label fw-bold small text-secondary mb-1 d-flex align-items-center justify-content-between">
-                      <span>⏰ Giờ bắt đầu trong ngày <span className="text-danger">*</span></span>
+                      <span>⏰ Giờ bắt đầu <span className="text-danger">*</span></span>
                       {conflictingEvents.length > 0 && (
                         <span className="badge bg-warning text-dark" style={{ fontSize: "0.7rem" }}>
                           ⚠️ Trùng giờ
@@ -2188,7 +2218,7 @@ export const CalendarView = () => {
 
                   <div className="col-12 col-sm-6">
                     <label className="form-label fw-bold small text-secondary mb-1 d-flex align-items-center justify-content-between">
-                      <span>⏱️ Giờ kết thúc trong ngày <span className="text-danger">*</span></span>
+                      <span>⏱️ Giờ kết thúc <span className="text-danger">*</span></span>
                       {conflictingEvents.length > 0 && (
                         <span className="badge bg-warning text-dark" style={{ fontSize: "0.7rem" }}>
                           ⚠️ Trùng giờ
@@ -2330,9 +2360,6 @@ export const CalendarView = () => {
                     <div className="fw-bold small d-flex align-items-center gap-1.5 mb-0.5" style={{ color: "var(--text-main)" }}>
                       <span>{formData.bat_thong_bao ? "🔔" : "🔕"}</span>
                       <span>Bật thông báo sự kiện</span>
-                    </div>
-                    <div className="small text-secondary" style={{ fontSize: "0.78rem" }}>
-                      Hệ thống sẽ nhắc nhở và phát chuông khi sự kiện sắp diễn ra
                     </div>
                   </div>
 

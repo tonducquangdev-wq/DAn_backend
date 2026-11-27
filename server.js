@@ -1,5 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
+dotenv.config();
+
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
@@ -21,9 +23,6 @@ const pushRouter = require("./Router/pushRouter");
 const syncExpertUsers = require("./Utils/syncExpertUsers");
 const { startDailyBriefingScheduler } = require("./Utils/dailyBriefingScheduler");
 
-// Load environment variables FIRST
-dotenv.config();
-
 // Ensure we have proper VAPID keys loaded upon startup
 if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
     console.warn("⚠️ VAPID keys not found in environment variables. Falling back to hardcoded keys.");
@@ -39,17 +38,26 @@ const app = express();
 // Middlewares
 const allowedOrigins = [
   "https://life-planner-lemon.vercel.app",
-  "http://localhost:5173",
   "http://localhost:5000",
   "http://localhost:3000"
 ];
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
+    // Cho phép mọi yêu cầu không có origin (curl, postman, mobile...)
+    if (!origin) return callback(null, true);
+
+    // Cho phép production domain
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Cho phép mọi cổng localhost (dev)
+    if (origin.startsWith("http://localhost:")) return callback(null, true);
+
+    // Cho phép IP LAN (Wi-Fi, Radmin VPN, v.v.): http://192.168.x.x, http://10.x.x.x, http://172.16-31.x.x
+    if (/^http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/.test(origin)) {
+      return callback(null, true);
     }
+
+    return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

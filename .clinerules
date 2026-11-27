@@ -1,7 +1,21 @@
-# QUY TẮC DỰ ÁN LIFE PLANNER (GÓI MIỄN PHÍ)
+# QUY TẮC DỰ ÁN LIFE PLANNER
 
-1. **Ngôn ngữ & Ngắn gọn:** Luôn giải thích và lập kế hoạch bằng tiếng Việt ngắn gọn, đi thẳng vào trọng tâm (tối đa 3-4 gạch đầu dòng), không viết lan man.
-2. **Tiết kiệm ngữ cảnh (Chống tràn bộ nhớ):** Chỉ đọc đúng các file được gắn thẻ `@` hoặc trực tiếp liên quan đến lỗi đang xử lý. Tuyệt đối không tự ý quét toàn bộ thư mục dự án.
-3. **Sửa code chuẩn xác:** Ưu tiên dùng `replace_in_file` để sửa đúng đoạn code thay đổi, hạn chế viết lại toàn bộ file lớn để tránh lỗi ngắt giữa chừng của model miễn phí.
-4. **Quy trình chạy lệnh:** Không tự ý chạy `npm run dev`, `npm start` hoặc khởi động lại server vì môi trường dev đã được bật sẵn.
-5. **Đồng bộ tài liệu:** Sau khi hoàn thành thay đổi code, cập nhật ngắn gọn phần thay đổi vào `AI_PROJECT_BRIEF.md` bằng `replace_in_file`.
+## 1. Giao tiếp & Ngữ cảnh (Tiết kiệm Token)
+- **Ngôn ngữ:** Giải thích và lập kế hoạch bằng tiếng Việt ngắn gọn, đi thẳng vào trọng tâm (tối đa 3–4 gạch đầu dòng), không lan man.
+- **Phạm vi đọc:** Chỉ đọc đúng các file được gắn thẻ `@` hoặc trực tiếp liên quan đến lỗi/tính năng đang xử lý. Tuyệt đối không tự ý quét toàn bộ thư mục dự án.
+
+## 2. Tư duy trước khi Code (Think Before Coding)
+- **Không đoán mò:** Nêu rõ các giả định trước khi làm. Nếu yêu cầu mơ hồ hoặc có nhiều hướng giải quyết, hãy hỏi lại ngắn gọn (tối đa 2–3 câu) và chỉ ra ưu/nhược điểm.
+- **Linh hoạt:** Với các tác vụ nhỏ, rõ ràng thì thực hiện ngay, không hỏi rườm rà. Đề xuất giải pháp đơn giản hơn nếu thấy cách hiện tại quá phức tạp.
+
+## 3. Sửa Code Phẫu Thuật & Đơn Giản (Simplicity & Surgical Changes)
+- **Tối giản:** Viết ít code nhất có thể để giải quyết đúng yêu cầu. Không tự ý thêm tính năng thừa, không tạo lớp trừu tượng rườm rà.
+- **Sửa đúng chỗ:** Ưu tiên dùng `replace_in_file` để sửa đúng đoạn code thay đổi, hạn chế viết lại toàn bộ file lớn.
+- **Giữ nguyên hiện trạng:** Chỉ sửa các dòng liên quan trực tiếp đến yêu cầu. Không tự ý format lại code, không refactor hoặc xóa code thừa không liên quan (chỉ nhắc nếu thấy, chỉ xóa import/biến do chính thay đổi của bạn làm thừa).
+
+## 4. Tiêu chuẩn Giao diện (UI Style)
+- **Bắt buộc Neumorphism:** Mọi thay đổi, chỉnh sửa hoặc tạo mới giao diện (UI) đều phải tuân thủ phong cách **Neumorphism (Tân hình thái học)**: sử dụng nền đồng màu, đổ bóng kép sáng/tối (`outer shadow` cho phần tử nổi, `inset shadow` cho ô nhập liệu/khung lõm/trạng thái nhấn), bo góc mềm mại, ưu tiên icon vector mảnh sắc nét thay cho Emoji và giữ khoảng đệm thoáng để bóng đổ không bị bó sát chữ.
+
+## 5. Thực thi, Kiểm chứng & Đồng bộ
+- **Kiểm chứng:** Với tác vụ nhiều bước, lập kế hoạch ngắn (`Bước -> Kiểm tra`). Đảm bảo code không lỗi cú pháp/build trước khi báo hoàn thành.
+- **Đồng bộ tài liệu:** Sau khi hoàn thành thay đổi code, cập nhật ngắn gọn nội dung vừa sửa vào `AI_PROJECT_BRIEF.md` bằng `replace_in_file`.

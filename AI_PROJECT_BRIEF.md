@@ -1,4 +1,4 @@
-# 🤖 AI PROJECT BRIEF — Life Planner RESTful API
+﻿# 🤖 AI PROJECT BRIEF — Life Planner RESTful API
 > **Mục đích file này:** Đây là tài liệu ngữ cảnh toàn diện dành cho AI. Khi bắt đầu làm việc với dự án này, hãy đọc file này để hiểu toàn bộ kiến trúc, tech stack, cấu trúc code, luồng nghiệp vụ và quy ước coding trước khi thực hiện bất kỳ thay đổi nào.
 
 ---
@@ -630,6 +630,10 @@ Environment Variables: MONGO_URI, JWT_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KE
 - File `client/vercel.json` đã tạo sẵn (SPA rewrites → `/index.html`).
 - Kích hoạt HTTPS và Domain tùy chỉnh.
 
+### Phát triển local
+- `npm run dev` — chạy backend (localhost:5000) + frontend (localhost:5173, Vite proxy `/api` → `localhost:5000`).
+- `npm run dev:full` — thêm ngrok tunnel, chỉ dùng khi test Web Push trên thiết bị di động.
+
 ### VPS (Production)
 ```bash
 # PM2 + Nginx reverse proxy
@@ -670,6 +674,9 @@ pm2 startup && pm2 save
 > **Chat sử dụng HTTP Polling** (không phải WebSocket). Nếu muốn nâng cấp lên real-time WebSocket, cần thêm `socket.io` vào `server.js` và refactor `tinNhanRiengController` + `chatTapLuyenController`.
 
 > [!TIP]
+> **Thứ tự load biến môi trường trong `server.js`:** `dotenv.config()` phải được gọi **ngay sau `require("dotenv")` và trước mọi `require` Router/Controller/Util đọc `process.env`** (ví dụ `pushService.js` cần `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` ngay khi khởi động). Nếu đặt sau các router, các module sẽ nhận `undefined` và server sẽ crash.
+
+> [!TIP]
 > **Khi thêm API mới:** Tạo route trong Router → khai báo hàm xử lý trong Controller → export và mount trong `server.js` (nếu là router mới). Luôn wrap trong `try/catch` và return JSON chuẩn format `{success, message, data}`.
 
 ---
@@ -677,4 +684,23 @@ pm2 startup && pm2 save
 *File này được cập nhật ngày **02/11/2026**: Hoàn thiện tính năng Cảnh báo Trùng lịch thời gian thực (Real-time Schedule Conflict Detection): Tự động tính toán các buổi dự kiến (kể cả chuỗi lặp) và phát hiện chồng lấn thời gian với sự kiện đã có; hiển thị huy hiệu `⚠️ Trùng giờ` cùng banner cảnh báo danh sách sự kiện bị trùng chi tiết ngay trên modal setup lịch; bật hộp thoại xác nhận khi bấm Lưu để người dùng quyết định điều chỉnh lại hoặc tiếp tục.*
 
 * **11/2026** — Sửa lệch 7h múi giờ cho `deadline` (và mọi loại sự kiện): Frontend gửi ISO có offset `+07:00` (`toVnIso` helper); Backend parse an toàn với `ensureVnOffset` (append `+07:00` nếu thiếu offset); Hiển thị dùng `new Date(iso).toLocaleTimeString("vi-VN")` — không thêm `"Z"`.
+ * **11/26/2026** — Thiết kế lại cụm nút điều hướng thời gian trong `client/src/views/CalendarView.jsx` theo chuẩn **Neumorphism** & nhỏ gọn hơn: gộp `[ < | Hôm nay | > ]` thành 1 thanh `inline-flex` liền mạch, nền `var(--neu-bg)`, viền `1px solid var(--border-color)`, `border-radius: 10px`, padding `2px`, shadow `inset` (`--neu-inset-dark/light`); nút mũi trái/phải **28×28px**, SVG Lucide stroke-based 14×14, hover nổi lên `--neu-shadow-dark/light` + màu `var(--primary)`; nút "Hôm nay" ở giữa **padding 0 10px**, font `0.8rem` `font-weight 600`, `white-space: nowrap`; divider flush giữa các phần (`borderRight`). Hỗ trợ Dark Mode toàn qua biến CSS, giữ nguyên logic `handlePrev`/`handleNext`/`handleToday`; nằm trong khối `{!isMobile && ...}` (Bootstrap responsive, chỉ hiển thị Laptop/Desktop).
+ * **11/26/2026** — Thiết kế lại nút **Dark/Light Mode** thành thanh gạt viên thuốc Neumorphism trong `client/src/components/Topbar.jsx`: pill `rounded-full` nền `var(--neu-bg)` viền `var(--border-color)`, shadow `inset` (`--neu-inset-dark/light`); viên bi tròn trượt `transform` (0 → 32px), `transition-transform 300ms`, nền `#6366f1` (Light) / `#fbbf24` (Dark), icon `bi-moon-stars-fill` / `bi-sun-fill`.
+ * **11/26/2026** — Nút **Đăng xuất** trong dropdown Topbar chuyển sang nút Neumorphism riêng biệt: `rounded-xl`, `px-3 py-1.5`, nền `var(--neu-bg)`, viền `var(--border-color)`, shadow `neumorphic` mềm, hover nền đỏ nhạt `rgba(239,68,68,0.08)` + viền/border `#ef4444`, `:active` inset shadow, icon `bi-box-arrow-right fs-6` + nhãn **"Thoát"**.
+ * **11/26/2026** — Đồng bộ 2 nút Dark/Light Mode + Đăng xuất trong `client/src/App.jsx` (header chính hiển thị trên màn hình): nút theme thành Toggle Pill Neumorphism `56×28px`, viên bi trượt `transform` 0→32px, `transition 300ms`, icon `bi-sun-fill` / `bi-moon-stars-fill`; nút logout thành nút `rounded-xl px-3 py-1.5`, nền `var(--neu-bg)`, hover màu đỏ nhạt `#ef4444`, icon `bi-box-arrow-right fs-6` + nhãn **"Thoát"**. Giữ nguyên logic `toggleTheme` và `logout`.
+ * **11/26/2026** — Thiết kế lại cụm nút điều hướng thời gian trong `client/src/views/CalendarView.jsx` theo chuẩn **Neumorphism** & nhỏ gọn hơn: gộp `[ < | Hôm nay | > ]` thành 1 thanh `inline-flex` liền mạch, nền `var(--neu-bg)`, viền `1px solid var(--border-color)`, `border-radius: 10px`, padding `2px`, shadow `inset` (`--neu-inset-dark/light`); nút mũi trái/phải **28×28px**, SVG Lucide stroke-based 14×14, hover nổi lên `--neu-shadow-dark/light` + màu `var(--primary)`; nút "Hôm nay" ở giữa **padding 0 10px**, font `0.8rem` `font-weight 600`, `white-space: nowrap`; divider flush giữa các phần (`borderRight`). Hỗ trợ Dark Mode toàn qua biến CSS, giữ nguyên logic `handlePrev`/`handleNext`/`handleToday`; nằm trong khối `{!isMobile && ...}` (Bootstrap responsive, chỉ hiển thị Laptop/Desktop).
+ * **11/26/2026** — Thiết kế lại nút **Dark/Light Mode** thành thanh gạt viên thuốc Neumorphism trong `client/src/components/Topbar.jsx`: pill `rounded-full` nền `var(--neu-bg)` viền `var(--border-color)`, shadow `inset` (`--neu-inset-dark/light`); viên bi tròn trượt `transform` (0 → 32px), `transition-transform 300ms`, nền `#6366f1` (Light) / `#fbbf24` (Dark), icon `bi-moon-stars-fill` / `bi-sun-fill`.
+ * **11/26/2026** — Nút **Đăng xuất** trong dropdown Topbar chuyển sang nút Neumorphism riêng biệt: `rounded-xl`, `px-3 py-1.5`, nền `var(--neu-bg)`, viền `var(--border-color)`, shadow `neumorphic` mềm, hover nền đỏ nhạt `rgba(239,68,68,0.08)` + viền/border `#ef4444`, `:active` inset shadow, icon `bi-box-arrow-right fs-6` + nhãn **\"Thoát\"**.
+Giữ nguyên logic `toggleTheme` và `logout`.
+ * **11/26/2026** — Đồng bộ 2 nút Dark/Light Mode + Đăng xuất trong `client/src/App.jsx` (header chính hiển thị trên màn hình): nút theme thành Toggle Pill Neumorphism `56×28px`, viên bi trượt `transform` 0→32px, `transition 300ms`, icon `bi-sun-fill` / `bi-moon-stars-fill`; nút logout thành nút `rounded-xl px-3 py-1.5`, nền `var(--neu-bg)`, hover màu đỏ nhạt `#ef4444`, icon `bi-box-arrow-right fs-6` + nhãn **"Thoát"**. Giữ nguyên logic `toggleTheme` và `logout`.
+ * **11/26/2026** — Nút **Đăng xuất** trong dropdown Topbar chuyển sang nút Neumorphism riêng biệt: `rounded-xl`, `px-3 py-1.5`, nền `var(--neu-bg)`, viền `var(--border-color)`, shadow `neumorphic` mềm, hover nền đỏ nhạt `rgba(239,68,68,0.08)` + viền/border `#ef4444`, `:active` inset shadow, icon `bi-box-arrow-right fs-6` + nhãn **"Thoát"**.
+ * **11/26/2026** — **Fix hiển thị** Toggle theme + nút Đăng xuất ở `client/src/App.jsx` và `client/src/components/Topbar.jsx`: thay các class **Tailwind không tồn tại trong Bootstrap** (`rounded-full`, `top-2`, `start-2`, `rounded-xl`, `px-3`, `py-1.5`) bằng **inline style thuần** (`borderRadius: "9999px"/"50%"/"12px"`, `padding`, `position`/`top`/`left`, `transform: translate(...)`). Nhờ đó pill bo tròn đúng, viên bi trượt mượt (0→28px), nút "Thoát" bo góc 12px. Giữ nguyên logic `toggleTheme` và `logout`.
+
+ * **11/26/2026** — **Thiết kế lại modal "Sự Kiện Trong Ngày" trong `client/src/views/CalendarView.jsx` + `client/src/index.css` (Neumorphism):**
+   - **Fix lỗi hiển thị**: `onClick`/`title` bị đặt **ngoài thẻ div** của card → render thành text rác `onClick=title="..."` trên giao diện. Đưa vào đúng thuộc tính của thẻ card.
+   - **Layout thẻ sự kiện mới**: thanh accent dọc 5px theo màu loại sự kiện (`--accent`), card bo tròn 18px nền `var(--card-bg)`, shadow kép Neumorphism, hover nâng lên.
+   - **Thông tin trình bày gọn**: pill loại sự kiện (icon Bootstrap `bi-book`/… thay emoji), pill lặp lại + chuông thông báo, chip thời gian/địa điểm dạng lõm (`dme-meta-chip`), ghi chú lõm 3 dòng (`dme-note`).
+   - **Header modal**: icon tile, số liệu "X sự kiện", ngày, nút X bo tròn; footer 2 nút Neumorphism (Đóng mờ / Thêm Sự Kiện gradient).
+   - **Trạng thái trống**: icon ly cà phê + mô tả khuyến khích thêm sự kiện.
+   - Hỗ trợ đầy đủ Dark Mode qua biến CSS `--neu-bg/--neu-shadow-dark/--neu-inset-*`; `vite build` thành công (47 modules, 0 lỗi).
 

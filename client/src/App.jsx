@@ -293,23 +293,91 @@ function MainApp() {
 
           <button
             id="header-theme-toggle"
-            className="header-theme-toggle"
+            className="d-flex align-items-center p-0"
             onClick={toggleTheme}
             title={theme === "dark" ? "Chuyển sang Giao diện Sáng (Light)" : "Chuyển sang Giao diện Tối (Dark)"}
             aria-label="Toggle theme"
+            style={{ background: "transparent", border: "none" }}
           >
-            {theme === "dark" ? "☀️" : "🌙"}
+            <div
+              style={{
+                width: "56px",
+                height: "28px",
+                borderRadius: "9999px",
+                position: "relative",
+                background: "var(--neu-bg)",
+                border: "1px solid var(--border-color)",
+                boxShadow:
+                  "inset 2px 2px 4px var(--neu-inset-dark), inset -2px -2px 4px var(--neu-inset-light)",
+                transition: "background 0.3s ease"
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "3px",
+                  width: "22px",
+                  height: "22px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: theme === "dark" ? "#fbbf24" : "#6366f1",
+                  boxShadow:
+                    "2px 2px 6px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light)",
+                  transform: `translate(${theme === "dark" ? "28px" : "0px"}, -50%)`,
+                  transition: "transform 300ms ease-out, background 300ms ease"
+                }}
+              >
+                <i
+                  className={theme === "dark" ? "bi bi-sun-fill" : "bi bi-moon-stars-fill"}
+                  style={{ fontSize: "12px", color: "#ffffff", lineHeight: 1 }}
+                />
+              </div>
+            </div>
           </button>
 
           {/* Nút Đăng xuất tiện lợi trên Mobile & Header */}
           <button
             id="header-logout-btn"
-            className="header-theme-toggle header-logout-btn"
+            className="d-flex align-items-center gap-2 border-0 cursor-pointer"
             onClick={logout}
-            title="Đăng xuất tài khoản"
-            aria-label="Đăng xuất"
+            title="Đăng xuất"
+            style={{
+              borderRadius: "12px",
+              padding: "6px 14px",
+              background: "var(--neu-bg)",
+              border: "1px solid var(--border-color)",
+              color: "var(--text-main)",
+              boxShadow:
+                "3px 3px 8px var(--neu-shadow-dark), -3px -3px 8px var(--neu-shadow-light)",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(239,68,68,0.1)";
+              e.currentTarget.style.borderColor = "rgba(239,68,68,0.35)";
+              e.currentTarget.style.color = "#ef4444";
+              e.currentTarget.style.boxShadow = "inset 2px 2px 5px rgba(239,68,68,0.15)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--neu-bg)";
+              e.currentTarget.style.borderColor = "var(--border-color)";
+              e.currentTarget.style.color = "var(--text-main)";
+              e.currentTarget.style.boxShadow =
+                "3px 3px 8px var(--neu-shadow-dark), -3px -3px 8px var(--neu-shadow-light)";
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.boxShadow =
+                "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)";
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.boxShadow =
+                "3px 3px 8px var(--neu-shadow-dark), -3px -3px 8px var(--neu-shadow-light)";
+            }}
           >
-            <span style={{ fontSize: "1.05rem", lineHeight: 1 }}>🚪</span>
+            <i className="bi bi-box-arrow-right" style={{ fontSize: "16px" }}></i>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Thoát</span>
           </button>
           <div
             className="d-none d-md-flex align-items-center gap-2"

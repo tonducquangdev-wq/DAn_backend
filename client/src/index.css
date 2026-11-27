@@ -1393,16 +1393,14 @@ tbody td {
   align-items: center;
   gap: 6px;
   padding: 6px 13px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-color);
-  background: var(--neu-bg);
-  box-shadow: 3px 3px 8px var(--neu-shadow-dark),
-             -3px -3px 8px var(--neu-shadow-light);
-  color: var(--text-main);
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  background: #f9fafb;
+  color: #334155;
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 }
 
 .filter-pill:hover {
@@ -1413,56 +1411,10 @@ tbody td {
 
 .filter-pill.active-all,
 .filter-pill.active {
-  box-shadow: inset 2px 2px 5px var(--neu-inset-dark),
-             inset -2px -2px 5px var(--neu-inset-light) !important;
-  color: var(--primary) !important;
-  border-color: var(--primary) !important;
-}
-
-/* Category specific pill styling - Light Mode */
-.filter-pill.pill-hoc-tap { color: #1d4ed8; }
-.filter-pill.pill-hoc-tap span { color: #3b82f6; }
-.filter-pill.pill-hoc-tap.active-type {
-  background: #eff6ff !important;
-  color: #1d4ed8 !important;
-  border-color: #3b82f6 !important;
-  box-shadow: inset 2px 2px 5px rgba(59, 130, 246, 0.25) !important;
-}
-
-.filter-pill.pill-tap-luyen { color: #047857; }
-.filter-pill.pill-tap-luyen span { color: #10b981; }
-.filter-pill.pill-tap-luyen.active-type {
-  background: #ecfdf5 !important;
-  color: #047857 !important;
-  border-color: #10b981 !important;
-  box-shadow: inset 2px 2px 5px rgba(16, 185, 129, 0.25) !important;
-}
-
-.filter-pill.pill-deadline { color: #b45309; }
-.filter-pill.pill-deadline span { color: #f59e0b; }
-.filter-pill.pill-deadline.active-type {
-  background: #fffbeb !important;
-  color: #b45309 !important;
-  border-color: #f59e0b !important;
-  box-shadow: inset 2px 2px 5px rgba(245, 158, 11, 0.25) !important;
-}
-
-.filter-pill.pill-ca-nhan { color: #6d28d9; }
-.filter-pill.pill-ca-nhan span { color: #8b5cf6; }
-.filter-pill.pill-ca-nhan.active-type {
-  background: #faf5ff !important;
-  color: #6d28d9 !important;
-  border-color: #8b5cf6 !important;
-  box-shadow: inset 2px 2px 5px rgba(139, 92, 246, 0.25) !important;
-}
-
-.filter-pill.pill-cong-viec { color: #4338ca; }
-.filter-pill.pill-cong-viec span { color: #6366f1; }
-.filter-pill.pill-cong-viec.active-type {
-  background: #eef2ff !important;
-  color: #4338ca !important;
-  border-color: #6366f1 !important;
-  box-shadow: inset 2px 2px 5px rgba(99, 102, 241, 0.25) !important;
+  background: #1f2937 !important;
+  border-color: #111827 !important;
+  color: #ffffff !important;
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.4), inset -2px -2px 5px rgba(0,0,0,0.4) !important;
 }
 
 /* Category specific pill styling - Dark Mode (Vibrant Neon Glow & Crisp Contrast) */
@@ -2170,6 +2122,7 @@ tbody td {
 .week-event-chip-card {
   color: #ffffff !important;
   padding: 7px 8px;
+  position: relative;
   border-radius: 9px;
   font-size: 0.78rem;
   line-height: 1.25;
@@ -2600,23 +2553,31 @@ tbody td {
 }
 
 .day-modal-event-card {
-  background: #f8fafc;
-  border-radius: 16px;
-  padding: 16px 18px;
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  background: var(--card-bg);
+  border-radius: 18px;
+  padding: 16px 18px 16px 22px;
+  border: 1px solid var(--border-color);
+  box-shadow: 6px 6px 14px var(--neu-shadow-dark), -6px -6px 14px var(--neu-shadow-light);
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
   overflow: hidden;
   box-sizing: border-box;
   max-width: 100%;
 }
-
+.day-modal-event-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--accent, var(--primary));
+  border-radius: 18px 0 0 18px;
+}
 .day-modal-event-card:hover {
-  background: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+  box-shadow: 10px 10px 20px var(--neu-shadow-dark), -10px -10px 20px var(--neu-shadow-light);
 }
 
 .day-modal-event-title {
@@ -2700,67 +2661,256 @@ tbody td {
 }
 
 .day-modal-empty {
-  padding: 30px 16px;
+  padding: 26px 16px;
   text-align: center;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--bg-recessed);
   border-radius: var(--radius);
-  border: 1px dashed rgba(0, 0, 0, 0.12);
+  border: 1px dashed var(--border-color);
+}
+.dme-empty-icon {
+  font-size: 2.6rem;
+  margin-bottom: 10px;
+  opacity: 0.6;
+}
+.dme-empty-title {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+.dme-empty-desc {
+  color: var(--text-muted);
+  font-size: 0.88rem;
 }
 
 /* Dark Mode Overrides for Day Events Modal */
-[data-theme='dark'] .day-modal-event-card {
-  background: #111827 !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6) !important;
-}
-
+[data-theme='dark'] .day-modal-event-card,
 [data-theme='dark'] .day-modal-event-card:hover {
-  background: #1e293b !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.8) !important;
+  background: var(--card-bg) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
-
 [data-theme='dark'] .day-modal-event-title {
   color: #ffffff !important;
 }
-
 [data-theme='dark'] .day-action-btn.notify-btn {
   background: rgba(16, 185, 129, 0.18) !important;
   color: #34d399 !important;
   border-color: rgba(16, 185, 129, 0.35) !important;
 }
-
 [data-theme='dark'] .day-action-btn.notify-btn.off {
   background: rgba(148, 163, 184, 0.15) !important;
   color: #94a3b8 !important;
   border-color: rgba(148, 163, 184, 0.25) !important;
 }
-
 [data-theme='dark'] .day-action-btn.edit-btn {
   background: rgba(56, 189, 248, 0.18) !important;
   color: #38bdf8 !important;
   border: 1px solid rgba(56, 189, 248, 0.35) !important;
 }
-
 [data-theme='dark'] .day-action-btn.edit-btn:hover {
   background: #0284c7 !important;
   color: #ffffff !important;
 }
-
 [data-theme='dark'] .day-action-btn.delete-btn {
   background: rgba(239, 68, 68, 0.22) !important;
   color: #f87171 !important;
   border: 1px solid rgba(239, 68, 68, 0.45) !important;
 }
-
 [data-theme='dark'] .day-action-btn.delete-btn:hover {
   background: #dc2626 !important;
   color: #ffffff !important;
 }
-
 [data-theme='dark'] .day-modal-empty {
   background: var(--bg-recessed) !important;
   border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* ============================================================
+   NEUMORPHIC DAY EVENTS MODAL — EXTENDED COMPONENTS
+   ============================================================ */
+.dme-header-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--neu-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 2px 2px 4px var(--neu-inset-dark), inset -2px -2px 4px var(--neu-inset-light);
+  color: var(--text-muted);
+}
+.dme-header .dme-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dme-count-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.dme-date-line {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dme-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--neu-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  box-shadow: inset 2px 2px 4px var(--neu-inset-dark), inset -2px -2px 4px var(--neu-inset-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.dme-close-btn:hover {
+  background: var(--bg-recessed);
+  box-shadow: inset 1px 1px 2px var(--neu-inset-dark), inset -1px -1px 2px var(--neu-inset-light);
+}
+
+/* Pills & chips trong card sự kiện */
+.dme-type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.71rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1;
+  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.6), inset -1px -1px 2px rgba(0, 0, 0, 0.06);
+}
+.dme-mini-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.69rem;
+  font-weight: 600;
+  background: var(--bg-recessed);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.5), inset -1px -1px 2px rgba(0, 0, 0, 0.05);
+}
+.dme-mini-pill.dme-mini-pill-off {
+  color: rgba(100, 116, 139, 0.6);
+  border-color: rgba(100, 116, 139, 0.2);
+}
+.dme-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background: var(--bg-recessed);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 2px 2px 4px var(--neu-inset-dark), inset -2px -2px 4px var(--neu-inset-light);
+  white-space: nowrap;
+}
+.dme-meta-chip.dme-chip-deadline {
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.25);
+  background: rgba(239, 68, 68, 0.06);
+}
+.dme-note {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  background: var(--bg-recessed);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 2px 2px 4px var(--neu-inset-dark), inset -2px -2px 4px var(--neu-inset-light);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* Footer nút */
+.dme-footer {
+  border-color: var(--border-color);
+}
+.dme-btn-ghost {
+  border-radius: 10px;
+  background: var(--neu-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  box-shadow: inset 2px 2px 4px var(--neu-inset-dark), inset -2px -2px 4px var(--neu-inset-light);
+  font-weight: 600;
+  padding: 7px 0;
+}
+.dme-btn-ghost:hover {
+  background: var(--bg-recessed);
+  box-shadow: inset 1px 1px 2px var(--neu-inset-dark), inset -1px -1px 2px var(--neu-inset-light);
+}
+.dme-btn-primary {
+  border-radius: 10px;
+  background: var(--primary-gradient);
+  border: 1px solid var(--primary);
+  color: #ffffff !important;
+  font-weight: 700;
+  padding: 7px 0;
+  box-shadow: 4px 4px 10px rgba(37, 99, 235, 0.3);
+}
+.dme-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 6px 6px 12px rgba(37, 99, 235, 0.4);
+}
+
+/* Dark overrides cho dme-* */
+[data-theme='dark'] .dme-header-icon,
+[data-theme='dark'] .dme-close-btn {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+[data-theme='dark'] .dme-count-pill {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+[data-theme='dark'] .dme-date-line,
+[data-theme='dark'] .dme-note,
+[data-theme='dark'] .dme-mini-pill,
+[data-theme='dark'] .dme-meta-chip,
+[data-theme='dark'] .dme-meta-chip.dme-chip-deadline {
+  border-color: var(--border-color) !important;
+  background: var(--bg-recessed) !important;
+}
+[data-theme='dark'] .dme-date-line,
+[data-theme='dark'] .dme-note,
+[data-theme='dark'] .dme-mini-pill {
+  color: var(--text-muted) !important;
+}
+[data-theme='dark'] .dme-meta-chip {
+  color: var(--text-main) !important;
+}
+[data-theme='dark'] .dme-meta-chip.dme-chip-deadline {
+  color: #f87171 !important;
 }
 
 /* ============================================================

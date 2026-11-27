@@ -56,12 +56,48 @@ export const Topbar = ({ activeTab, setActiveTab, setMobileOpen }) => {
       <div className="topbar-right header-actions d-flex align-items-center gap-2 gap-sm-3">
         {/* Theme toggle button */}
         <button
-          className="btn btn-sm btn-outline-secondary rounded-circle p-2 border-0 d-flex align-items-center justify-content-center"
-          style={{ width: "36px", height: "36px" }}
+          className="d-flex align-items-center p-0"
           onClick={toggleTheme}
           title={`Chuyển sang ${theme === "dark" ? "Light Mode ☀️" : "Dark Mode 🌙"}`}
+          style={{ background: "transparent", border: "none" }}
         >
-          <i className={`bi ${theme === "dark" ? "bi-sun-fill text-warning" : "bi-moon-stars-fill text-primary"} fs-6`}></i>
+          <div
+            style={{
+              width: "56px",
+              height: "28px",
+              borderRadius: "9999px",
+              position: "relative",
+              background: "var(--neu-bg)",
+              border: "1px solid var(--border-color)",
+              boxShadow:
+                "inset 2px 2px 4px var(--neu-inset-dark), inset -2px -2px 4px var(--neu-inset-light)",
+              transition: "background 0.3s ease"
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "3px",
+                width: "22px",
+                height: "22px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: theme === "dark" ? "#fbbf24" : "#6366f1",
+                boxShadow:
+                  "2px 2px 6px var(--neu-shadow-dark), -2px -2px 6px var(--neu-shadow-light)",
+                transform: `translate(${theme === "dark" ? "28px" : "0px"}, -50%)`,
+                transition: "transform 300ms ease-out, background 300ms ease"
+              }}
+            >
+              <i
+                className={theme === "dark" ? "bi bi-sun-fill" : "bi bi-moon-stars-fill"}
+                style={{ fontSize: "12px", color: "#ffffff", lineHeight: 1 }}
+              />
+            </div>
+          </div>
         </button>
 
         {/* User Profile */}
@@ -111,11 +147,43 @@ export const Topbar = ({ activeTab, setActiveTab, setMobileOpen }) => {
             <li><hr className="dropdown-divider my-1" /></li>
             <li>
               <button
-                className="dropdown-item py-2 d-flex align-items-center gap-2 text-danger rounded-2 mx-1 border-0 bg-transparent cursor-pointer"
+                className="d-flex align-items-center gap-2 border-0 cursor-pointer"
                 onClick={logout}
+                title="Đăng xuất"
+                style={{
+                  borderRadius: "12px",
+                  padding: "6px 14px",
+                  background: "var(--neu-bg)",
+                  border: "1px solid var(--border-color)",
+                  color: "var(--text-main)",
+                  boxShadow:
+                    "3px 3px 8px var(--neu-shadow-dark), -3px -3px 8px var(--neu-shadow-light)",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(239,68,68,0.1)";
+                  e.currentTarget.style.borderColor = "rgba(239,68,68,0.35)";
+                  e.currentTarget.style.color = "#ef4444";
+                  e.currentTarget.style.boxShadow = "inset 2px 2px 5px rgba(239,68,68,0.15)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--neu-bg)";
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.color = "var(--text-main)";
+                  e.currentTarget.style.boxShadow =
+                    "3px 3px 8px var(--neu-shadow-dark), -3px -3px 8px var(--neu-shadow-light)";
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.boxShadow =
+                    "inset 3px 3px 6px var(--neu-inset-dark), inset -3px -3px 6px var(--neu-inset-light)";
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.boxShadow =
+                    "3px 3px 8px var(--neu-shadow-dark), -3px -3px 8px var(--neu-shadow-light)";
+                }}
               >
-                <i className="bi bi-box-arrow-right"></i>
-                <span>Đăng xuất</span>
+                <i className="bi bi-box-arrow-right" style={{ fontSize: "16px" }}></i>
+                <span style={{ fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Thoát</span>
               </button>
             </li>
           </ul>
