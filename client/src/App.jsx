@@ -31,6 +31,9 @@ function MainApp() {
     setActiveTab("messages");
   };
 
+  // Đường dẫn riêng cho Admin Portal (bí mật, đọc từ Vite env: VITE_ADMIN_PATH)
+  const ADMIN_PATH = import.meta.env.VITE_ADMIN_PATH || "/lp-admin-secure";
+
   // Nhận diện đường dẫn vào cổng Admin Login
   const checkIsAdminPortalFromUrl = () => {
     if (typeof window === "undefined") return false;
@@ -38,10 +41,10 @@ function MainApp() {
     const hash = window.location.hash.toLowerCase();
     const search = window.location.search.toLowerCase();
     return (
-      path === "/admin/login" ||
-      path === "/admin" ||
-      hash === "#admin" ||
-      hash === "#admin-login" ||
+      path === ADMIN_PATH ||
+      path === `${ADMIN_PATH}/login` ||
+      hash === ADMIN_PATH.toLowerCase() ||
+      hash === `${ADMIN_PATH.toLowerCase()}/login` ||
       search.includes("admin")
     );
   };
@@ -60,14 +63,11 @@ function MainApp() {
     };
   }, []);
 
-  const navigateToAdminPortal = () => {
-    setIsAdminPortal(true);
-    window.location.hash = "admin-login";
-  };
-
   const navigateToUserPortal = () => {
     setIsAdminPortal(false);
-    if (window.location.hash === "#admin-login" || window.location.hash === "#admin") {
+    const adminHash = `#${ADMIN_PATH.toLowerCase()}`;
+    const adminLoginHash = `#${ADMIN_PATH.toLowerCase()}/login`;
+    if (window.location.hash === adminLoginHash || window.location.hash === adminHash) {
       window.history.replaceState(null, "", window.location.pathname);
     }
   };
@@ -102,7 +102,7 @@ function MainApp() {
         />
       );
     }
-    return <AuthModal onGoToAdminLogin={navigateToAdminPortal} />;
+    return <AuthModal />;
   }
 
   const renderContent = () => {

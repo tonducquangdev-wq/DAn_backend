@@ -4179,3 +4179,60 @@ tbody td {
 }
 
 
+
+/* ============================================================
+   STUDY — Giờ & Ngày học (chip Neumorphism)
+   ============================================================ */
+.schedule-times {
+  min-width: 0;
+}
+
+.sched-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 10px 4px 4px;
+  border-radius: 10px;
+  background: var(--neu-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 2px 2px 4px var(--neu-inset-dark),
+              inset -2px -2px 4px var(--neu-inset-light);
+}
+
+.sched-chip-day {
+  min-width: 46px;
+  padding: 2px 7px;
+  border-radius: 7px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.22);
+}
+
+.sched-chip-time {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  color: var(--text-main);
+}
+
+.sched-chip-room {
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+[data-theme='dark'] .sched-chip-day,
+[data-bs-theme='dark'] .sched-chip-day {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(96, 165, 250, 0.28);
+  color: #93c5fd;
+}
+

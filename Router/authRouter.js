@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
+const rateLimit = require("express-rate-limit");
 const { 
     register, 
     login, 
@@ -10,6 +11,12 @@ const {
     changePassword 
 } = require("../Controller/api/authController");
 const authMiddleware = require("../Middleware/authMiddleware");
+
+const adminLoginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { success: false, message: "Quá nhiều lần thử đăng nhập Quản trị. Vui lòng thử lại sau 15 phút." }
+});
 
 // Middleware chặn và trả về lỗi validation nếu có
 const handleValidationErrors = (req, res, next) => {
@@ -49,7 +56,7 @@ const loginValidator = [
 // Public Auth routes (Bảo vệ bằng express-validator)
 router.post("/register", registerValidator, handleValidationErrors, register);
 router.post("/login", loginValidator, handleValidationErrors, login);
-router.post("/admin-login", loginValidator, handleValidationErrors, adminLogin);
+router.post("/admin-login", adminLoginLimiter, loginValidator, handleValidationErrors, adminLogin);
 
 // Protected Profile routes
 router.get("/me", authMiddleware, getMe);

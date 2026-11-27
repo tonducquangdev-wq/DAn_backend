@@ -13,10 +13,44 @@ const DAYS_OF_WEEK = [
   { value: 8, label: "Chủ Nhật", short: "CN" }
 ];
 
+const DAY_SHORT = { 2: "T2", 3: "T3", 4: "T4", 5: "T5", 6: "T6", 7: "T7", 8: "CN" };
+const DAY_FULL = { 2: "Thứ 2", 3: "Thứ 3", 4: "Thứ 4", 5: "Thứ 5", 6: "Thứ 6", 7: "Thứ 7", 8: "CN" };
+
 const formatScheduleDays = (days) => {
   if (!days || !days.length) return "T2";
-  const map = { 2: "T2", 3: "T3", 4: "T4", 5: "T5", 6: "T6", 7: "T7", 8: "CN" };
-  return days.map(d => map[d] || d).join(", ");
+  return days.map(d => DAY_SHORT[d] || d).join(", ");
+};
+
+// Chuẩn hóa lịch học: luôn đồng bộ theo ngay_hoc để không lệch thứ giữa các nơi hiển thị
+const getScheduleSessions = (m) => {
+  const days = Array.isArray(m.ngay_hoc) ? m.ngay_hoc.map(Number) : [];
+  const detail = Array.isArray(m.chi_tiet_lich_hoc) ? m.chi_tiet_lich_hoc : [];
+  const sessions = [];
+
+  days.forEach(thu => {
+    const found = detail.find(s => Number(s.thu_trong_tuan) === thu);
+    sessions.push({
+      ...(found || { phong_hoc: "" }),
+      thu_trong_tuan: thu,
+      gio_bat_dau: found?.gio_bat_dau || m.gio_bat_dau || "07:30",
+      gio_ket_thuc: found?.gio_ket_thuc || m.gio_ket_thuc || "09:30"
+    });
+  });
+
+  // Dữ liệu cũ chưa có ngay_hoc → dùng chi tiết lịch, cuối cùng mới mặc định Thứ 2
+  if (sessions.length === 0) {
+    const fallback = detail.length > 0 ? detail : [{ thu_trong_tuan: 2 }];
+    fallback.forEach(s => {
+      sessions.push({
+        ...s,
+        thu_trong_tuan: Number(s.thu_trong_tuan),
+        gio_bat_dau: s.gio_bat_dau || m.gio_bat_dau || "07:30",
+        gio_ket_thuc: s.gio_ket_thuc || m.gio_ket_thuc || "09:30"
+      });
+    });
+  }
+
+  return sessions.sort((a, b) => a.thu_trong_tuan - b.thu_trong_tuan);
 };
 
 const formatDateDisplay = (dateStr) => {
@@ -122,34 +156,17 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
   }, []);
 
   const formatSubjectSchedule = (m) => {
-    if (m.chi_tiet_lich_hoc && m.chi_tiet_lich_hoc.length > 0) {
-      const firstStart = m.chi_tiet_lich_hoc[0].gio_bat_dau;
-      const firstEnd = m.chi_tiet_lich_hoc[0].gio_ket_thuc;
-      const isAllSame = m.chi_tiet_lich_hoc.every(s => s.gio_bat_dau === firstStart && s.gio_ket_thuc === firstEnd);
-
-      if (isAllSame) {
-        return {
-          timeStr: `${firstStart} – ${firstEnd}`,
-          daysStr: formatScheduleDays(m.chi_tiet_lich_hoc.map(s => s.thu_trong_tuan)),
-          isCustom: false,
-          sessions: m.chi_tiet_lich_hoc
-        };
-      }
-
-      const mapDay = { 2: "T2", 3: "T3", 4: "T4", 5: "T5", 6: "T6", 7: "T7", 8: "CN" };
-      return {
-        timeStr: m.chi_tiet_lich_hoc.map(s => `${mapDay[s.thu_trong_tuan] || s.thu_trong_tuan}: ${s.gio_bat_dau}-${s.gio_ket_thuc}`).join(" | "),
-        daysStr: formatScheduleDays(m.chi_tiet_lich_hoc.map(s => s.thu_trong_tuan)),
-        isCustom: true,
-        sessions: m.chi_tiet_lich_hoc
-      };
-    }
+    const sessions = getScheduleSessions(m);
+    const first = sessions[0];
+    const isAllSame = sessions.every(s => s.gio_bat_dau === first.gio_bat_dau && s.gio_ket_thuc === first.gio_ket_thuc);
 
     return {
-      timeStr: `${m.gio_bat_dau || "07:30"} – ${m.gio_ket_thuc || "09:30"}`,
-      daysStr: formatScheduleDays(m.ngay_hoc),
-      isCustom: false,
-      sessions: []
+      timeStr: isAllSame
+        ? `${first.gio_bat_dau} – ${first.gio_ket_thuc}`
+        : sessions.map(s => `${DAY_SHORT[s.thu_trong_tuan] || s.thu_trong_tuan}: ${s.gio_bat_dau}-${s.gio_ket_thuc}`).join(" | "),
+      daysStr: formatScheduleDays(sessions.map(s => s.thu_trong_tuan)),
+      isCustom: !isAllSame,
+      sessions
     };
   };
 
@@ -443,11 +460,6 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                             <span className="fw-bold d-block text-main" style={{ fontSize: "0.92rem" }}>
                               {m.ten_mon}
                             </span>
-                            {m.so_tin_chi && (
-                              <span className="text-muted" style={{ fontSize: "0.75rem" }}>
-                                {m.so_tin_chi} tín chỉ
-                              </span>
-                            )}
                           </div>
                         </div>
                       </td>
@@ -479,50 +491,23 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                         )}
                       </td>
                       <td>
-                        {(() => {
-                          const sched = formatSubjectSchedule(m);
-                          if (sched.isCustom) {
-                            const mapDay = { 2: "Thứ 2", 3: "Thứ 3", 4: "Thứ 4", 5: "Thứ 5", 6: "Thứ 6", 7: "Thứ 7", 8: "CN" };
-                            return (
-                              <div className="d-flex flex-column gap-1">
-                                {sched.sessions.map(s => (
-                                  <div key={s.thu_trong_tuan} className="d-inline-flex align-items-center gap-1.5" style={{ fontSize: "0.82rem" }}>
-                                    <span
-                                      className="badge"
-                                      style={{
-                                        background: "rgba(59, 130, 246, 0.12)",
-                                        color: "var(--primary)",
-                                        border: "1px solid rgba(59, 130, 246, 0.25)",
-                                        padding: "2px 6px",
-                                        fontSize: "0.72rem"
-                                      }}
-                                    >
-                                      {mapDay[s.thu_trong_tuan] || `T${s.thu_trong_tuan}`}
-                                    </span>
-                                    <span className="fw-bold font-numeric text-main">
-                                      {s.gio_bat_dau} – {s.gio_ket_thuc}
-                                    </span>
-                                    {s.phong_hoc && s.phong_hoc !== m.phong_hoc && (
-                                      <span className="text-muted" style={{ fontSize: "0.72rem" }}>({s.phong_hoc})</span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          }
-                          return (
-                            <div className="d-flex flex-column gap-1">
-                              <span className="fw-bold text-main d-inline-flex align-items-center gap-1.5" style={{ fontSize: "0.86rem" }}>
-                                <i className="bi bi-clock-fill text-primary" style={{ fontSize: "0.8rem" }}></i>
-                                <span>{sched.timeStr}</span>
-                              </span>
-                              <span className="d-inline-flex align-items-center gap-1.5 text-secondary" style={{ fontSize: "0.8rem" }}>
-                                <i className="bi bi-calendar-week text-muted" style={{ fontSize: "0.78rem" }}></i>
-                                <span className="fw-medium">{sched.daysStr}</span>
-                              </span>
+                        <div className="d-flex flex-column gap-1.5 schedule-times">
+                          {formatSubjectSchedule(m).sessions.map(s => (
+                            <div
+                              key={s.thu_trong_tuan}
+                              className="sched-chip"
+                            >
+                              <span className="sched-chip-day">{DAY_FULL[s.thu_trong_tuan] || `T${s.thu_trong_tuan}`}</span>
+                              <span className="sched-chip-time font-numeric">{s.gio_bat_dau} – {s.gio_ket_thuc}</span>
+                              {s.phong_hoc && s.phong_hoc !== m.phong_hoc && (
+                                <span className="sched-chip-room text-muted">({s.phong_hoc})</span>
+                              )}
                             </div>
-                          );
-                        })()}
+                          ))}
+                          {formatSubjectSchedule(m).sessions.length === 0 && (
+                            <span className="text-muted" style={{ fontSize: "0.82rem" }}>{formatSubjectSchedule(m).daysStr || "—"}</span>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <div
@@ -679,32 +664,23 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
                         <div className="col-12 text-muted">
                           {(() => {
                             const sched = formatSubjectSchedule(m);
-                            if (sched.isCustom) {
-                              const mapDay = { 2: "T2", 3: "T3", 4: "T4", 5: "T5", 6: "T6", 7: "T7", 8: "CN" };
-                              return (
-                                <div className="d-flex flex-wrap gap-1.5 align-items-center">
-                                  <i className="bi bi-clock text-primary me-1"></i>
-                                  {sched.sessions.map(s => (
-                                    <span
-                                      key={s.thu_trong_tuan}
-                                      className="badge"
-                                      style={{
-                                        background: "rgba(59, 130, 246, 0.12)",
-                                        color: "var(--primary)",
-                                        border: "1px solid rgba(59, 130, 246, 0.25)",
-                                        fontSize: "0.74rem"
-                                      }}
-                                    >
-                                      {mapDay[s.thu_trong_tuan]}: {s.gio_bat_dau} - {s.gio_ket_thuc}
-                                    </span>
-                                  ))}
-                                </div>
-                              );
-                            }
                             return (
-                              <div className="d-flex flex-wrap gap-3">
-                                <span><i className="bi bi-clock me-1 text-primary"></i> Giờ: <strong className="text-main">{sched.timeStr}</strong></span>
-                                <span><i className="bi bi-calendar3 me-1 text-muted"></i> Thứ: <strong className="text-main">{sched.daysStr}</strong></span>
+                              <div className="d-flex flex-wrap gap-1 align-items-center schedule-times">
+                                {sched.sessions.map(s => (
+                                  <div
+                                    key={s.thu_trong_tuan}
+                                    className="sched-chip"
+                                  >
+                                    <span className="sched-chip-day">{DAY_FULL[s.thu_trong_tuan] || `T${s.thu_trong_tuan}`}</span>
+                                    <span className="sched-chip-time font-numeric">{s.gio_bat_dau} – {s.gio_ket_thuc}</span>
+                                    {s.phong_hoc && s.phong_hoc !== m.phong_hoc && (
+                                      <span className="sched-chip-room text-muted">({s.phong_hoc})</span>
+                                    )}
+                                  </div>
+                                ))}
+                                {sched.sessions.length === 0 && (
+                                  <span className="text-muted" style={{ fontSize: "0.82rem" }}>{sched.daysStr || "—"}</span>
+                                )}
                               </div>
                             );
                           })()}
@@ -1148,10 +1124,6 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
               </div>
 
               <div className="d-flex flex-column-reverse flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2 pt-3 border-top mt-3">
-                <span className="small text-muted d-flex align-items-center gap-1 justify-content-center justify-content-sm-start">
-                  <span>⚡</span>
-                  <span>Tự động đồng bộ vào trang Lịch</span>
-                </span>
                 <div className="d-flex gap-2">
                   <button
                     type="button"
@@ -1181,7 +1153,7 @@ export const StudyGpaView = ({ onNavigateToTutor, onOpenDangKyGiaSu }) => {
             style={{ maxWidth: "560px", width: "95%", maxHeight: "90vh", overflowY: "auto" }}
           >
             <div className="d-flex justify-content-between align-items-start mb-3">
-              <h3 className="fs-5 fw-bold mb-0">➕ Thêm Bài Tập & Tự Động Lưu Deadline</h3>
+              <h3 className="fs-5 fw-bold mb-0">➕ Thêm Bài Tập</h3>
               <button
                 type="button"
                 className="btn-close"

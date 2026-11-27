@@ -73,7 +73,7 @@ test_backend/
 │   └── pushNotificationController.js ← VAPID subscribe, Daily Briefing config
 │
 ├── Middleware/
-│   ├── authMiddleware.js          ← Xác thực Bearer JWT + chặn banned
+│   ├── authMiddleware.js          ← Xác thực Bearer JWT + chặn banned 
 │   ├── roleMiddleware.js          ← RBAC: checkRole('admin') / checkRole('tutor','pt')
 │   └── errorMiddleware.js        ← notFound (404) + errorHandler toàn cục
 │
@@ -609,7 +609,7 @@ npm run dev
 Email:    admin@lifeplanner.com
 Password: admin123456
 ```
-> Đăng nhập admin qua `POST /api/auth/admin-login` hoặc màn hình `AdminLoginView`
+> Đăng nhập admin **chỉ** qua `POST /api/auth/admin-login` hoặc trang riêng `http://localhost:5000/quangdeptrai` (màn hình `AdminLoginView`). Đường dẫn bí mật lấy từ env: `ADMIN_PATH` (backend, đặt trong `.env` gốc) và `VITE_ADMIN_PATH` (frontend, **bắt buộc đặt trong `client/.env`** vì Vite chỉ đọc `.env` tại thư mục `client/`). Màn hình đăng nhập người dùng (`AuthModal`) **đã bỏ nút chuyển cổng Admin** để ngăn user thông thường bấm nhầm. **Lưu ý:** sau khi đổi `VITE_ADMIN_PATH` phải chạy lại `npm run build` trong `client/` để Vite nhúng biến mới vào bundle.
 
 ---
 
@@ -704,3 +704,9 @@ Giữ nguyên logic `toggleTheme` và `logout`.
    - **Trạng thái trống**: icon ly cà phê + mô tả khuyến khích thêm sự kiện.
    - Hỗ trợ đầy đủ Dark Mode qua biến CSS `--neu-bg/--neu-shadow-dark/--neu-inset-*`; `vite build` thành công (47 modules, 0 lỗi).
 
+
+ * **11/27/2026** — **Thiết kế lại ô \"Giờ & Ngày học\" + xóa tín chỉ trong `client/src/views/StudyGpaView.jsx` + `client/src/index.css` (Neumorphism):**
+   - **Đồng bộ thứ**: bổ sung helper `getScheduleSessions()` lấy `ngay_hoc` làm nguồn chuẩn, bù ngày còn thiếu / loại ngày đã xóa khỏi `chi_tiet_lich_hoc`, sắp xếp tăng dần theo thứ → mọi nơi hiển thị (bảng desktop, thẻ mobile, modal chi tiết) đồng nhất tên thứ và giờ.
+   - **Thiết kế lại ô hiển thị**: mỗi buổi học là 1 chip Neumorphism `[Thứ X] giờ–giờ (phòng)` (nền `var(--neu-bg)`, inset shadow, chữ ngày mảng in đậm, giờ dùng `font-numeric`), thay thế 2 kiểu hiển thị trộn lẫn trước đó.
+   - **Xóa phần "x tín chỉ"** dưới tên môn học trong bảng danh sách.
+   - CSS mới: `.schedule-times`, `.sched-chip`, `.sched-chip-day`, `.sched-chip-time`, `.sched-chip-room` trong `client/src/index.css` hỗ trợ Dark Mode.

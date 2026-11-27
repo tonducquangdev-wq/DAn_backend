@@ -7,6 +7,10 @@ const path = require("path");
 const fs = require("fs");
 const connectDB = require("./Config/db");
 
+// Đường dẫn riêng cho Admin Portal (bí mật, đặt trong .env: ADMIN_PATH)
+const ADMIN_PATH = process.env.ADMIN_PATH || "/lp-admin-secure";
+const adminIndexPath = path.join(__dirname, "client", "dist", "index.html");
+
 // Import Routers
 const authRouter = require("./Router/authRouter");
 const suKienRouter = require("./Router/suKienRouter");
@@ -72,6 +76,14 @@ app.use("/public", express.static(path.join(__dirname, "Public")));
 // Health check endpoint cho cron-job.org (tránh bị hiểu nhầm server ngủ/lỗi)
 app.get("/ping", (req, res) => res.status(200).send("OK"));
 
+// Route riêng cho Admin Portal (chỉ serve khi đúng ADMIN_PATH bí mật)
+app.get(ADMIN_PATH, (req, res) => {
+    if (fs.existsSync(adminIndexPath)) {
+        return res.sendFile(adminIndexPath);
+    }
+    return res.status(404).json({ success: false, message: "Admin frontend not found" });
+});
+
 // Nạp các Routes API
 app.use("/api/auth", authRouter);
 app.use("/api/su-kien", suKienRouter);
@@ -107,7 +119,7 @@ app.get("/", (req, res) => {
 
 // Middleware Fallback cho các URL client-side routing của React (nếu client đã build)
 app.use((req, res, next) => {
-    if (req.method === "GET" && !req.path.startsWith("/api") && !req.path.startsWith("/public")) {
+    if (req.method === "GET" && !req.path.startsWith("/api") && !req.path.startsWith("/public") && req.path !== ADMIN_PATH) {
         const indexPath = path.join(clientDistPath, "index.html");
         if (fs.existsSync(indexPath)) {
             return res.sendFile(indexPath);
